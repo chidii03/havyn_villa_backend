@@ -1,0 +1,26 @@
+# Root .dockerignore — only apps/web/Dockerfile uses the repo root as its build
+# context (it needs packages/shared, which Docker can't COPY from outside the
+# context — see that Dockerfile's own comment). apps/api/Dockerfile has its own
+# context (apps/api/) and its own .dockerignore.
+
+**/node_modules/
+**/.next/
+**/.git/
+.gradle/
+apps/api/build/
+apps/api/bin/
+apps/api/loadtest/node_modules/
+infra/observability/node_modules/
+
+# Not needed to build the web image — excluding keeps the build context small.
+apps/api/src/
+project-docs/
+brand/
+
+*.log
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/

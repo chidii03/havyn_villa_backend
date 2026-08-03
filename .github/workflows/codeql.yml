@@ -1,0 +1,53 @@
+name: CodeQL
+
+# project-docs/prompts/24-security-hardening.md: "dependency + SAST scanning in CI."
+# This is the SAST half (Dependabot, .github/dependabot.yml, is the dependency-
+# scanning half). Scans both languages in this repo — java-kotlin for apps/api,
+# javascript-typescript for apps/web + packages/shared.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "23 4 * * 1" # weekly, catches newly-published CodeQL query findings even with no code changes
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: java-kotlin
+            # Unlike JS/TS, Java analysis needs a real build to extract an accurate call
+            # graph — `autobuild` invokes apps/api's Gradle wrapper automatically.
+            build-mode: autobuild
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        if: matrix.language == 'java-kotlin'
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

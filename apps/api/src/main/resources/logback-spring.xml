@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structured JSON logs (prompt 26 — project-docs/devops/02-observability.md#logs).
+  Replaces the plain-text `logging.pattern.console` this project used through prompt
+  25 — a real log aggregator (ELK/Loki/CloudWatch/...) needs structured fields, not a
+  formatted string it has to re-parse.
+
+  correlationId (CorrelationIdFilter's own app-level id) and traceId/spanId (real
+  OpenTelemetry, via micrometer-tracing-bridge-otel's automatic MDC population) are
+  both included whenever present — they're complementary, not duplicates, see
+  CorrelationIdFilter's class doc. No PII/secrets are added here beyond whatever a
+  log statement itself passes — see AuthService/PaystackPaymentProvider/PaymentService
+  for the actual scrubbing discipline (never a raw password/token; email is hashed,
+  not logged raw, in the one place it previously appeared).
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+            <customFields>{"service":"havyn-villa-api"}</customFields>
+            <timeZone>UTC</timeZone>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="JSON_CONSOLE" />
+    </root>
+</configuration>

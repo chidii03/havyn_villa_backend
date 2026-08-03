@@ -1,0 +1,53 @@
+appId: com.havynvilla.mobile
+---
+# prompt 30 deliverable: "E2E on a device/simulator for core flow" — search → property
+# detail → reserve, driven against a real running app + real backend, same as
+# apps/web/e2e's Playwright specs. Needs a fixture user already registered against the
+# live API (E2E_TEST_EMAIL / E2E_TEST_PASSWORD) — this flow doesn't create one, since
+# signup requires real email verification (see apps/web/e2e/README.md's own
+# findVerificationLink note) and Maestro has no Mailhog client of its own.
+
+- launchApp
+
+# Explore tab (default landing tab) — GET /api/v1/properties, needs at least one
+# ACTIVE listing seeded, same DB fixture apps/web/e2e/seed.ts inserts. `property-card-*`
+# is a real testID on components/property-card.tsx's root Pressable, added for this flow.
+- assertVisible: "Explore stays"
+- tapOn:
+    id: "property-card-.*"
+    index: 0
+
+# Property detail screen
+- tapOn: "Check price"
+- assertVisible: "Total"
+
+# Reserving while unauthenticated redirects to /login (requireAuth in
+# app/property/[id].tsx) — this is real app behavior, not a scripted shortcut.
+- tapOn: "Reserve"
+- assertVisible: "Log in"
+- tapOn:
+    id: "email-input"
+- inputText: ${E2E_TEST_EMAIL}
+- tapOn:
+    id: "password-input"
+- inputText: ${E2E_TEST_PASSWORD}
+- tapOn: "Log in"
+
+# Login always lands on the Account tab (router.replace("/(tabs)/account") in
+# app/login.tsx) rather than returning to the screen that triggered the redirect —
+# a real, known gap (see project-docs/mobile/01-mobile-architecture.md), not something
+# this flow papers over. Re-enter the flow manually.
+- assertVisible: "Log out"
+- tapOn: "Explore"
+- tapOn:
+    id: "property-card-.*"
+    index: 0
+- tapOn: "Check price"
+- assertVisible: "Total"
+- tapOn: "Reserve"
+
+# Same honest stopping point as apps/web/e2e/search-and-reserve.spec.ts: no live
+# Paystack credentials exist anywhere this project has run, so this is as far as any
+# reserve flow — web or mobile — can truthfully go.
+- assertVisible: "Dates held"
+- assertVisible: "Payment isn't available yet"

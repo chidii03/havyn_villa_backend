@@ -1,0 +1,110 @@
+name: Rollback
+
+# prompt 28: "documented rollback" + "rollback drill" test. Two modes:
+#   previous-revision — `kubectl rollout undo`, reverts to the ReplicaSet Kubernetes
+#     itself already kept from the last deploy. Fast, no image tag to look up —
+#     the right choice for "something's on fire right now."
+#   specific-tag — re-applies a named image tag (e.g. rolling back two releases,
+#     not one, or re-promoting a known-good tag after a bad rollback attempt).
+#
+# Deliberately NOT gated behind a GitHub Environment's required-reviewer approval
+# (unlike deploy.yml's promote-production job) — manually triggering this workflow
+# at all already requires repo write access, and an emergency rollback should be
+# fast, not wait on the same approval flow as a forward deploy.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment to roll back"
+        type: choice
+        options: [staging, production]
+        required: true
+      mode:
+        description: "previous-revision = kubectl rollout undo. specific-tag = redeploy an exact tag."
+        type: choice
+        options: [previous-revision, specific-tag]
+        default: previous-revision
+      image_tag:
+        description: "Only used when mode=specific-tag — e.g. ghcr.io/OWNER/havyn-villa-api:<sha>. Must already exist in the registry (this workflow never builds)."
+        required: false
+
+jobs:
+  rollback:
+    name: Roll back ${{ inputs.environment }} (${{ inputs.mode }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve target cluster + namespace
+        id: target
+        run: |
+          if [ "${{ inputs.environment }}" = "staging" ]; then
+            echo "namespace=havyn-staging" >> "$GITHUB_OUTPUT"
+          else
+            echo "namespace=havyn-production" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check cluster access is configured
+        id: gate
+        env:
+          KUBE_CONFIG_STAGING: ${{ secrets.KUBE_CONFIG_STAGING }}
+          KUBE_CONFIG_PRODUCTION: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+        run: |
+          if [ "${{ inputs.environment }}" = "staging" ]; then
+            VALUE="$KUBE_CONFIG_STAGING"
+          else
+            VALUE="$KUBE_CONFIG_PRODUCTION"
+          fi
+          if [ -z "$VALUE" ]; then
+            echo "No cluster configured for ${{ inputs.environment }} yet — nothing to roll back. Skipping."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            mkdir -p "$HOME/.kube"
+            echo "$VALUE" | base64 -d > "$HOME/.kube/config"
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.gate.outputs.configured == 'true'
+        uses: azure/setup-kubectl@v4
+
+      - name: Validate specific-tag input
+        if: steps.gate.outputs.configured == 'true' && inputs.mode == 'specific-tag'
+        run: |
+          if [ -z "${{ inputs.image_tag }}" ]; then
+            echo "mode=specific-tag needs image_tag set (e.g. ghcr.io/OWNER/havyn-villa-api:<sha>)."
+            exit 1
+          fi
+
+      - name: Roll back — previous revision
+        if: steps.gate.outputs.configured == 'true' && inputs.mode == 'previous-revision'
+        run: |
+          kubectl -n ${{ steps.target.outputs.namespace }} rollout undo deployment/havyn-api
+          kubectl -n ${{ steps.target.outputs.namespace }} rollout undo deployment/havyn-web
+
+      - name: Roll back — specific tag
+        if: steps.gate.outputs.configured == 'true' && inputs.mode == 'specific-tag'
+        working-directory: infra/k8s/overlays/${{ inputs.environment }}
+        run: |
+          curl -sfL https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64.tar.gz | tar xz
+          # image_tag is expected to already carry its own repo (see the input's own
+          # description) — same `name=value` form kustomize edit set image always takes.
+          ./kustomize edit set image "${{ inputs.image_tag }}"
+          ./kustomize build . | kubectl apply -f -
+
+      # Same gating logic as a forward deploy (prompt 27's infra/k8s/README.md) — a
+      # rollback that itself fails to become Ready fails this step loudly, rather
+      # than silently leaving the cluster in a half-rolled-back state unreported.
+      - if: steps.gate.outputs.configured == 'true'
+        run: |
+          kubectl -n ${{ steps.target.outputs.namespace }} rollout status deployment/havyn-api --timeout=5m
+          kubectl -n ${{ steps.target.outputs.namespace }} rollout status deployment/havyn-web --timeout=5m
+
+      - name: Confirm the rollback actually restored health
+        if: steps.gate.outputs.configured == 'true'
+        working-directory: infra/observability
+        run: |
+          npm install
+          node synthetic-checks.mjs
+        env:
+          SYNTHETIC_BASE_URL: ${{ inputs.environment == 'staging' && vars.STAGING_API_BASE_URL || vars.PRODUCTION_API_BASE_URL }}

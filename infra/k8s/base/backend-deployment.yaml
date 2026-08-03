@@ -1,0 +1,83 @@
+# prompt 27: "managed k8s or equivalent" (architecture/01-system-architecture.md#8)
+# — deliberately generic manifests, not tied to a specific cloud (no ADR has decided
+# one; see project-docs/architecture/02-adr-index.md). Runs on any conformant
+# managed Kubernetes. Image ref is a placeholder — see kustomization.yaml/overlays
+# for how it's actually set per environment/deploy.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: havyn-api
+  labels:
+    app: havyn-api
+spec:
+  replicas: 2 # overridden per-overlay; 2 as a base default so a rolling update never drops to zero capacity
+  selector:
+    matchLabels:
+      app: havyn-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0 # never fewer replicas serving than requested, mid-rollout
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: havyn-api
+    spec:
+      # Least-privilege runtime (prompt 27 constraint) — matches the Dockerfile's
+      # own non-root user; enforced again here so a misbuilt/tampered image still
+      # can't run as root against this cluster's policy.
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: havyn-api
+          image: ghcr.io/OWNER/havyn-villa-api:REPLACED_BY_CI # see README.md — no real registry/org exists yet
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # Spring Boot's readiness/liveness split (management.health.
+          # readinessstate/livenessstate — already enabled, application.yml) maps
+          # directly onto Kubernetes' own readiness/liveness distinction, not the
+          # generic /actuator/health.
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          envFrom:
+            - configMapRef:
+                name: havyn-api-config
+            - secretRef:
+                name: havyn-api-secrets
+          volumeMounts:
+            # readOnlyRootFilesystem needs a writable /tmp — the JVM uses it
+            # (java.io.tmpdir) regardless of app-level file usage.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

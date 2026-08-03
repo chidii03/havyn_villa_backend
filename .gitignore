@@ -1,0 +1,33 @@
+# Env / secrets
+.env
+.env.*
+.env.example
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+*.log
+.pnpm-store/
+
+# Java / Spring / Gradle
+apps/api/build/
+apps/api/bin/
+apps/api/.gradle/
+*.class
+target/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Test / coverage
+coverage/
+*.lcov
+.playwright/
+test-results/
+playwright-report/

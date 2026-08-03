@@ -1,0 +1,64 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: havyn-staging
+
+resources:
+  - ../../base
+
+# CI overwrites these tags with the real just-built image digest for this commit —
+# see .github/workflows/deploy.yml's `kustomize edit set image` step. The values
+# here are just what `kustomize build` produces if run by hand with no override.
+images:
+  - name: ghcr.io/OWNER/havyn-villa-api
+    newTag: staging-latest
+  - name: ghcr.io/OWNER/havyn-villa-web
+    newTag: staging-latest
+
+replicas:
+  - name: havyn-api
+    count: 1
+  - name: havyn-web
+    count: 1
+
+patches:
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: havyn-api
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: havyn-web
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+  - target:
+      kind: Ingress
+      name: havyn-villa
+    patch: |
+      - op: replace
+        path: /spec/tls/0/hosts
+        value: ["staging.CHANGEME.example.com", "api.staging.CHANGEME.example.com"]
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.CHANGEME.example.com
+      - op: replace
+        path: /spec/rules/1/host
+        value: api.staging.CHANGEME.example.com
+  - target:
+      kind: ConfigMap
+      name: havyn-api-config
+    patch: |
+      - op: add
+        path: /data/WEB_BASE_URL
+        value: https://staging.CHANGEME.example.com

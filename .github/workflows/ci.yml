@@ -1,0 +1,416 @@
+name: CI
+
+# project-docs/prompts/23-testing.md: "CI configured with coverage thresholds on
+# domain modules and a11y checks... block merges on failures." Jobs: pipeline-
+# validation (prompt 28 — meta-checks on this repo's own infra-as-code), backend
+# (unit + Testcontainers integration tests — this runner has Docker preinstalled, so
+# the *FlowIT/*IT suites that can't run in the local dev sandbox run for real here),
+# frontend (lint, typecheck, tests incl. jest-axe a11y assertions, coverage gate,
+# build), e2e (Playwright against a real booted stack), docker (prompt 27 — Dockerfile
+# lint + real container smoke tests), and load-test (prompt 25 — k6 against search/
+# property-detail/quote/booking, the hot paths that got caching/N+1/index/pool
+# attention this prompt). See project-docs/testing/01-testing-strategy.md's "CI
+# gates" section and infra/github/configure-branch-protection.sh for which of these
+# are required-to-merge vs. informational.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # prompt 28's "pipeline dry-run" — meta-checks about the pipeline/infra-as-code
+  # itself, grouped in one place rather than scattered across the jobs that
+  # happen to also need Node. See each script's own header comment for exactly
+  # what it checks and why (no live Prometheus/kustomize/GitHub API to check
+  # against for real — this is the structural proxy for each).
+  pipeline-validation:
+    name: Pipeline validation — observability, k8s manifests, workflow config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate observability alert rules + dashboard (prompt 26)
+        working-directory: infra/observability
+        run: |
+          npm install
+          node validate.mjs
+
+      - name: Validate k8s manifests (prompt 27)
+        working-directory: infra/k8s
+        run: |
+          npm install
+          node validate.mjs
+
+      - name: Validate workflow job graphs + secrets/vars docs (prompt 28)
+        working-directory: infra/github
+        run: |
+          npm install
+          node validate.mjs
+
+  backend:
+    name: Backend — build, unit + integration tests, coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Test + coverage verification
+        working-directory: apps/api
+        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: apps/api/build/reports/tests/test
+          retention-days: 14
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: apps/api/build/reports/jacoco/test/html
+          retention-days: 14
+
+  frontend:
+    name: Frontend — lint, typecheck, test + coverage gate + a11y, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint -w apps/web
+      - run: npm run typecheck -w apps/web
+
+      # jest-axe a11y assertions live inline in the component/page tests this runs —
+      # there's no separate a11y step; a11y failures fail this step like any other.
+      - name: Test with coverage gate
+        run: npm run test:coverage -w apps/web
+
+      - run: npm run build -w apps/web
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: apps/web/coverage
+          retention-days: 14
+
+  e2e:
+    name: E2E — Playwright against a real booted stack
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: havyn_villa
+          POSTGRES_USER: havyn
+          POSTGRES_PASSWORD: change_me
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U havyn -d havyn_villa"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      # AuthService.register sends a real verification email synchronously inside
+      # the same transaction (SmtpMailer -> JavaMailSender.send) — without a real
+      # SMTP endpoint listening, every E2E spec that signs up (nearly all of them,
+      # since reserving requires auth) would 500 on the very first step.
+      mailhog:
+        image: mailhog/mailhog:latest
+        ports: ["1025:1025", "8025:8025"]
+
+    env:
+      # Every one of these matches application.yml's own defaults (see apps/api/src/
+      # main/resources/application.yml) — spelled out explicitly rather than relying
+      # on defaults, so this workflow keeps working even if a default ever changes.
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: havyn_villa
+      POSTGRES_USER: havyn
+      POSTGRES_PASSWORD: change_me
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+      MAIL_HOST: localhost
+      MAIL_PORT: "1025"
+      WEB_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Start backend (background)
+        working-directory: apps/api
+        run: |
+          nohup ./gradlew bootRun > /tmp/api.log 2>&1 &
+          echo "Waiting for the API to become healthy (cold Gradle cache on a first-ever run can be slow)..."
+          for i in $(seq 1 100); do
+            if curl -sf http://localhost:8080/actuator/health >/dev/null; then
+              echo "API is up."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "API never became healthy — last 200 log lines:"
+          tail -n 200 /tmp/api.log
+          exit 1
+
+      - name: Build frontend
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Start frontend (background)
+        working-directory: apps/web
+        run: |
+          nohup npm run start > /tmp/web.log 2>&1 &
+          echo "Waiting for the web app to respond..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 >/dev/null; then
+              echo "Web app is up."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Web app never came up — last 200 log lines:"
+          tail -n 200 /tmp/web.log
+          exit 1
+
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E
+        working-directory: apps/web
+        run: npm run e2e
+        env:
+          DATABASE_URL: postgres://havyn:change_me@localhost:5432/havyn_villa
+          E2E_BASE_URL: http://localhost:3000
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 14
+
+  docker:
+    name: Docker — Dockerfile lint, image build + container smoke tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: havyn_villa
+          POSTGRES_USER: havyn
+          POSTGRES_PASSWORD: change_me
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U havyn -d havyn_villa"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Lint Dockerfiles
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/api/Dockerfile
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/web/Dockerfile
+
+      - name: Build API image
+        run: docker build -t havyn-api:ci apps/api
+
+      # --network host: this container reaches the postgres/redis *service*
+      # containers above via localhost, exactly matching application.yml's own
+      # POSTGRES_HOST:localhost/REDIS_HOST:localhost defaults — no env overrides
+      # needed. (Linux-only; ubuntu-latest runners support it — this wouldn't work
+      # unmodified on a Windows/Mac runner, not a concern here.)
+      # Kept running (not torn down) through the web smoke test below — the web
+      # container gets NEXT_PUBLIC_API_BASE_URL=http://localhost:8080 pointing at
+      # *this* container, so its own smoke test is a real check against a live
+      # backend, not a container that 500s on every data-fetching page because
+      # nothing is listening on the other end.
+      - name: Smoke-test API container (real Postgres/Redis, real Flyway migration)
+        run: |
+          docker run -d --network host --name havyn-api-smoke \
+            -e JWT_ACCESS_SECRET=ci-smoke-test-placeholder-not-a-real-secret \
+            -e JWT_REFRESH_SECRET=ci-smoke-test-placeholder-not-a-real-secret-2 \
+            havyn-api:ci
+          echo "Waiting for the container to report healthy (Docker HEALTHCHECK)..."
+          for i in $(seq 1 30); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' havyn-api-smoke)
+            if [ "$status" = "healthy" ]; then
+              echo "Container is healthy."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Container never became healthy — logs:"
+          docker logs havyn-api-smoke
+          exit 1
+
+      - name: Build web image
+        run: |
+          docker build -t havyn-web:ci -f apps/web/Dockerfile \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:8080 .
+
+      - name: Smoke-test web container (against the live API container above)
+        run: |
+          docker run -d --network host --name havyn-web-smoke havyn-web:ci
+          echo "Waiting for the container to report healthy (Docker HEALTHCHECK)..."
+          for i in $(seq 1 20); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' havyn-web-smoke)
+            if [ "$status" = "healthy" ]; then
+              echo "Container is healthy."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Container never became healthy — logs:"
+          docker logs havyn-web-smoke
+          exit 1
+
+      - if: always()
+        run: |
+          docker rm -f havyn-api-smoke havyn-web-smoke || true
+
+  load-test:
+    name: Load test — k6 against search/property-detail/quote/booking
+    runs-on: ubuntu-latest
+    needs: [backend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: havyn_villa
+          POSTGRES_USER: havyn
+          POSTGRES_PASSWORD: change_me
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U havyn -d havyn_villa"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      mailhog: # the booking scenario's setup() registers real users — see e2e job's note on why this is needed
+        image: mailhog/mailhog:latest
+        ports: ["1025:1025", "8025:8025"]
+
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: havyn_villa
+      POSTGRES_USER: havyn
+      POSTGRES_PASSWORD: change_me
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+      MAIL_HOST: localhost
+      MAIL_PORT: "1025"
+      # This job measures the endpoints' own latency under sustained concurrent load —
+      # not the rate limiter (that already has RateLimitFilterIT) — so it's disabled
+      # here, or the booking/auth scenarios would just measure 429s.
+      HAVYN_RATE_LIMIT_ENABLED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Start backend (background)
+        working-directory: apps/api
+        run: |
+          nohup ./gradlew bootRun > /tmp/api.log 2>&1 &
+          echo "Waiting for the API to become healthy..."
+          for i in $(seq 1 100); do
+            if curl -sf http://localhost:8080/actuator/health >/dev/null; then
+              echo "API is up."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "API never became healthy — last 200 log lines:"
+          tail -n 200 /tmp/api.log
+          exit 1
+
+      - name: Seed load-test properties
+        working-directory: apps/api/loadtest
+        run: |
+          npm install
+          node seed.mjs
+        env:
+          DATABASE_URL: postgres://havyn:change_me@localhost:5432/havyn_villa
+
+      - name: Run k6
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: apps/api/loadtest/hot-paths.js
+        env:
+          API_BASE_URL: http://localhost:8080

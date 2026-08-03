@@ -1,0 +1,31 @@
+version: 2
+
+# project-docs/prompts/24-security-hardening.md: "dependency + SAST scanning in CI."
+# Dependabot handles dependency scanning/updates (this file); SAST is
+# .github/workflows/codeql.yml. Grouped into weekly PRs rather than one PR per
+# package — this repo has three ecosystems and a lot of transitive churn (Next.js,
+# Spring Boot), so per-dependency PRs would be noise.
+
+updates:
+  - package-ecosystem: npm
+    directory: "/" # npm workspaces root — covers apps/web and packages/shared
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns: ["*"]
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: gradle
+    directory: "/apps/api"
+    schedule:
+      interval: weekly
+    groups:
+      gradle-dependencies:
+        patterns: ["*"]
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

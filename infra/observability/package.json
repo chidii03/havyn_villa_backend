@@ -1,0 +1,9 @@
+{
+  "name": "havyn-observability-validate",
+  "private": true,
+  "type": "module",
+  "description": "Validates alerts.yml/dashboard.json (prompt 26) are well-formed and every havyn_* metric they reference actually exists in apps/api's source. Not part of the npm workspace — self-contained, same pattern as apps/api/loadtest.",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

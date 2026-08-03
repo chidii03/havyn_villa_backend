@@ -1,0 +1,163 @@
+{
+  "title": "Havyn Villa API — Golden Signals & Business KPIs",
+  "uid": "havyn-villa-api",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "utc",
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "tags": ["havyn-villa", "prompt-26"],
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Golden signals",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Request rate (by outcome)",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count[5m])) by (outcome)",
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "5xx error rate (%)",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{outcome=\"SERVER_ERROR\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m]))",
+          "legendFormat": "5xx rate"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Latency p50/p95/p99 by route",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri))",
+          "legendFormat": "p50 {{uri}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri))",
+          "legendFormat": "p95 {{uri}}"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri))",
+          "legendFormat": "p99 {{uri}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Business KPIs",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Bookings created (last 1h)",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "sum(increase(havyn_booking_created_total[1h]))" }]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Booking create failures (by reason)",
+      "gridPos": { "h": 6, "w": 9, "x": 6, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(havyn_booking_create_failed_total[5m])) by (reason)",
+          "legendFormat": "{{reason}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Booking hold expirations (by trigger)",
+      "gridPos": { "h": 6, "w": 9, "x": 15, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(havyn_booking_hold_expired_total[15m])) by (trigger)",
+          "legendFormat": "{{trigger}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Payment webhooks (by outcome)",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(havyn_payment_webhook_total[5m])) by (provider, outcome)",
+          "legendFormat": "{{provider}} — {{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Bookings cancelled (refunded vs not)",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(havyn_booking_cancelled_total[15m])) by (refunded)",
+          "legendFormat": "refunded={{refunded}}"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Platform",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Hikari connection pool utilization",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "min": 0 }, "overrides": [] },
+      "targets": [{ "expr": "hikaricp_connections_active / hikaricp_connections_max", "legendFormat": "utilization" }]
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Rate-limit rejections (by rule)",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(havyn_rate_limit_rejected_total[5m])) by (rule)",
+          "legendFormat": "{{rule}}"
+        }
+      ]
+    }
+  ]
+}

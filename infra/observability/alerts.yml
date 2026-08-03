@@ -1,0 +1,102 @@
+# Prometheus alerting rules (prompt 26 — project-docs/devops/02-observability.md
+# "Dashboards & alerts"). Every metric named below is real and currently emitted by
+# apps/api (scrape /actuator/prometheus) — not placeholder names. See
+# project-docs/devops/02-observability.md's prompt 26 notes for how to load this into
+# a real Prometheus (none is deployed yet — prompts 27/29) and why "alerts fire on
+# injected faults" hasn't been verified end-to-end here.
+#
+# Constraint from the prompt: "Alerts actionable, not noisy" — every rule below has a
+# `for:` duration so a single blip doesn't page anyone, and every annotation says what
+# to go look at, not just that a number crossed a line.
+
+groups:
+  - name: havyn-villa-golden-signals
+    rules:
+      - alert: HighHttpServerErrorRate
+        expr: >
+          sum(rate(http_server_requests_seconds_count{outcome="SERVER_ERROR"}[5m]))
+          / sum(rate(http_server_requests_seconds_count[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "5xx rate above 5% for 5+ minutes"
+          description: >
+            {{ $value | humanizePercentage }} of requests are failing with a 5xx.
+            Check `/actuator/prometheus`'s http_server_requests_seconds_count by uri,
+            and the JSON logs (correlationId/traceId) for the failing requests.
+
+      - alert: HighP95Latency
+        expr: >
+          histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 latency above 500ms on {{ $labels.uri }} for 10+ minutes"
+          description: >
+            project-docs/prompts/25-performance.md's load test targets specific
+            hot paths (search/property-detail/quote/booking) below this — if one of
+            those is the offender, compare against apps/api/loadtest/hot-paths.js's
+            own thresholds first.
+
+  - name: havyn-villa-payments
+    rules:
+      - alert: PaymentWebhookFailuresElevated
+        expr: >
+          sum(rate(havyn_payment_webhook_total{outcome=~"invalid_signature|unmatched_ref"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Payment webhooks failing signature verification or matching no known payment"
+          description: >
+            invalid_signature repeatedly = either a real spoofing attempt or
+            PAYSTACK_SECRET_KEY is wrong/rotated. unmatched_ref repeatedly = the
+            provider is sending references this system never created — check the
+            provider dashboard for account/environment mismatch first.
+
+  - name: havyn-villa-bookings
+    rules:
+      - alert: BookingHoldExpiryRateElevated
+        expr: sum(rate(havyn_booking_hold_expired_total[15m])) > 0.5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Booking holds are expiring unusually often"
+          description: >
+            Holds expire when a guest doesn't complete checkout in time
+            (havyn.booking.hold-duration-minutes). A sustained spike usually means
+            checkout/payment itself is broken (guests can't get through, not that
+            they're changing their minds) — check PaymentWebhookFailuresElevated
+            and payment intent creation errors first.
+
+  - name: havyn-villa-platform
+    rules:
+      - alert: DatabaseConnectionPoolSaturated
+        expr: hikaricp_connections_active / hikaricp_connections_max > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Hikari connection pool >90% utilized for 5+ minutes"
+          description: >
+            Requests are about to start queuing on connection-timeout (5s, see
+            application.yml's spring.datasource.hikari.connection-timeout). Check
+            for a slow query or a leak first (leak-detection-threshold: 30s logs a
+            stack trace for any connection held that long) before just raising
+            maximum-pool-size.
+
+      - alert: RateLimitRejectionsElevated
+        expr: sum(rate(havyn_rate_limit_rejected_total[5m])) by (rule) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sustained rate-limit rejections on {{ $labels.rule }}"
+          description: >
+            Could be a real attack (credential stuffing on /api/v1/auth, scraping on
+            /api/v1/search) or a legitimate traffic spike outgrowing the configured
+            limit (application.yml's havyn.rate-limit.rules) — check the source IP
+            distribution in logs before assuming either.

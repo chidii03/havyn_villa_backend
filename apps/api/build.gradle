@@ -1,0 +1,137 @@
+plugins {
+	id 'java'
+	id 'jacoco'
+	id 'org.springframework.boot' version '3.5.3'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.havyn'
+version = '0.0.1-SNAPSHOT'
+description = 'Havyn Villa API - Spring Boot modular monolith'
+
+java {
+	// Target Java 21 bytecode/source level without pinning a toolchain — this avoids
+	// Gradle toolchain auto-provisioning (no download repository configured in this
+	// environment) while still working on any JDK 21+ (dev machine here has JDK 23).
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+
+	// Observability (prompt 26) — versions for the three below are Spring Boot's own
+	// managed BOM versions (io.spring.dependency-management plugin), same as every
+	// other unversioned `implementation` line here; only logstash-logback-encoder
+	// needs a pinned version since it isn't part of that BOM (verified against Maven
+	// Central before adding, same discipline as every hand-picked dependency in this
+	// project — see the prompt-08 note on fabricated Spring Initializr coordinates).
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+	implementation 'io.opentelemetry:opentelemetry-exporter-logging' // dev-friendly default — logs spans, no external collector required
+	runtimeOnly 'io.opentelemetry:opentelemetry-exporter-otlp' // real backend (Jaeger/Tempo/Honeycomb/...), used only if management.otlp.tracing.endpoint is configured
+	implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	runtimeOnly 'org.postgresql:postgresql'
+	// Spring Security's Argon2PasswordEncoder needs a real Argon2 implementation on the
+	// classpath at runtime — it's an optional dependency of spring-security-crypto, not
+	// pulled in transitively. Without this, encoding/matching throws NoClassDefFoundError.
+	runtimeOnly 'org.bouncycastle:bcprov-jdk18on:1.80'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:postgresql'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+
+jacoco {
+	toolVersion = "0.8.12"
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+// project-docs/testing/01-testing-strategy.md: "coverage threshold on domain
+// modules." 80% on the four packages that carry the money-critical logic: pricing,
+// booking domain/service, auth domain.
+//
+// Measured locally (unit/Mockito tests only — this dev sandbox has no Docker daemon,
+// so the Testcontainers-backed *FlowIT/*IT suites can't run here; see
+// backend/01-backend-foundation.md's session 4 note and every session since):
+// `pricing.service` and `booking.domain` already clear 80% from unit tests alone.
+// `auth.domain` (24%) and `booking.service` (72%) do NOT — both have real logic that
+// only executes against live Redis (refresh-token session families, booking holds/
+// locks), which this codebase deliberately tests via Testcontainers integration tests
+// (AuthFlowIT, RefreshTokenServiceIT, RoleRepositoryIT, BookingFlowIT,
+// BookingConcurrencyIT) rather than mocking Redis. Those suites are broad enough that
+// 80% is a reasonable target once they run — but that combined number has NOT been
+// empirically confirmed end-to-end in this sandbox, only in CI (Docker available).
+// State this plainly rather than silently lowering the bar to whatever unit tests
+// alone happen to hit.
+jacocoTestCoverageVerification {
+	dependsOn test
+	violationRules {
+		rule {
+			element = 'PACKAGE'
+			includes = [
+				'com.havyn.pricing.service',
+				'com.havyn.booking.domain',
+				'com.havyn.booking.service',
+				'com.havyn.auth.domain',
+			]
+			limit {
+				counter = 'LINE'
+				minimum = 0.80
+			}
+		}
+	}
+}
+
+// Local-dev convenience only — never affects a packaged jar or a real deployment,
+// which always get config from real env vars/K8s secrets (see infra/k8s/), not a
+// .env file. `bootRun` is a JavaExec task; Gradle itself never reads `.env` files,
+// and neither does this Spring Boot app (no spring-dotenv or similar on the
+// classpath) — without this, a developer's .env is silently ignored and the app
+// falls back to application.yml's `havyn`/change_me/havyn_villa defaults, which is
+// exactly the "password authentication failed" confusion this fixes.
+tasks.named('bootRun') {
+	def envFile = file('.env').exists() ? file('.env') : file('../../.env')
+	if (envFile.exists()) {
+		envFile.readLines().each { line ->
+			line = line.trim()
+			if (line && !line.startsWith('#') && line.contains('=')) {
+				def (key, value) = line.split('=', 2)
+				environment(key.trim(), value.trim())
+			}
+		}
+	}
+}
+
+check.dependsOn jacocoTestCoverageVerification

@@ -1,0 +1,9 @@
+{
+  "name": "havyn-github-validate",
+  "private": true,
+  "type": "module",
+  "description": "Validates .github/workflows (prompt 28) — job dependency graphs and secrets/vars documentation. Not part of the npm workspace — self-contained, same pattern as infra/observability and infra/k8s.",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

@@ -1,0 +1,13 @@
+# Non-secret config only (prompt 27: "No secrets in images/repo; env-driven
+# config"). Values here are base defaults — each overlay patches what differs per
+# environment (POSTGRES_HOST pointing at that env's managed Postgres, etc.).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: havyn-api-config
+data:
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: havyn_villa
+  REDIS_PORT: "6379"
+  MAIL_PORT: "1025"
+  PAYMENTS_PROVIDER: paystack

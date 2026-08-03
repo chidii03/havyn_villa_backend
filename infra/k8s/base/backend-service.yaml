@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: havyn-api
+  labels:
+    app: havyn-api
+spec:
+  selector:
+    app: havyn-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

@@ -1,0 +1,9 @@
+{
+  "name": "havyn-k8s-validate",
+  "private": true,
+  "type": "module",
+  "description": "Validates infra/k8s manifests (prompt 27) are well-formed and cross-referenced correctly. Not part of the npm workspace — self-contained, same pattern as apps/api/loadtest and infra/observability.",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
