@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Payment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.payments.domain</a> &gt; <span class="el_source">Payment.java</span></div><h1>Payment.java</h1><pre class="source lang-java linenums">package com.havyn.payments.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.UUID;
+
+/**
+ * One payment attempt against a booking. {@code bookingId} is a plain UUID (not a JPA
+ * association) — same reasoning as {@code Booking.propertyId}/{@code guestId}: a
+ * financial record should stay stable and independently queryable, not entangled with
+ * the booking module's object graph. There is a real FK at the DB layer
+ * ({@code V6__payments.sql}) even though the Java side doesn't model it as one.
+ */
+@Entity
+@Table(name = &quot;payment&quot;)
+public class Payment extends BaseEntity {
+
+    @Column(name = &quot;booking_id&quot;, nullable = false)
+    private UUID bookingId;
+
+    @Column(name = &quot;provider&quot;, nullable = false, length = 30)
+    private String provider;
+
+    @Column(name = &quot;provider_ref&quot;, nullable = false, length = 100)
+    private String providerRef;
+
+    @Column(name = &quot;amount&quot;, nullable = false)
+    private BigDecimal amount;
+
+    @Column(name = &quot;currency&quot;, nullable = false, length = 3)
+    private String currency;
+
+<span class="pc" id="L38">    @Enumerated(EnumType.STRING)</span>
+    @Column(name = &quot;status&quot;, nullable = false, length = 20)
+    private PaymentStatus status = PaymentStatus.PENDING;
+
+<span class="nc" id="L42">    protected Payment() {</span>
+        // JPA
+<span class="nc" id="L44">    }</span>
+
+<span class="fc" id="L46">    public Payment(UUID bookingId, String provider, String providerRef, BigDecimal amount, String currency) {</span>
+<span class="fc" id="L47">        this.bookingId = bookingId;</span>
+<span class="fc" id="L48">        this.provider = provider;</span>
+<span class="fc" id="L49">        this.providerRef = providerRef;</span>
+<span class="fc" id="L50">        this.amount = amount;</span>
+<span class="fc" id="L51">        this.currency = currency;</span>
+<span class="fc" id="L52">    }</span>
+
+    public UUID getBookingId() {
+<span class="fc" id="L55">        return bookingId;</span>
+    }
+
+    public String getProvider() {
+<span class="fc" id="L59">        return provider;</span>
+    }
+
+    public String getProviderRef() {
+<span class="fc" id="L63">        return providerRef;</span>
+    }
+
+    public BigDecimal getAmount() {
+<span class="nc" id="L67">        return amount;</span>
+    }
+
+    public String getCurrency() {
+<span class="fc" id="L71">        return currency;</span>
+    }
+
+    public PaymentStatus getStatus() {
+<span class="fc" id="L75">        return status;</span>
+    }
+
+    public void markSucceeded() {
+<span class="fc" id="L79">        this.status = PaymentStatus.SUCCEEDED;</span>
+<span class="fc" id="L80">    }</span>
+
+    public void markFailed() {
+<span class="fc" id="L83">        this.status = PaymentStatus.FAILED;</span>
+<span class="fc" id="L84">    }</span>
+
+    public boolean isTerminal() {
+<span class="pc bpc" id="L87" title="1 of 4 branches missed.">        return status == PaymentStatus.SUCCEEDED || status == PaymentStatus.FAILED;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

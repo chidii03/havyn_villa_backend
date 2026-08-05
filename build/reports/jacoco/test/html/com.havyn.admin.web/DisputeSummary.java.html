@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DisputeSummary.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.admin.web</a> &gt; <span class="el_source">DisputeSummary.java</span></div><h1>DisputeSummary.java</h1><pre class="source lang-java linenums">package com.havyn.admin.web;
+
+import com.havyn.admin.domain.Dispute;
+import java.time.Instant;
+import java.util.UUID;
+
+<span class="nc" id="L7">public record DisputeSummary(</span>
+        UUID id,
+        UUID bookingId,
+        UUID raisedBy,
+        String reason,
+        String status,
+        String resolutionNotes,
+        UUID resolvedBy,
+        Instant resolvedAt,
+        Instant createdAt) {
+
+    public static DisputeSummary from(Dispute dispute) {
+<span class="nc" id="L19">        return new DisputeSummary(</span>
+<span class="nc" id="L20">                dispute.getId(), dispute.getBookingId(), dispute.getRaisedBy(), dispute.getReason(), dispute.getStatus().name(),</span>
+<span class="nc" id="L21">                dispute.getResolutionNotes(), dispute.getResolvedBy(), dispute.getResolvedAt(), dispute.getCreatedAt());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CancellationPolicyCalculator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.booking.domain</a> &gt; <span class="el_source">CancellationPolicyCalculator.java</span></div><h1>CancellationPolicyCalculator.java</h1><pre class="source lang-java linenums">package com.havyn.booking.domain;
+
+import java.math.BigDecimal;
+
+/**
+ * Pure refund-percentage calculation for the three cancellation policies (labels
+ * mirror {@code apps/web/src/components/property/policy-block.tsx}):
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@code FLEXIBLE} — full refund if cancelled at least 1 day before check-in.&lt;/li&gt;
+ *   &lt;li&gt;{@code MODERATE} — full refund if cancelled at least 5 days before check-in.&lt;/li&gt;
+ *   &lt;li&gt;{@code STRICT} — 50% refund if cancelled at least 7 days before check-in.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &quot;24 hours before check-in&quot; (the product copy for {@code FLEXIBLE}) is approximated
+ * as &quot;the day before or earlier&quot; — {@code Property}/{@code Booking} store check-in as
+ * a plain date with no check-in time, so a hard &quot;24 hours&quot; boundary isn't
+ * representable; day-granularity is the honest precision available here.
+ */
+public final class CancellationPolicyCalculator {
+
+<span class="fc" id="L20">    private static final BigDecimal FULL_REFUND = BigDecimal.valueOf(100);</span>
+<span class="fc" id="L21">    private static final BigDecimal HALF_REFUND = BigDecimal.valueOf(50);</span>
+<span class="fc" id="L22">    private static final BigDecimal NO_REFUND = BigDecimal.ZERO;</span>
+
+    private CancellationPolicyCalculator() {
+    }
+
+    /** @param daysUntilCheckIn whole days between &quot;now&quot; and check-in; negative/zero means check-in has passed or is today. */
+    public static BigDecimal refundPercentage(String cancellationPolicy, long daysUntilCheckIn) {
+<span class="fc bfc" id="L29" title="All 4 branches covered.">        return switch (cancellationPolicy) {</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">            case &quot;FLEXIBLE&quot; -&gt; daysUntilCheckIn &gt;= 1 ? FULL_REFUND : NO_REFUND;</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">            case &quot;MODERATE&quot; -&gt; daysUntilCheckIn &gt;= 5 ? FULL_REFUND : NO_REFUND;</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">            case &quot;STRICT&quot; -&gt; daysUntilCheckIn &gt;= 7 ? HALF_REFUND : NO_REFUND;</span>
+<span class="fc" id="L33">            default -&gt; NO_REFUND;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

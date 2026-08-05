@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminUserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.admin.service</a> &gt; <span class="el_source">AdminUserService.java</span></div><h1>AdminUserService.java</h1><pre class="source lang-java linenums">package com.havyn.admin.service;
+
+import com.havyn.audit.service.AuditLogService;
+import com.havyn.common.error.BadRequestException;
+import com.havyn.common.error.NotFoundException;
+import com.havyn.common.reference.Role;
+import com.havyn.common.reference.RoleRepository;
+import com.havyn.users.domain.User;
+import com.havyn.users.domain.UserStatus;
+import com.havyn.users.repo.UserRepository;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Admin user management — see project-docs/prompts/18-admin-platform.md. Only
+ * {@code HOST}/{@code ADMIN} are grantable/revocable this way (not {@code CUSTOMER} —
+ * the baseline role every registration already assigns). Every mutation is
+ * audit-logged in the same transaction as the change itself.
+ */
+@Service
+public class AdminUserService {
+
+<span class="fc" id="L30">    private static final Set&lt;String&gt; GRANTABLE_ROLE_CODES = Set.of(&quot;HOST&quot;, &quot;ADMIN&quot;);</span>
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final AuditLogService auditLogService;
+
+<span class="fc" id="L36">    public AdminUserService(UserRepository userRepository, RoleRepository roleRepository, AuditLogService auditLogService) {</span>
+<span class="fc" id="L37">        this.userRepository = userRepository;</span>
+<span class="fc" id="L38">        this.roleRepository = roleRepository;</span>
+<span class="fc" id="L39">        this.auditLogService = auditLogService;</span>
+<span class="fc" id="L40">    }</span>
+
+    @Transactional(readOnly = true)
+    public Page&lt;User&gt; list(String emailSearch, Pageable pageable) {
+<span class="nc bnc" id="L44" title="All 4 branches missed.">        if (emailSearch != null &amp;&amp; !emailSearch.isBlank()) {</span>
+<span class="nc" id="L45">            return userRepository.findAllByEmailContainingIgnoreCase(emailSearch, pageable);</span>
+        }
+<span class="nc" id="L47">        return userRepository.findAll(pageable);</span>
+    }
+
+    @Transactional
+    public User grantRole(UUID adminId, UUID userId, String roleCode) {
+<span class="fc" id="L52">        validateGrantableRole(roleCode);</span>
+<span class="fc" id="L53">        User user = findUser(userId);</span>
+<span class="fc" id="L54">        Role role = findRole(roleCode);</span>
+<span class="fc" id="L55">        Set&lt;String&gt; before = roleCodes(user);</span>
+<span class="fc" id="L56">        user.addRole(role);</span>
+<span class="fc" id="L57">        auditLogService.record(adminId, &quot;USER_ROLE_GRANTED&quot;, &quot;User&quot;, userId, Map.of(&quot;roles&quot;, before), Map.of(&quot;roles&quot;, roleCodes(user)));</span>
+<span class="fc" id="L58">        return user;</span>
+    }
+
+    @Transactional
+    public User revokeRole(UUID adminId, UUID userId, String roleCode) {
+<span class="fc" id="L63">        validateGrantableRole(roleCode);</span>
+<span class="pc bpc" id="L64" title="1 of 4 branches missed.">        if (adminId.equals(userId) &amp;&amp; &quot;ADMIN&quot;.equals(roleCode)) {</span>
+<span class="fc" id="L65">            throw new BadRequestException(&quot;CANNOT_REVOKE_OWN_ADMIN_ROLE&quot;, &quot;You cannot revoke your own admin role&quot;);</span>
+        }
+<span class="fc" id="L67">        User user = findUser(userId);</span>
+<span class="fc" id="L68">        Role role = findRole(roleCode);</span>
+<span class="fc" id="L69">        Set&lt;String&gt; before = roleCodes(user);</span>
+<span class="fc" id="L70">        user.removeRole(role);</span>
+<span class="fc" id="L71">        auditLogService.record(adminId, &quot;USER_ROLE_REVOKED&quot;, &quot;User&quot;, userId, Map.of(&quot;roles&quot;, before), Map.of(&quot;roles&quot;, roleCodes(user)));</span>
+<span class="fc" id="L72">        return user;</span>
+    }
+
+    @Transactional
+    public User suspend(UUID adminId, UUID userId) {
+<span class="fc" id="L77">        User user = findUser(userId);</span>
+<span class="fc" id="L78">        UserStatus before = user.getStatus();</span>
+<span class="fc" id="L79">        user.setStatus(UserStatus.SUSPENDED);</span>
+<span class="fc" id="L80">        auditLogService.record(adminId, &quot;USER_SUSPENDED&quot;, &quot;User&quot;, userId, Map.of(&quot;status&quot;, before), Map.of(&quot;status&quot;, user.getStatus()));</span>
+<span class="fc" id="L81">        return user;</span>
+    }
+
+    @Transactional
+    public User reactivate(UUID adminId, UUID userId) {
+<span class="fc" id="L86">        User user = findUser(userId);</span>
+<span class="fc" id="L87">        UserStatus before = user.getStatus();</span>
+<span class="fc" id="L88">        user.setStatus(UserStatus.ACTIVE);</span>
+<span class="fc" id="L89">        auditLogService.record(adminId, &quot;USER_REACTIVATED&quot;, &quot;User&quot;, userId, Map.of(&quot;status&quot;, before), Map.of(&quot;status&quot;, user.getStatus()));</span>
+<span class="fc" id="L90">        return user;</span>
+    }
+
+    private void validateGrantableRole(String roleCode) {
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (!GRANTABLE_ROLE_CODES.contains(roleCode)) {</span>
+<span class="fc" id="L95">            throw new BadRequestException(&quot;INVALID_ROLE&quot;, &quot;Role must be one of &quot; + GRANTABLE_ROLE_CODES);</span>
+        }
+<span class="fc" id="L97">    }</span>
+
+    private Role findRole(String roleCode) {
+<span class="fc" id="L100">        return roleRepository.findByCode(roleCode)</span>
+<span class="pc" id="L101">                .orElseThrow(() -&gt; new IllegalStateException(roleCode + &quot; role must be seeded by V1__init.sql&quot;));</span>
+    }
+
+    private User findUser(UUID userId) {
+<span class="fc" id="L105">        return userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
+    }
+
+    private Set&lt;String&gt; roleCodes(User user) {
+<span class="fc" id="L109">        return user.getRoles().stream().map(Role::getCode).collect(Collectors.toCollection(TreeSet::new));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

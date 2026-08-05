@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchCacheService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.search.cache</a> &gt; <span class="el_source">SearchCacheService.java</span></div><h1>SearchCacheService.java</h1><pre class="source lang-java linenums">package com.havyn.search.cache;
+
+import com.havyn.properties.domain.event.PropertyChangedEvent;
+import com.havyn.search.service.SearchCriteria;
+import java.time.Duration;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+/**
+ * Redis-backed cache for {@code GET /search}, keyed by a generation counter rather
+ * than per-entry deletes — see project-docs/prompts/11-search-discovery.md's &quot;sane
+ * invalidation&quot; requirement. Every cache key embeds the current generation
+ * ({@code havyn:search:v&lt;gen&gt;:&lt;criteria&gt;}); bumping the generation on any {@link
+ * PropertyChangedEvent} instantly makes every previously-cached key unreachable
+ * without needing to enumerate or scan for them (Redis's {@code KEYS}/{@code SCAN} is
+ * a landmine at production scale). Stale entries simply age out via TTL. Postgres
+ * remains the source of truth throughout — see {@code architecture/03...} &quot;cache is
+ * best-effort&quot;.
+ */
+@Service
+public class SearchCacheService {
+
+<span class="fc" id="L31">    private static final Logger log = LoggerFactory.getLogger(SearchCacheService.class);</span>
+    private static final String GENERATION_KEY = &quot;havyn:search:gen&quot;;
+    private static final String KEY_PREFIX = &quot;havyn:search:&quot;;
+<span class="fc" id="L34">    private static final Duration TTL = Duration.ofSeconds(60);</span>
+
+    private final StringRedisTemplate stringRedisTemplate;
+    private final RedisTemplate&lt;String, Object&gt; objectRedisTemplate;
+
+<span class="nc" id="L39">    public SearchCacheService(StringRedisTemplate stringRedisTemplate, RedisTemplate&lt;String, Object&gt; objectRedisTemplate) {</span>
+<span class="nc" id="L40">        this.stringRedisTemplate = stringRedisTemplate;</span>
+<span class="nc" id="L41">        this.objectRedisTemplate = objectRedisTemplate;</span>
+<span class="nc" id="L42">    }</span>
+
+    /** Best-effort per this class's own contract — a Redis outage must degrade to a cache miss, never fail the search. */
+    public Optional&lt;CachedSearchPage&gt; get(SearchCriteria criteria, Pageable pageable) {
+        try {
+<span class="nc" id="L47">            Object cached = objectRedisTemplate.opsForValue().get(cacheKey(criteria, pageable));</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            return cached instanceof CachedSearchPage page ? Optional.of(page) : Optional.empty();</span>
+<span class="nc" id="L49">        } catch (DataAccessException ex) {</span>
+<span class="nc" id="L50">            log.warn(&quot;Search cache read failed, treating as a miss: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L51">            return Optional.empty();</span>
+        }
+    }
+
+    public void put(SearchCriteria criteria, Pageable pageable, CachedSearchPage page) {
+        try {
+<span class="nc" id="L57">            objectRedisTemplate.opsForValue().set(cacheKey(criteria, pageable), page, TTL);</span>
+<span class="nc" id="L58">        } catch (DataAccessException ex) {</span>
+<span class="nc" id="L59">            log.warn(&quot;Search cache write failed, skipping: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L60">        }</span>
+<span class="nc" id="L61">    }</span>
+
+    /**
+     * {@code fallbackExecution = true} so this still runs if a caller ever invokes it
+     * outside a transaction; {@code AFTER_COMMIT} so a change that gets rolled back
+     * never invalidates a cache entry that was actually still accurate.
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onPropertyChanged(PropertyChangedEvent event) {
+        try {
+<span class="nc" id="L71">            stringRedisTemplate.opsForValue().increment(GENERATION_KEY);</span>
+<span class="nc" id="L72">        } catch (DataAccessException ex) {</span>
+<span class="nc" id="L73">            log.warn(&quot;Search cache invalidation failed, skipping: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L74">        }</span>
+<span class="nc" id="L75">    }</span>
+
+    private String cacheKey(SearchCriteria criteria, Pageable pageable) {
+<span class="nc" id="L78">        return KEY_PREFIX + &quot;v&quot; + currentGeneration() + &quot;:&quot; + criteria + &quot;:page=&quot;</span>
+<span class="nc" id="L79">                + pageable.getPageNumber() + &quot;:size=&quot; + pageable.getPageSize();</span>
+    }
+
+    private long currentGeneration() {
+<span class="nc" id="L83">        String raw = stringRedisTemplate.opsForValue().get(GENERATION_KEY);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        return raw == null ? 0L : Long.parseLong(raw);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

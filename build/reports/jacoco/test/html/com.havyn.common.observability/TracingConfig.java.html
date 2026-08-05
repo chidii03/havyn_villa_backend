@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TracingConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.common.observability</a> &gt; <span class="el_source">TracingConfig.java</span></div><h1>TracingConfig.java</h1><pre class="source lang-java linenums">package com.havyn.common.observability;
+
+import io.opentelemetry.exporter.logging.LoggingSpanExporter;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * project-docs/prompts/26-observability.md: &quot;OpenTelemetry tracing across API →
+ * DB/Redis/providers.&quot; {@code micrometer-tracing-bridge-otel} (build.gradle) does the
+ * actual instrumentation — Spring Boot auto-instruments JDBC (Postgres), Lettuce
+ * (Redis), and outbound {@code RestClient} calls (Paystack/Cloudinary) automatically
+ * once it's on the classpath, no manual span code needed for any of those.
+ *
+ * &lt;p&gt;What Boot does &lt;em&gt;not&lt;/em&gt; auto-configure is a default exporter: {@code
+ * OtlpAutoConfiguration} only activates when {@code management.otlp.tracing.endpoint}
+ * is set (see application.yml's prompt 26 notes on why that's left unset by default).
+ * Without this bean, spans would still be created and propagated (context/MDC
+ * population works regardless), just never sent anywhere visible — this makes traces
+ * actually observable in dev/CI console output with zero external infra, and keeps
+ * working alongside a real OTLP exporter once one is configured (Boot combines every
+ * {@link SpanExporter} bean in the context, it doesn't pick just one).
+ */
+@Configuration
+<span class="nc" id="L25">public class TracingConfig {</span>
+
+    @Bean
+    public SpanExporter loggingSpanExporter() {
+<span class="nc" id="L29">        return LoggingSpanExporter.create();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

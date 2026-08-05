@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CorrelationIdFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.common.logging</a> &gt; <span class="el_source">CorrelationIdFilter.java</span></div><h1>CorrelationIdFilter.java</h1><pre class="source lang-java linenums">package com.havyn.common.logging;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.UUID;
+import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/**
+ * Reads (or generates) a correlation id per request, stores it in the SLF4J MDC for
+ * structured logging, and echoes it back on the response so clients can quote it in
+ * support requests. See project-docs/backend/01-backend-foundation.md.
+ *
+ * &lt;p&gt;Deliberately a distinct MDC key from {@code traceId}/{@code spanId} (prompt 26 —
+ * Micrometer Tracing/OpenTelemetry populates those two itself once a request is
+ * inside an active span). This id is a simpler, always-present, app-level &quot;quote this
+ * in a support ticket&quot; value that exists independently of whether tracing sampled
+ * this particular request — the two are complementary, not the same concept.
+ */
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+<span class="fc" id="L28">public class CorrelationIdFilter extends OncePerRequestFilter {</span>
+
+    public static final String HEADER = &quot;X-Correlation-Id&quot;;
+    public static final String MDC_KEY = &quot;correlationId&quot;;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+<span class="fc" id="L36">        String incoming = request.getHeader(HEADER);</span>
+<span class="pc bpc" id="L37" title="1 of 4 branches missed.">        String traceId = (incoming == null || incoming.isBlank()) ? UUID.randomUUID().toString() : incoming;</span>
+<span class="fc" id="L38">        MDC.put(MDC_KEY, traceId);</span>
+<span class="fc" id="L39">        response.setHeader(HEADER, traceId);</span>
+        try {
+<span class="fc" id="L41">            chain.doFilter(request, response);</span>
+        } finally {
+<span class="fc" id="L43">            MDC.remove(MDC_KEY);</span>
+        }
+<span class="fc" id="L45">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

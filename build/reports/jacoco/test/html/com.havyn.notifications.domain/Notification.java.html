@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Notification.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.notifications.domain</a> &gt; <span class="el_source">Notification.java</span></div><h1>Notification.java</h1><pre class="source lang-java linenums">package com.havyn.notifications.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * An in-app notification record — see project-docs/prompts/16-messaging-notifications.md.
+ * {@code userId} has a real FK (ON DELETE CASCADE — deleting a user removes their
+ * notifications, same reasoning as {@code favorite.user_id}). {@code linkId} is a plain,
+ * untyped UUID (e.g. a bookingId or conversationId) for client-side deep-linking,
+ * deliberately not a jsonb payload — see database/01-data-model.md's session 7 notes on
+ * why this schema doesn't introduce jsonb for a single column ahead of a real convention.
+ */
+@Entity
+@Table(name = &quot;notification&quot;)
+public class Notification extends BaseEntity {
+
+    @Column(name = &quot;user_id&quot;, nullable = false)
+    private UUID userId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;type&quot;, nullable = false, length = 30)
+    private NotificationType type;
+
+    @Column(name = &quot;title&quot;, nullable = false, length = 200)
+    private String title;
+
+    @Column(name = &quot;body&quot;, nullable = false)
+    private String body;
+
+    @Column(name = &quot;link_id&quot;)
+    private UUID linkId;
+
+    @Column(name = &quot;read_at&quot;)
+    private Instant readAt;
+
+<span class="nc" id="L43">    protected Notification() {</span>
+        // JPA
+<span class="nc" id="L45">    }</span>
+
+<span class="fc" id="L47">    public Notification(UUID userId, NotificationType type, String title, String body, UUID linkId) {</span>
+<span class="fc" id="L48">        this.userId = userId;</span>
+<span class="fc" id="L49">        this.type = type;</span>
+<span class="fc" id="L50">        this.title = title;</span>
+<span class="fc" id="L51">        this.body = body;</span>
+<span class="fc" id="L52">        this.linkId = linkId;</span>
+<span class="fc" id="L53">    }</span>
+
+    public void markRead(Instant when) {
+<span class="fc" id="L56">        this.readAt = when;</span>
+<span class="fc" id="L57">    }</span>
+
+    public UUID getUserId() {
+<span class="fc" id="L60">        return userId;</span>
+    }
+
+    public NotificationType getType() {
+<span class="fc" id="L64">        return type;</span>
+    }
+
+    public String getTitle() {
+<span class="fc" id="L68">        return title;</span>
+    }
+
+    public String getBody() {
+<span class="fc" id="L72">        return body;</span>
+    }
+
+    public UUID getLinkId() {
+<span class="fc" id="L76">        return linkId;</span>
+    }
+
+    public Instant getReadAt() {
+<span class="fc" id="L80">        return readAt;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

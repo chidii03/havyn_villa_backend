@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CloudinaryUrlBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.media.service</a> &gt; <span class="el_source">CloudinaryUrlBuilder.java</span></div><h1>CloudinaryUrlBuilder.java</h1><pre class="source lang-java linenums">package com.havyn.media.service;
+
+/**
+ * Pure string manipulation over a Cloudinary {@code secure_url} — no network call.
+ * Named card/hero/thumb sizes + a video poster frame, per project-docs/prompts/
+ * 14-media-storage.md's delivery-helper deliverable ({@code f_auto,q_auto}, {@code
+ * so_auto}).
+ */
+public final class CloudinaryUrlBuilder {
+
+    private static final String UPLOAD_MARKER = &quot;/upload/&quot;;
+
+    private CloudinaryUrlBuilder() {
+    }
+
+    /** Inserts a transformation string right after {@code /upload/}. Returns the URL unchanged if it isn't a recognizable Cloudinary delivery URL. */
+    public static String withTransformation(String secureUrl, String transformation) {
+<span class="fc" id="L18">        int index = secureUrl.indexOf(UPLOAD_MARKER);</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        if (index &lt; 0) {</span>
+<span class="fc" id="L20">            return secureUrl;</span>
+        }
+<span class="fc" id="L22">        int insertAt = index + UPLOAD_MARKER.length();</span>
+<span class="fc" id="L23">        return secureUrl.substring(0, insertAt) + transformation + &quot;/&quot; + secureUrl.substring(insertAt);</span>
+    }
+
+    public static String cardUrl(String secureUrl) {
+<span class="fc" id="L27">        return withTransformation(secureUrl, &quot;c_fill,w_400,h_400,f_auto,q_auto&quot;);</span>
+    }
+
+    public static String heroUrl(String secureUrl) {
+<span class="fc" id="L31">        return withTransformation(secureUrl, &quot;c_fill,w_1600,h_900,f_auto,q_auto&quot;);</span>
+    }
+
+    public static String thumbUrl(String secureUrl) {
+<span class="fc" id="L35">        return withTransformation(secureUrl, &quot;c_fill,w_150,h_150,f_auto,q_auto&quot;);</span>
+    }
+
+    /** A still frame auto-selected from the video (`so_auto`), delivered as a `.jpg` — Cloudinary's documented video-poster pattern (resource_type stays `video`). */
+    public static String videoPosterUrl(String secureUrl) {
+<span class="fc" id="L40">        String withPoster = withTransformation(secureUrl, &quot;so_auto&quot;);</span>
+<span class="fc" id="L41">        int lastDot = withPoster.lastIndexOf('.');</span>
+<span class="fc" id="L42">        int lastSlash = withPoster.lastIndexOf('/');</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        if (lastDot &gt; lastSlash) {</span>
+<span class="fc" id="L44">            return withPoster.substring(0, lastDot) + &quot;.jpg&quot;;</span>
+        }
+<span class="nc" id="L46">        return withPoster + &quot;.jpg&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

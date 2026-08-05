@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.havyn.properties.rayprop.RayPropLiveSmokeTest" tests="1" skipped="1" failures="0" errors="0" timestamp="2026-08-05T03:21:29.039Z" hostname="CHIDI" time="0.018">
+  <properties/>
+  <testcase name="fetchesLiveListingsWithCurrentRequestShape()" classname="com.havyn.properties.rayprop.RayPropLiveSmokeTest" time="0.002">
+    <skipped/>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SmtpMailer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.auth.domain</a> &gt; <span class="el_source">SmtpMailer.java</span></div><h1>SmtpMailer.java</h1><pre class="source lang-java linenums">package com.havyn.auth.domain;
+
+import java.nio.charset.StandardCharsets;
+import java.net.URLEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Component;
+
+/**
+ * Local dev / MVP {@link Mailer}: plain SMTP via Spring's {@link JavaMailSender},
+ * pointed at Mailhog locally (see infra/docker-compose.yml, spring.mail.* in
+ * application.yml). A production HTTP-API provider (Resend/SES/Postmark — see
+ * MAIL_PROVIDER/MAIL_API_KEY in .env.example and
+ * project-docs/architecture/04-integrations.md#4) is a follow-up adapter behind this
+ * same interface, not a change to callers.
+ */
+@Component
+public class SmtpMailer implements Mailer {
+
+<span class="fc" id="L24">    private static final Logger log = LoggerFactory.getLogger(SmtpMailer.class);</span>
+
+    private final JavaMailSender mailSender;
+    private final String webBaseUrl;
+    private final String mailFrom;
+
+    public SmtpMailer(
+            JavaMailSender mailSender,
+            @Value(&quot;${havyn.web-base-url}&quot;) String webBaseUrl,
+<span class="fc" id="L33">            @Value(&quot;${havyn.mail-from}&quot;) String mailFrom) {</span>
+<span class="fc" id="L34">        this.mailSender = mailSender;</span>
+<span class="fc" id="L35">        this.webBaseUrl = webBaseUrl;</span>
+<span class="fc" id="L36">        this.mailFrom = mailFrom;</span>
+<span class="fc" id="L37">    }</span>
+
+    @Override
+    public void sendEmailVerification(String toEmail, String rawToken) {
+<span class="fc" id="L41">        String link = webBaseUrl + &quot;/verify-email?token=&quot; + encode(rawToken);</span>
+<span class="fc" id="L42">        send(toEmail, &quot;Verify your Havyn Villa email&quot;,</span>
+                &quot;Welcome to Havyn Villa. Confirm your email address:\n\n&quot; + link
+                        + &quot;\n\nThis link expires in 24 hours.&quot;);
+<span class="fc" id="L45">    }</span>
+
+    @Override
+    public void sendPasswordReset(String toEmail, String rawToken) {
+<span class="fc" id="L49">        String link = webBaseUrl + &quot;/reset-password?token=&quot; + encode(rawToken);</span>
+<span class="fc" id="L50">        send(toEmail, &quot;Reset your Havyn Villa password&quot;,</span>
+                &quot;We received a request to reset your password:\n\n&quot; + link
+                        + &quot;\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.&quot;);
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * Never throws — see {@link Mailer}'s class doc for why. A down/misconfigured mail
+     * server (Mailhog not running locally, a real provider outage in prod) degrades to
+     * &quot;the email didn't go out,&quot; not &quot;the account couldn't be created&quot; or &quot;password
+     * reset silently 500s only when the address is real.&quot;
+     */
+    private void send(String to, String subject, String body) {
+<span class="fc" id="L62">        SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="fc" id="L63">        message.setFrom(mailFrom);</span>
+<span class="fc" id="L64">        message.setTo(to);</span>
+<span class="fc" id="L65">        message.setSubject(subject);</span>
+<span class="fc" id="L66">        message.setText(body);</span>
+        try {
+<span class="fc" id="L68">            mailSender.send(message);</span>
+<span class="fc" id="L69">        } catch (MailException ex) {</span>
+<span class="fc" id="L70">            log.warn(&quot;Failed to send email (subject=\&quot;{}\&quot;), continuing without it: {}&quot;, subject, ex.getMessage());</span>
+<span class="fc" id="L71">        }</span>
+<span class="fc" id="L72">    }</span>
+
+    private String encode(String value) {
+<span class="fc" id="L75">        return URLEncoder.encode(value, StandardCharsets.UTF_8);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

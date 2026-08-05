@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HostOnboardingService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.hosts.service</a> &gt; <span class="el_source">HostOnboardingService.java</span></div><h1>HostOnboardingService.java</h1><pre class="source lang-java linenums">package com.havyn.hosts.service;
+
+import com.havyn.auth.domain.AuthResult;
+import com.havyn.auth.domain.AuthService;
+import com.havyn.common.error.BadRequestException;
+import com.havyn.common.error.NotFoundException;
+import com.havyn.common.reference.Role;
+import com.havyn.common.reference.RoleRepository;
+import com.havyn.users.domain.User;
+import com.havyn.users.repo.UserRepository;
+import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Self-serve &quot;become a host&quot; — see project-docs/prompts/17-host-dashboard.md. Grants
+ * the {@code HOST} role (idempotent — already-hosts just get fresh tokens back, no
+ * error) and re-mints tokens via {@code AuthService#reissueTokens} so the caller's
+ * next request can immediately use {@code @PreAuthorize(&quot;hasRole('HOST')&quot;)} endpoints
+ * without a full logout/login. Requires a verified email — a real marketplace's supply
+ * side needs at least that much accountability before anyone can list a property.
+ *
+ * Mutates {@code users.domain.User} directly via {@code User#addRole}, a public method
+ * that entity already exposes for exactly this — the same category of minimal,
+ * necessary cross-module write {@code BookingService} already makes on
+ * {@code properties.domain.Availability} (see database/01-data-model.md's session 4
+ * notes on {@code Availability.setBookingId}).
+ */
+@Service
+public class HostOnboardingService {
+
+    private static final String HOST_ROLE_CODE = &quot;HOST&quot;;
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final AuthService authService;
+
+<span class="fc" id="L38">    public HostOnboardingService(UserRepository userRepository, RoleRepository roleRepository, AuthService authService) {</span>
+<span class="fc" id="L39">        this.userRepository = userRepository;</span>
+<span class="fc" id="L40">        this.roleRepository = roleRepository;</span>
+<span class="fc" id="L41">        this.authService = authService;</span>
+<span class="fc" id="L42">    }</span>
+
+    @Transactional
+    public AuthResult becomeHost(UUID userId) {
+<span class="fc" id="L46">        User user = userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (!user.isEmailVerified()) {</span>
+<span class="fc" id="L48">            throw new BadRequestException(&quot;EMAIL_NOT_VERIFIED&quot;, &quot;Verify your email before you can host&quot;);</span>
+        }
+
+<span class="fc" id="L51">        boolean alreadyHost = user.getRoles().stream().anyMatch(role -&gt; role.getCode().equals(HOST_ROLE_CODE));</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (!alreadyHost) {</span>
+<span class="fc" id="L53">            Role hostRole = roleRepository.findByCode(HOST_ROLE_CODE)</span>
+<span class="pc" id="L54">                    .orElseThrow(() -&gt; new IllegalStateException(HOST_ROLE_CODE + &quot; role must be seeded by V1__init.sql&quot;));</span>
+<span class="fc" id="L55">            user.addRole(hostRole);</span>
+        }
+
+<span class="fc" id="L58">        return authService.reissueTokens(user);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

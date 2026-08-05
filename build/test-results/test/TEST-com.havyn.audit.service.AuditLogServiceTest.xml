@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.havyn.audit.service.AuditLogServiceTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:20:29.119Z" hostname="CHIDI" time="2.523">
+  <properties/>
+  <testcase name="record_serializesBeforeAndAfterSnapshotsAsJson()" classname="com.havyn.audit.service.AuditLogServiceTest" time="0.349"/>
+  <testcase name="record_handlesNullBeforeAndAfter()" classname="com.havyn.audit.service.AuditLogServiceTest" time="0.036"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertySummary.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.web</a> &gt; <span class="el_source">PropertySummary.java</span></div><h1>PropertySummary.java</h1><pre class="source lang-java linenums">package com.havyn.properties.web;
+
+import com.havyn.properties.domain.Property;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.UUID;
+
+<span class="nc" id="L8">public record PropertySummary(</span>
+        UUID id,
+        String title,
+        String city,
+        String state,
+        String country,
+        BigDecimal lat,
+        BigDecimal lng,
+        String propertyType,
+        String currency,
+        BigDecimal basePrice,
+        int capacity,
+        int bedrooms,
+        BigDecimal ratingAvg,
+        int ratingCount,
+        String status) {
+
+    public static PropertySummary from(Property property) {
+<span class="nc" id="L26">        return new PropertySummary(</span>
+<span class="nc" id="L27">                property.getId(),</span>
+<span class="nc" id="L28">                property.getTitle(),</span>
+<span class="nc" id="L29">                property.getCity(),</span>
+<span class="nc" id="L30">                property.getState(),</span>
+<span class="nc" id="L31">                property.getCountry(),</span>
+<span class="nc" id="L32">                property.getLat(),</span>
+<span class="nc" id="L33">                property.getLng(),</span>
+<span class="nc" id="L34">                property.getType().getCode(),</span>
+<span class="nc" id="L35">                property.getCurrency(),</span>
+<span class="nc" id="L36">                property.getBasePrice(),</span>
+<span class="nc" id="L37">                property.getCapacity(),</span>
+<span class="nc" id="L38">                property.getBedrooms(),</span>
+<span class="nc" id="L39">                property.getRatingAvg(),</span>
+<span class="nc" id="L40">                property.getRatingCount(),</span>
+<span class="nc" id="L41">                property.getStatus().name());</span>
+    }
+
+    /**
+     * project-docs/roadmap/02-launch-checklist.md#3 — same reasoning as {@code
+     * PropertyDetail#withApproximateLocation}. Deliberately NOT applied inside {@link
+     * #from}: this type is also used for a host's own listings ({@code
+     * HostListingController}) and admin's moderation view ({@code
+     * AdminPropertyController}), both of which need exact coordinates. Only the truly
+     * public catalog ({@code PropertyController#list}) opts into this.
+     */
+    public PropertySummary withApproximateLocation() {
+<span class="nc" id="L53">        return new PropertySummary(</span>
+<span class="nc" id="L54">                id, title, city, state, country, approximate(lat), approximate(lng), propertyType, currency,</span>
+                basePrice, capacity, bedrooms, ratingAvg, ratingCount, status);
+    }
+
+    private static BigDecimal approximate(BigDecimal coordinate) {
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        return coordinate == null ? null : coordinate.setScale(2, RoundingMode.HALF_UP);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

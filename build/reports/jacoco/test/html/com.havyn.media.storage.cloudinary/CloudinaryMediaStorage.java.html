@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CloudinaryMediaStorage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.media.storage.cloudinary</a> &gt; <span class="el_source">CloudinaryMediaStorage.java</span></div><h1>CloudinaryMediaStorage.java</h1><pre class="source lang-java linenums">package com.havyn.media.storage.cloudinary;
+
+import com.havyn.media.domain.MediaResourceType;
+import com.havyn.media.storage.MediaStorage;
+import com.havyn.media.storage.SignedUpload;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Clock;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
+
+/**
+ * Real Cloudinary signed-upload integration (https://cloudinary.com/documentation/upload_images#generating_authentication_signatures).
+ * {@code createSignedUpload} is pure local computation — no network call, since the
+ * actual file upload happens directly from the client's browser to Cloudinary using
+ * this signature, never through our backend. {@code deleteAsset} does call Cloudinary
+ * (the &quot;destroy&quot; API) and shares the same live-credential gap as {@code
+ * PaystackPaymentProvider} — no live Cloudinary account exists in this environment.
+ * Signature generation is real and unit-tested against independently-computed SHA-1
+ * values.
+ */
+@Component
+public class CloudinaryMediaStorage implements MediaStorage {
+
+    private final RestClient restClient;
+    private final CloudinaryProperties properties;
+    private final Clock clock;
+
+<span class="fc" id="L36">    public CloudinaryMediaStorage(RestClient.Builder restClientBuilder, CloudinaryProperties properties, Clock clock) {</span>
+<span class="fc" id="L37">        this.properties = properties;</span>
+<span class="fc" id="L38">        this.clock = clock;</span>
+<span class="fc" id="L39">        this.restClient = restClientBuilder.baseUrl(&quot;https://api.cloudinary.com&quot;).build();</span>
+<span class="fc" id="L40">    }</span>
+
+    @Override
+    public SignedUpload createSignedUpload(String folder) {
+<span class="fc" id="L44">        long timestamp = clock.instant().getEpochSecond();</span>
+<span class="fc" id="L45">        Map&lt;String, String&gt; paramsToSign = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L46">        paramsToSign.put(&quot;folder&quot;, folder);</span>
+<span class="fc" id="L47">        paramsToSign.put(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
+
+<span class="fc" id="L49">        String signature = sign(paramsToSign);</span>
+<span class="fc" id="L50">        return new SignedUpload(properties.getCloudName(), properties.getApiKey(), timestamp, signature, folder);</span>
+    }
+
+    @Override
+    public boolean isValidAssetUrl(String secureUrl) {
+<span class="fc bfc" id="L55" title="All 4 branches covered.">        return secureUrl != null &amp;&amp; secureUrl.contains(&quot;res.cloudinary.com/&quot; + properties.getCloudName() + &quot;/&quot;);</span>
+    }
+
+    @Override
+    public void deleteAsset(String publicId, MediaResourceType resourceType) {
+<span class="fc" id="L60">        long timestamp = clock.instant().getEpochSecond();</span>
+<span class="fc" id="L61">        Map&lt;String, String&gt; paramsToSign = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L62">        paramsToSign.put(&quot;public_id&quot;, publicId);</span>
+<span class="fc" id="L63">        paramsToSign.put(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
+<span class="fc" id="L64">        String signature = sign(paramsToSign);</span>
+
+<span class="fc" id="L66">        MultiValueMap&lt;String, String&gt; body = new LinkedMultiValueMap&lt;&gt;();</span>
+<span class="fc" id="L67">        body.add(&quot;public_id&quot;, publicId);</span>
+<span class="fc" id="L68">        body.add(&quot;api_key&quot;, properties.getApiKey());</span>
+<span class="fc" id="L69">        body.add(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
+<span class="fc" id="L70">        body.add(&quot;signature&quot;, signature);</span>
+
+<span class="fc" id="L72">        restClient.post()</span>
+<span class="fc" id="L73">                .uri(&quot;/v1_1/{cloud}/{type}/destroy&quot;, properties.getCloudName(), resourceType.name().toLowerCase())</span>
+<span class="fc" id="L74">                .contentType(MediaType.APPLICATION_FORM_URLENCODED)</span>
+<span class="fc" id="L75">                .body(body)</span>
+<span class="fc" id="L76">                .retrieve()</span>
+<span class="fc" id="L77">                .toBodilessEntity();</span>
+<span class="fc" id="L78">    }</span>
+
+    /** Cloudinary's documented algorithm: sort params alphabetically, join as key=value&amp;..., append the raw API secret (no separator), SHA-1, hex-encode. */
+    private String sign(Map&lt;String, String&gt; params) {
+<span class="fc" id="L82">        String paramString = params.entrySet().stream()</span>
+<span class="fc" id="L83">                .sorted(Map.Entry.comparingByKey())</span>
+<span class="fc" id="L84">                .map(entry -&gt; entry.getKey() + &quot;=&quot; + entry.getValue())</span>
+<span class="fc" id="L85">                .collect(Collectors.joining(&quot;&amp;&quot;));</span>
+<span class="fc" id="L86">        return sha1Hex(paramString + properties.getApiSecret());</span>
+    }
+
+    private static String sha1Hex(String data) {
+        try {
+<span class="fc" id="L91">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-1&quot;);</span>
+<span class="fc" id="L92">            byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L93">            return HexFormat.of().formatHex(hash);</span>
+<span class="nc" id="L94">        } catch (Exception e) {</span>
+<span class="nc" id="L95">            throw new IllegalStateException(&quot;Unable to compute SHA-1 signature&quot;, e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

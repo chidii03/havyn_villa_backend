@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.notifications.service</a> &gt; <span class="el_source">NotificationService.java</span></div><h1>NotificationService.java</h1><pre class="source lang-java linenums">package com.havyn.notifications.service;
+
+import com.havyn.booking.domain.event.BookingCancelledEvent;
+import com.havyn.booking.domain.event.BookingConfirmedEvent;
+import com.havyn.common.error.ForbiddenException;
+import com.havyn.common.error.NotFoundException;
+import com.havyn.messaging.domain.event.MessageSentEvent;
+import com.havyn.notifications.domain.EmailSender;
+import com.havyn.notifications.domain.Notification;
+import com.havyn.notifications.domain.NotificationType;
+import com.havyn.notifications.repo.NotificationRepository;
+import com.havyn.properties.domain.Property;
+import com.havyn.properties.repo.PropertyRepository;
+import com.havyn.users.repo.UserRepository;
+import java.time.Instant;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+/**
+ * Channel-agnostic notifications (in-app persistence + best-effort email) — see
+ * project-docs/prompts/16-messaging-notifications.md. Subscribes to the three domain
+ * events named in this prompt's own deliverable list (booking confirmed, message
+ * received, status changes — the latter covered by {@link BookingCancelledEvent}),
+ * mirroring {@code PaymentService#onBookingRefundDue}'s exact
+ * {@code @TransactionalEventListener(AFTER_COMMIT, fallbackExecution=true)} pattern:
+ * never notify about a change that ends up rolling back.
+ *
+ * Reads {@code properties/}'s and {@code users/}'s repositories directly (read-only,
+ * just for a human-readable title and a delivery email address) — the same established
+ * cross-module read pattern used throughout this codebase (e.g. {@code ReviewService}
+ * reading {@code booking/}'s repository).
+ */
+@Service
+public class NotificationService {
+
+<span class="fc" id="L44">    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);</span>
+
+    private final NotificationRepository notificationRepository;
+    private final PropertyRepository propertyRepository;
+    private final UserRepository userRepository;
+    private final EmailSender emailSender;
+
+    public NotificationService(
+            NotificationRepository notificationRepository,
+            PropertyRepository propertyRepository,
+            UserRepository userRepository,
+<span class="fc" id="L55">            EmailSender emailSender) {</span>
+<span class="fc" id="L56">        this.notificationRepository = notificationRepository;</span>
+<span class="fc" id="L57">        this.propertyRepository = propertyRepository;</span>
+<span class="fc" id="L58">        this.userRepository = userRepository;</span>
+<span class="fc" id="L59">        this.emailSender = emailSender;</span>
+<span class="fc" id="L60">    }</span>
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onBookingConfirmed(BookingConfirmedEvent event) {
+<span class="fc" id="L65">        String propertyTitle = propertyTitle(event.propertyId());</span>
+<span class="fc" id="L66">        create(</span>
+<span class="fc" id="L67">                event.guestId(),</span>
+                NotificationType.BOOKING_CONFIRMED,
+                &quot;Booking confirmed&quot;,
+<span class="fc" id="L70">                &quot;Your stay at &quot; + propertyTitle + &quot; (&quot; + event.checkIn() + &quot; to &quot; + event.checkOut() + &quot;) is confirmed.&quot;,</span>
+<span class="fc" id="L71">                event.bookingId());</span>
+<span class="fc" id="L72">    }</span>
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onBookingCancelled(BookingCancelledEvent event) {
+<span class="fc" id="L77">        String propertyTitle = propertyTitle(event.propertyId());</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        String refundNote = event.refunded() ? &quot; A refund has been issued.&quot; : &quot;&quot;;</span>
+<span class="fc" id="L79">        create(</span>
+<span class="fc" id="L80">                event.guestId(),</span>
+                NotificationType.BOOKING_CANCELLED,
+                &quot;Booking cancelled&quot;,
+                &quot;Your booking at &quot; + propertyTitle + &quot; has been cancelled.&quot; + refundNote,
+<span class="fc" id="L84">                event.bookingId());</span>
+<span class="fc" id="L85">    }</span>
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onMessageSent(MessageSentEvent event) {
+<span class="fc" id="L90">        String propertyTitle = propertyTitle(event.propertyId());</span>
+<span class="fc" id="L91">        create(</span>
+<span class="fc" id="L92">                event.recipientId(),</span>
+                NotificationType.MESSAGE_RECEIVED,
+                &quot;New message&quot;,
+                &quot;You have a new message about &quot; + propertyTitle + &quot;.&quot;,
+<span class="fc" id="L96">                event.conversationId());</span>
+<span class="fc" id="L97">    }</span>
+
+    @Transactional(readOnly = true)
+    public Page&lt;Notification&gt; listForUser(UUID userId, Pageable pageable) {
+<span class="nc" id="L101">        return notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public long unreadCount(UUID userId) {
+<span class="fc" id="L106">        return notificationRepository.countByUserIdAndReadAtIsNull(userId);</span>
+    }
+
+    @Transactional
+    public void markRead(UUID userId, UUID notificationId) {
+<span class="fc" id="L111">        Notification notification = notificationRepository.findById(notificationId)</span>
+<span class="fc" id="L112">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Notification&quot;, notificationId));</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (!notification.getUserId().equals(userId)) {</span>
+<span class="fc" id="L114">            throw new ForbiddenException(&quot;You do not have access to this notification&quot;);</span>
+        }
+<span class="fc" id="L116">        notification.markRead(Instant.now());</span>
+<span class="fc" id="L117">    }</span>
+
+    private void create(UUID userId, NotificationType type, String title, String body, UUID linkId) {
+<span class="fc" id="L120">        notificationRepository.save(new Notification(userId, type, title, body, linkId));</span>
+<span class="fc" id="L121">        sendEmailBestEffort(userId, title, body);</span>
+<span class="fc" id="L122">    }</span>
+
+    /**
+     * Email is a best-effort side channel — the in-app row above is the source of
+     * truth, so a flaky SMTP/provider failure must never roll back a real notification
+     * that was otherwise successfully recorded.
+     */
+    private void sendEmailBestEffort(UUID userId, String subject, String body) {
+<span class="fc" id="L130">        userRepository.findById(userId).ifPresent(user -&gt; {</span>
+            try {
+<span class="fc" id="L132">                emailSender.send(user.getEmail(), subject, body);</span>
+<span class="fc" id="L133">            } catch (RuntimeException e) {</span>
+<span class="fc" id="L134">                log.warn(&quot;Failed to send notification email for user {}: {}&quot;, userId, e.getMessage());</span>
+<span class="fc" id="L135">            }</span>
+<span class="fc" id="L136">        });</span>
+<span class="fc" id="L137">    }</span>
+
+    private String propertyTitle(UUID propertyId) {
+<span class="fc" id="L140">        return propertyRepository.findById(propertyId).map(Property::getTitle).orElse(&quot;your listing&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

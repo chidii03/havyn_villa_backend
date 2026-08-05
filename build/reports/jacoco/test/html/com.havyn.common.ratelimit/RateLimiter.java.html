@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RateLimiter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.common.ratelimit</a> &gt; <span class="el_source">RateLimiter.java</span></div><h1>RateLimiter.java</h1><pre class="source lang-java linenums">package com.havyn.common.ratelimit;
+
+import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+/**
+ * Fixed-window rate limiter backed by Redis {@code INCR} (atomic) with a conditional
+ * {@code EXPIRE} set only by the request that created the window (count == 1), so
+ * concurrent callers can't each reset the window. See ADR-010.
+ */
+@Component
+public class RateLimiter {
+
+<span class="nc" id="L18">    private static final Logger log = LoggerFactory.getLogger(RateLimiter.class);</span>
+    private static final String KEY_PREFIX = &quot;havyn:ratelimit:&quot;;
+
+    private final StringRedisTemplate redisTemplate;
+
+<span class="nc" id="L23">    public RateLimiter(StringRedisTemplate redisTemplate) {</span>
+<span class="nc" id="L24">        this.redisTemplate = redisTemplate;</span>
+<span class="nc" id="L25">    }</span>
+
+    /** @return true if this call is within {@code limit} requests per {@code window}. */
+    public boolean allow(String key, int limit, Duration window) {
+<span class="nc" id="L29">        String redisKey = KEY_PREFIX + key;</span>
+        Long count;
+        try {
+<span class="nc" id="L32">            count = redisTemplate.opsForValue().increment(redisKey);</span>
+<span class="nc" id="L33">        } catch (DataAccessException ex) {</span>
+            // Redis unavailable/unreachable — Lettuce raises here rather than returning
+            // null, so this catch is what actually implements &quot;fail open rather than
+            // blocking all traffic,&quot; not the count == null check below.
+<span class="nc" id="L37">            log.warn(&quot;Rate limiter Redis call failed, failing open: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L38">            return true;</span>
+<span class="nc" id="L39">        }</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (count == null) {</span>
+<span class="nc" id="L41">            return true; // Defensive: same fail-open intent if a driver ever returns null instead of throwing.</span>
+        }
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (count == 1L) {</span>
+<span class="nc" id="L44">            redisTemplate.expire(redisKey, window);</span>
+        }
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        return count &lt;= limit;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyCacheService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.cache</a> &gt; <span class="el_source">PropertyCacheService.java</span></div><h1>PropertyCacheService.java</h1><pre class="source lang-java linenums">package com.havyn.properties.cache;
+
+import com.havyn.properties.domain.event.PropertyChangedEvent;
+import com.havyn.properties.web.PropertyDetail;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+/**
+ * Redis-backed cache for {@code GET /properties/{id}} — prompt 25's &quot;caching for
+ * popular properties.&quot; Unlike {@code search.cache.SearchCacheService}'s
+ * generation-counter scheme (needed there because one property change must
+ * invalidate *many* different cached search-result pages), a property detail change
+ * only ever needs to invalidate *one* key — its own — so a direct delete on {@link
+ * PropertyChangedEvent} is simpler and just as correct, without a KEYS/SCAN in sight.
+ *
+ * &lt;p&gt;&lt;strong&gt;Never used for price-critical reads.&lt;/strong&gt; {@code
+ * PropertyService.getActive(UUID)} (used by booking/quote — see
+ * project-docs/security/01-security-plan.md-adjacent &quot;cache is best-effort, don't
+ * cache price-critical data unsafely&quot;) stays entirely uncached, always hitting
+ * Postgres directly; only the new read-only {@code getActiveDetail(UUID)} — backing
+ * the public detail page — goes through this cache.
+ */
+@Service
+public class PropertyCacheService {
+
+<span class="fc" id="L34">    private static final Logger log = LoggerFactory.getLogger(PropertyCacheService.class);</span>
+    private static final String KEY_PREFIX = &quot;havyn:property:&quot;;
+<span class="fc" id="L36">    private static final Duration TTL = Duration.ofSeconds(60);</span>
+
+    private final RedisTemplate&lt;String, Object&gt; objectRedisTemplate;
+
+<span class="nc" id="L40">    public PropertyCacheService(RedisTemplate&lt;String, Object&gt; objectRedisTemplate) {</span>
+<span class="nc" id="L41">        this.objectRedisTemplate = objectRedisTemplate;</span>
+<span class="nc" id="L42">    }</span>
+
+    /** Best-effort per this class's own contract — a Redis outage must degrade to a cache miss, never fail the request. */
+    public Optional&lt;PropertyDetail&gt; get(UUID propertyId) {
+        try {
+<span class="nc" id="L47">            Object cached = objectRedisTemplate.opsForValue().get(key(propertyId));</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            return cached instanceof PropertyDetail detail ? Optional.of(detail) : Optional.empty();</span>
+<span class="nc" id="L49">        } catch (DataAccessException ex) {</span>
+<span class="nc" id="L50">            log.warn(&quot;Property cache read failed, treating as a miss: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L51">            return Optional.empty();</span>
+        }
+    }
+
+    public void put(UUID propertyId, PropertyDetail detail) {
+        try {
+<span class="nc" id="L57">            objectRedisTemplate.opsForValue().set(key(propertyId), detail, TTL);</span>
+<span class="nc" id="L58">        } catch (DataAccessException ex) {</span>
+<span class="nc" id="L59">            log.warn(&quot;Property cache write failed, skipping: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L60">        }</span>
+<span class="nc" id="L61">    }</span>
+
+    /** Same AFTER_COMMIT/fallbackExecution reasoning as SearchCacheService's listener. */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onPropertyChanged(PropertyChangedEvent event) {
+        try {
+<span class="nc" id="L67">            objectRedisTemplate.delete(key(event.propertyId()));</span>
+<span class="nc" id="L68">        } catch (DataAccessException ex) {</span>
+<span class="nc" id="L69">            log.warn(&quot;Property cache invalidation failed, skipping: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L70">        }</span>
+<span class="nc" id="L71">    }</span>
+
+    private String key(UUID propertyId) {
+<span class="nc" id="L74">        return KEY_PREFIX + propertyId;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

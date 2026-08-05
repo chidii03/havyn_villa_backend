@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.service</a> &gt; <span class="el_source">PropertyService.java</span></div><h1>PropertyService.java</h1><pre class="source lang-java linenums">package com.havyn.properties.service;
+
+import com.havyn.amenities.domain.Amenity;
+import com.havyn.amenities.repo.AmenityRepository;
+import com.havyn.booking.domain.BookingStatus;
+import com.havyn.booking.repo.BookingRepository;
+import com.havyn.common.error.BadRequestException;
+import com.havyn.common.error.ForbiddenException;
+import com.havyn.common.error.NotFoundException;
+import com.havyn.properties.domain.Availability;
+import com.havyn.properties.domain.Property;
+import com.havyn.properties.domain.PropertyStatus;
+import com.havyn.properties.domain.PropertyType;
+import com.havyn.media.domain.PropertyMedia;
+import com.havyn.media.repo.PropertyMediaRepository;
+import com.havyn.properties.cache.PropertyCacheService;
+import com.havyn.properties.domain.event.PropertyChangedEvent;
+import com.havyn.properties.repo.AvailabilityRepository;
+import com.havyn.properties.repo.PropertyRepository;
+import com.havyn.properties.repo.PropertyTypeRepository;
+import com.havyn.properties.web.AvailabilityDayInput;
+import com.havyn.properties.web.CreatePropertyRequest;
+import com.havyn.properties.web.PropertyDetail;
+import com.havyn.properties.web.SetAvailabilityRequest;
+import com.havyn.properties.web.UpdatePropertyRequest;
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Listing CRUD, status lifecycle, and availability — see
+ * project-docs/backend/02-domain-modules.md#properties--media--amenities. Object-level
+ * authorization (a host may only touch their own listings) is enforced here, not just
+ * at the controller, per {@link ForbiddenException}'s documented purpose.
+ */
+@Service
+public class PropertyService {
+
+    /** Who gets the exact address/coordinates on a detail read — see {@link #getActiveDetail}. */
+<span class="fc" id="L47">    private static final Set&lt;BookingStatus&gt; LOCATION_REVEAL_STATUSES = Set.of(BookingStatus.CONFIRMED, BookingStatus.COMPLETED);</span>
+
+    private final PropertyRepository propertyRepository;
+    private final PropertyTypeRepository propertyTypeRepository;
+    private final AmenityRepository amenityRepository;
+    private final AvailabilityRepository availabilityRepository;
+    private final BookingRepository bookingRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final PropertyCacheService propertyCacheService;
+    // Cross-module read (media/ owns PropertyMedia) — same established pattern as
+    // NotificationService/SearchService reading other modules' repositories directly.
+    private final PropertyMediaRepository propertyMediaRepository;
+
+    public PropertyService(
+            PropertyRepository propertyRepository,
+            PropertyTypeRepository propertyTypeRepository,
+            AmenityRepository amenityRepository,
+            AvailabilityRepository availabilityRepository,
+            BookingRepository bookingRepository,
+            ApplicationEventPublisher eventPublisher,
+            PropertyCacheService propertyCacheService,
+<span class="fc" id="L68">            PropertyMediaRepository propertyMediaRepository) {</span>
+<span class="fc" id="L69">        this.propertyRepository = propertyRepository;</span>
+<span class="fc" id="L70">        this.propertyTypeRepository = propertyTypeRepository;</span>
+<span class="fc" id="L71">        this.amenityRepository = amenityRepository;</span>
+<span class="fc" id="L72">        this.availabilityRepository = availabilityRepository;</span>
+<span class="fc" id="L73">        this.bookingRepository = bookingRepository;</span>
+<span class="fc" id="L74">        this.eventPublisher = eventPublisher;</span>
+<span class="fc" id="L75">        this.propertyCacheService = propertyCacheService;</span>
+<span class="fc" id="L76">        this.propertyMediaRepository = propertyMediaRepository;</span>
+<span class="fc" id="L77">    }</span>
+
+    @Transactional
+    public Property create(UUID hostId, CreatePropertyRequest request) {
+<span class="fc" id="L81">        PropertyType type = findType(request.typeCode());</span>
+<span class="fc" id="L82">        Property property = new Property(</span>
+                hostId,
+                type,
+<span class="fc" id="L85">                request.title().trim(),</span>
+<span class="fc" id="L86">                request.description().trim(),</span>
+<span class="fc" id="L87">                request.address().trim(),</span>
+<span class="fc" id="L88">                request.city().trim(),</span>
+<span class="fc" id="L89">                request.state().trim(),</span>
+<span class="fc" id="L90">                request.country().trim(),</span>
+<span class="fc" id="L91">                request.basePrice(),</span>
+<span class="fc" id="L92">                request.capacity(),</span>
+<span class="fc" id="L93">                request.bedrooms(),</span>
+<span class="fc" id="L94">                request.beds(),</span>
+<span class="fc" id="L95">                request.bathrooms());</span>
+<span class="fc" id="L96">        property.setLat(request.lat());</span>
+<span class="fc" id="L97">        property.setLng(request.lng());</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">        if (request.currency() != null) {</span>
+<span class="nc" id="L99">            property.setCurrency(request.currency().toUpperCase());</span>
+        }
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        if (request.cleaningFee() != null) {</span>
+<span class="nc" id="L102">            property.setCleaningFee(request.cleaningFee());</span>
+        }
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (request.serviceFeePct() != null) {</span>
+<span class="nc" id="L105">            property.setServiceFeePct(request.serviceFeePct());</span>
+        }
+<span class="fc" id="L107">        property.setHouseRules(request.houseRules());</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (request.cancellationPolicy() != null) {</span>
+<span class="nc" id="L109">            property.setCancellationPolicy(request.cancellationPolicy());</span>
+        }
+<span class="fc" id="L111">        property.setAmenities(resolveAmenities(request.amenityCodes()));</span>
+
+<span class="fc" id="L113">        Property saved = propertyRepository.save(property);</span>
+<span class="fc" id="L114">        publishChanged(saved.getId());</span>
+<span class="fc" id="L115">        return saved;</span>
+    }
+
+    @Transactional
+    public Property update(UUID hostId, UUID propertyId, UpdatePropertyRequest request) {
+<span class="fc" id="L120">        Property property = findOwned(hostId, propertyId);</span>
+
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        if (request.typeCode() != null) {</span>
+<span class="nc" id="L123">            property.setType(findType(request.typeCode()));</span>
+        }
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        if (request.title() != null) {</span>
+<span class="fc" id="L126">            property.setTitle(request.title().trim());</span>
+        }
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        if (request.description() != null) {</span>
+<span class="nc" id="L129">            property.setDescription(request.description().trim());</span>
+        }
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        if (request.address() != null) {</span>
+<span class="nc" id="L132">            property.setAddress(request.address().trim());</span>
+        }
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (request.city() != null) {</span>
+<span class="nc" id="L135">            property.setCity(request.city().trim());</span>
+        }
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (request.state() != null) {</span>
+<span class="nc" id="L138">            property.setState(request.state().trim());</span>
+        }
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        if (request.country() != null) {</span>
+<span class="nc" id="L141">            property.setCountry(request.country().trim());</span>
+        }
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        if (request.lat() != null) {</span>
+<span class="nc" id="L144">            property.setLat(request.lat());</span>
+        }
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (request.lng() != null) {</span>
+<span class="nc" id="L147">            property.setLng(request.lng());</span>
+        }
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (request.currency() != null) {</span>
+<span class="nc" id="L150">            property.setCurrency(request.currency().toUpperCase());</span>
+        }
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (request.basePrice() != null) {</span>
+<span class="nc" id="L153">            property.setBasePrice(request.basePrice());</span>
+        }
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (request.capacity() != null) {</span>
+<span class="nc" id="L156">            property.setCapacity(request.capacity());</span>
+        }
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">        if (request.bedrooms() != null) {</span>
+<span class="nc" id="L159">            property.setBedrooms(request.bedrooms());</span>
+        }
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (request.beds() != null) {</span>
+<span class="nc" id="L162">            property.setBeds(request.beds());</span>
+        }
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (request.bathrooms() != null) {</span>
+<span class="nc" id="L165">            property.setBathrooms(request.bathrooms());</span>
+        }
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (request.cleaningFee() != null) {</span>
+<span class="nc" id="L168">            property.setCleaningFee(request.cleaningFee());</span>
+        }
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (request.serviceFeePct() != null) {</span>
+<span class="nc" id="L171">            property.setServiceFeePct(request.serviceFeePct());</span>
+        }
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        if (request.houseRules() != null) {</span>
+<span class="nc" id="L174">            property.setHouseRules(request.houseRules());</span>
+        }
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (request.cancellationPolicy() != null) {</span>
+<span class="nc" id="L177">            property.setCancellationPolicy(request.cancellationPolicy());</span>
+        }
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (request.amenityCodes() != null) {</span>
+<span class="nc" id="L180">            property.setAmenities(resolveAmenities(request.amenityCodes()));</span>
+        }
+
+<span class="fc" id="L183">        publishChanged(property.getId());</span>
+<span class="fc" id="L184">        return property;</span>
+    }
+
+    @Transactional
+    public Property transition(UUID hostId, UUID propertyId, PropertyStatus target) {
+<span class="fc" id="L189">        Property property = findOwned(hostId, propertyId);</span>
+        try {
+<span class="fc" id="L191">            property.transitionTo(target);</span>
+<span class="fc" id="L192">        } catch (IllegalStateException invalidTransition) {</span>
+<span class="fc" id="L193">            throw new BadRequestException(&quot;INVALID_STATUS_TRANSITION&quot;, invalidTransition.getMessage());</span>
+<span class="fc" id="L194">        }</span>
+<span class="fc" id="L195">        publishChanged(property.getId());</span>
+<span class="fc" id="L196">        return property;</span>
+    }
+
+    /**
+     * Admin moderation — see project-docs/prompts/18-admin-platform.md. Deliberately
+     * additive, not a replacement for {@link #transition}: hosts keep their existing
+     * self-publish flow (PENDING -&amp;gt; ACTIVE) unchanged; this exists alongside it for
+     * admin-initiated transitions that skip the ownership check (e.g. suspending any
+     * listing, or rejecting a pending submission back to DRAFT). {@code admin/}
+     * (session 19) is responsible for authz (only reachable via
+     * {@code @PreAuthorize(&quot;hasRole('ADMIN')&quot;)}) and audit logging around this call —
+     * this method itself only knows how to change status, same as {@link #transition}.
+     */
+    @Transactional
+    public Property transitionAsAdmin(UUID propertyId, PropertyStatus target) {
+<span class="nc" id="L211">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+        try {
+<span class="nc" id="L213">            property.transitionTo(target);</span>
+<span class="nc" id="L214">        } catch (IllegalStateException invalidTransition) {</span>
+<span class="nc" id="L215">            throw new BadRequestException(&quot;INVALID_STATUS_TRANSITION&quot;, invalidTransition.getMessage());</span>
+<span class="nc" id="L216">        }</span>
+<span class="nc" id="L217">        publishChanged(property.getId());</span>
+<span class="nc" id="L218">        return property;</span>
+    }
+
+    /** Admin-scoped read — unlike {@link #getActive}, not limited to ACTIVE listings. */
+    @Transactional(readOnly = true)
+    public Property getAny(UUID propertyId) {
+<span class="nc" id="L224">        return propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+    }
+
+    /** Admin-scoped list — every listing regardless of host or status. */
+    @Transactional(readOnly = true)
+    public Page&lt;Property&gt; listAll(Pageable pageable) {
+<span class="nc" id="L230">        return propertyRepository.findAll(pageable);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Property getOwned(UUID hostId, UUID propertyId) {
+<span class="nc" id="L235">        return findOwned(hostId, propertyId);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Page&lt;Property&gt; listOwned(UUID hostId, Pageable pageable) {
+<span class="nc" id="L240">        return propertyRepository.findAllByHostId(hostId, pageable);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Property getActive(UUID propertyId) {
+<span class="fc" id="L245">        Property property = propertyRepository.findById(propertyId)</span>
+<span class="fc" id="L246">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">        if (property.getStatus() != PropertyStatus.ACTIVE) {</span>
+            // Same 404 as &quot;doesn't exist&quot; — a draft/suspended listing isn't publicly visible.
+<span class="fc" id="L249">            throw NotFoundException.of(&quot;Property&quot;, propertyId);</span>
+        }
+<span class="fc" id="L251">        return property;</span>
+    }
+
+    /**
+     * Cached read path for the public {@code GET /properties/{id}} detail page —
+     * prompt 25's &quot;caching for popular properties.&quot; {@link #getActive(UUID)} above
+     * stays uncached deliberately (booking/quote read the property through it, and
+     * those reads must never see stale data — see {@link PropertyCacheService}'s
+     * class doc).
+     *
+     * &lt;p&gt;The cached value is always the full-precision {@link PropertyDetail} —
+     * caching a viewer-redacted copy would either leak the exact address to the next
+     * anonymous visitor to hit a warm cache entry, or hide it from a privileged viewer
+     * behind someone else's cached anonymous view. Redaction happens here, per call,
+     * after the cache lookup, based on who's actually asking: the property's own host,
+     * an ADMIN, and a guest with a {@code CONFIRMED}/{@code COMPLETED} booking for this
+     * property see the real thing; everyone else — including a guest with only a
+     * {@code PENDING} hold, which anyone can create — gets {@link
+     * PropertyDetail#withApproximateLocation()}. See
+     * project-docs/roadmap/02-launch-checklist.md#3.
+     */
+    @Transactional(readOnly = true)
+    public PropertyDetail getActiveDetail(UUID propertyId, UUID viewerId, boolean viewerIsAdmin) {
+<span class="fc" id="L274">        PropertyDetail detail = propertyCacheService.get(propertyId).orElseGet(() -&gt; {</span>
+<span class="fc" id="L275">            List&lt;String&gt; photoUrls = propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId).stream()</span>
+<span class="fc" id="L276">                    .map(PropertyMedia::getSecureUrl)</span>
+<span class="fc" id="L277">                    .toList();</span>
+<span class="fc" id="L278">            PropertyDetail fresh = PropertyDetail.from(getActive(propertyId), photoUrls);</span>
+<span class="fc" id="L279">            propertyCacheService.put(propertyId, fresh);</span>
+<span class="fc" id="L280">            return fresh;</span>
+        });
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        return canViewExactLocation(detail, viewerId, viewerIsAdmin) ? detail : detail.withApproximateLocation();</span>
+    }
+
+    private boolean canViewExactLocation(PropertyDetail detail, UUID viewerId, boolean viewerIsAdmin) {
+<span class="fc bfc" id="L286" title="All 2 branches covered.">        if (viewerIsAdmin) {</span>
+<span class="fc" id="L287">            return true;</span>
+        }
+<span class="fc bfc" id="L289" title="All 2 branches covered.">        if (viewerId == null) {</span>
+<span class="fc" id="L290">            return false;</span>
+        }
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        if (detail.hostId().equals(viewerId)) {</span>
+<span class="fc" id="L293">            return true;</span>
+        }
+<span class="fc" id="L295">        return bookingRepository.existsByGuestIdAndPropertyIdAndStatusIn(viewerId, detail.id(), LOCATION_REVEAL_STATUSES);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Page&lt;Property&gt; listActive(Pageable pageable) {
+<span class="nc" id="L300">        return propertyRepository.findAllByStatus(PropertyStatus.ACTIVE, pageable);</span>
+    }
+
+    @Transactional
+    public List&lt;Availability&gt; setAvailability(UUID hostId, UUID propertyId, SetAvailabilityRequest request) {
+<span class="fc" id="L305">        Property property = findOwned(hostId, propertyId);</span>
+<span class="fc" id="L306">        List&lt;Availability&gt; result = request.days().stream()</span>
+<span class="fc" id="L307">                .map(day -&gt; upsertAvailabilityDay(property, day))</span>
+<span class="fc" id="L308">                .toList();</span>
+<span class="fc" id="L309">        publishChanged(property.getId());</span>
+<span class="fc" id="L310">        return result;</span>
+    }
+
+    @Transactional(readOnly = true)
+    public List&lt;Availability&gt; getAvailability(UUID hostId, UUID propertyId, LocalDate from, LocalDate to) {
+<span class="fc" id="L315">        findOwned(hostId, propertyId);</span>
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">        if (from.isAfter(to)) {</span>
+<span class="fc" id="L317">            throw new BadRequestException(&quot;INVALID_DATE_RANGE&quot;, &quot;'from' must not be after 'to'&quot;);</span>
+        }
+<span class="nc" id="L319">        return availabilityRepository.findAllByProperty_IdAndDateBetweenOrderByDateAsc(propertyId, from, to);</span>
+    }
+
+    private Availability upsertAvailabilityDay(Property property, AvailabilityDayInput day) {
+<span class="fc" id="L323">        Availability availability = availabilityRepository</span>
+<span class="fc" id="L324">                .findByProperty_IdAndDate(property.getId(), day.date())</span>
+<span class="fc" id="L325">                .orElseGet(() -&gt; availabilityRepository.save(new Availability(property, day.date(), false, null)));</span>
+<span class="pc bpc" id="L326" title="1 of 2 branches missed.">        if (day.blocked() != null) {</span>
+<span class="fc" id="L327">            availability.setBlocked(day.blocked());</span>
+        }
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        if (day.priceOverride() != null) {</span>
+<span class="fc" id="L330">            availability.setPriceOverride(day.priceOverride());</span>
+        }
+<span class="fc" id="L332">        return availability;</span>
+    }
+
+    private Property findOwned(UUID hostId, UUID propertyId) {
+<span class="fc" id="L336">        Property property = propertyRepository.findById(propertyId)</span>
+<span class="fc" id="L337">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="fc bfc" id="L338" title="All 2 branches covered.">        if (!property.getHostId().equals(hostId)) {</span>
+<span class="fc" id="L339">            throw new ForbiddenException(&quot;You do not have access to this listing&quot;);</span>
+        }
+<span class="fc" id="L341">        return property;</span>
+    }
+
+    private PropertyType findType(String code) {
+<span class="fc" id="L345">        return propertyTypeRepository.findByCodeIgnoreCase(code)</span>
+<span class="fc" id="L346">                .orElseThrow(() -&gt; new BadRequestException(&quot;UNKNOWN_PROPERTY_TYPE&quot;, &quot;Unknown property type: &quot; + code));</span>
+    }
+
+    private Set&lt;Amenity&gt; resolveAmenities(Set&lt;String&gt; codes) {
+<span class="pc bpc" id="L350" title="2 of 4 branches missed.">        if (codes == null || codes.isEmpty()) {</span>
+<span class="nc" id="L351">            return new LinkedHashSet&lt;&gt;();</span>
+        }
+<span class="fc" id="L353">        List&lt;Amenity&gt; found = amenityRepository.findAllByCodeInIgnoreCase(codes);</span>
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        if (found.size() != codes.size()) {</span>
+<span class="fc" id="L355">            throw new BadRequestException(&quot;UNKNOWN_AMENITY&quot;, &quot;One or more amenity codes are unknown&quot;);</span>
+        }
+<span class="fc" id="L357">        return new LinkedHashSet&lt;&gt;(found);</span>
+    }
+
+    private void publishChanged(UUID propertyId) {
+<span class="fc" id="L361">        eventPublisher.publishEvent(PropertyChangedEvent.of(propertyId));</span>
+<span class="fc" id="L362">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

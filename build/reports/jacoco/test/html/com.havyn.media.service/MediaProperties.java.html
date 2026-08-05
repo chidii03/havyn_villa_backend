@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MediaProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.media.service</a> &gt; <span class="el_source">MediaProperties.java</span></div><h1>MediaProperties.java</h1><pre class="source lang-java linenums">package com.havyn.media.service;
+
+import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/** {@code havyn.media.*} — validation limits, per project-docs/prompts/14-media-storage.md#4. */
+@ConfigurationProperties(prefix = &quot;havyn.media&quot;)
+<span class="fc" id="L8">public class MediaProperties {</span>
+
+<span class="fc" id="L10">    private int maxPerListing = 20;</span>
+<span class="fc" id="L11">    private long maxImageBytes = 10 * 1024 * 1024;</span>
+<span class="fc" id="L12">    private long maxVideoBytes = 200 * 1024 * 1024;</span>
+<span class="fc" id="L13">    private List&lt;String&gt; allowedImageFormats = List.of(&quot;jpg&quot;, &quot;jpeg&quot;, &quot;png&quot;, &quot;webp&quot;);</span>
+<span class="fc" id="L14">    private List&lt;String&gt; allowedVideoFormats = List.of(&quot;mp4&quot;, &quot;mov&quot;);</span>
+
+    public int getMaxPerListing() {
+<span class="fc" id="L17">        return maxPerListing;</span>
+    }
+
+    public void setMaxPerListing(int maxPerListing) {
+<span class="fc" id="L21">        this.maxPerListing = maxPerListing;</span>
+<span class="fc" id="L22">    }</span>
+
+    public long getMaxImageBytes() {
+<span class="fc" id="L25">        return maxImageBytes;</span>
+    }
+
+    public void setMaxImageBytes(long maxImageBytes) {
+<span class="fc" id="L29">        this.maxImageBytes = maxImageBytes;</span>
+<span class="fc" id="L30">    }</span>
+
+    public long getMaxVideoBytes() {
+<span class="nc" id="L33">        return maxVideoBytes;</span>
+    }
+
+    public void setMaxVideoBytes(long maxVideoBytes) {
+<span class="nc" id="L37">        this.maxVideoBytes = maxVideoBytes;</span>
+<span class="nc" id="L38">    }</span>
+
+    public List&lt;String&gt; getAllowedImageFormats() {
+<span class="fc" id="L41">        return allowedImageFormats;</span>
+    }
+
+    public void setAllowedImageFormats(List&lt;String&gt; allowedImageFormats) {
+<span class="nc" id="L45">        this.allowedImageFormats = allowedImageFormats;</span>
+<span class="nc" id="L46">    }</span>
+
+    public List&lt;String&gt; getAllowedVideoFormats() {
+<span class="nc" id="L49">        return allowedVideoFormats;</span>
+    }
+
+    public void setAllowedVideoFormats(List&lt;String&gt; allowedVideoFormats) {
+<span class="nc" id="L53">        this.allowedVideoFormats = allowedVideoFormats;</span>
+<span class="nc" id="L54">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

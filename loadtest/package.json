@@ -1,0 +1,9 @@
+{
+  "name": "havyn-api-loadtest",
+  "private": true,
+  "type": "module",
+  "description": "Seed fixture data for k6 load-testing apps/api's hot paths (prompt 25). Not part of the npm workspace — self-contained.",
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

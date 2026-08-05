@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RateLimitFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.common.ratelimit</a> &gt; <span class="el_source">RateLimitFilter.java</span></div><h1>RateLimitFilter.java</h1><pre class="source lang-java linenums">package com.havyn.common.ratelimit;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.havyn.common.error.ErrorResponse;
+import com.havyn.common.logging.CorrelationIdFilter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+/**
+ * Applies the first matching {@link RateLimitProperties.Rule} (by path prefix), keyed
+ * on client IP. Runs as a plain servlet filter (outside Spring Security's chain) so it
+ * rejects before authentication is even attempted — see
+ * project-docs/security/01-security-plan.md#platform and ADR-010.
+ */
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE + 10) // after CorrelationIdFilter, before everything else
+public class RateLimitFilter extends OncePerRequestFilter {
+
+<span class="nc" id="L33">    private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);</span>
+    private final RateLimiter rateLimiter;
+    private final RateLimitProperties properties;
+    private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
+
+<span class="nc" id="L39">    public RateLimitFilter(RateLimiter rateLimiter, RateLimitProperties properties, ObjectMapper objectMapper, MeterRegistry meterRegistry) {</span>
+<span class="nc" id="L40">        this.rateLimiter = rateLimiter;</span>
+<span class="nc" id="L41">        this.properties = properties;</span>
+<span class="nc" id="L42">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L43">        this.meterRegistry = meterRegistry;</span>
+<span class="nc" id="L44">    }</span>
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (!properties.isEnabled()) {</span>
+<span class="nc" id="L50">            chain.doFilter(request, response);</span>
+<span class="nc" id="L51">            return;</span>
+        }
+
+<span class="nc" id="L54">        RateLimitProperties.Rule rule = matchingRule(request.getRequestURI());</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (rule == null) {</span>
+<span class="nc" id="L56">            chain.doFilter(request, response);</span>
+<span class="nc" id="L57">            return;</span>
+        }
+
+<span class="nc" id="L60">        String key = rule.getPathPrefix() + &quot;:&quot; + clientIp(request);</span>
+<span class="nc" id="L61">        boolean allowed = rateLimiter.allow(key, rule.getLimit(), Duration.ofSeconds(rule.getWindowSeconds()));</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (!allowed) {</span>
+<span class="nc" id="L63">            log.warn(&quot;Rate limit exceeded rule={} ip={}&quot;, rule.getPathPrefix(), clientIp(request));</span>
+<span class="nc" id="L64">            meterRegistry.counter(&quot;havyn.rate_limit.rejected&quot;, &quot;rule&quot;, rule.getPathPrefix()).increment();</span>
+<span class="nc" id="L65">            respondTooManyRequests(response, rule.getWindowSeconds());</span>
+<span class="nc" id="L66">            return;</span>
+        }
+
+<span class="nc" id="L69">        chain.doFilter(request, response);</span>
+<span class="nc" id="L70">    }</span>
+
+    private RateLimitProperties.Rule matchingRule(String path) {
+<span class="nc" id="L73">        return properties.getRules().stream()</span>
+<span class="nc" id="L74">                .filter(rule -&gt; path.startsWith(rule.getPathPrefix()))</span>
+<span class="nc" id="L75">                .findFirst()</span>
+<span class="nc" id="L76">                .orElse(null);</span>
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        // No reverse proxy in front of the API yet (see prompts 27/29) — once one
+        // exists, prefer a trusted X-Forwarded-For here instead.
+<span class="nc" id="L82">        return request.getRemoteAddr();</span>
+    }
+
+    private void respondTooManyRequests(HttpServletResponse response, int windowSeconds) throws IOException {
+<span class="nc" id="L86">        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());</span>
+<span class="nc" id="L87">        response.setHeader(&quot;Retry-After&quot;, String.valueOf(windowSeconds));</span>
+<span class="nc" id="L88">        response.setContentType(MediaType.APPLICATION_JSON_VALUE);</span>
+<span class="nc" id="L89">        String traceId = MDC.get(CorrelationIdFilter.MDC_KEY);</span>
+<span class="nc" id="L90">        ErrorResponse body = ErrorResponse.of(</span>
+                &quot;RATE_LIMITED&quot;, &quot;Too many requests — please try again shortly.&quot;, null, traceId);
+<span class="nc" id="L92">        objectMapper.writeValue(response.getWriter(), body);</span>
+<span class="nc" id="L93">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

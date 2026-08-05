@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Favorite.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.favorites.domain</a> &gt; <span class="el_source">Favorite.java</span></div><h1>Favorite.java</h1><pre class="source lang-java linenums">package com.havyn.favorites.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.util.UUID;
+
+/**
+ * A user's saved property — see project-docs/prompts/15-reviews-favorites.md.
+ * {@code userId}/{@code propertyId} are plain UUID columns at the JPA level, same as
+ * every other cross-aggregate reference in this project; the DB-level FKs (ON DELETE
+ * CASCADE, see the V8 migration) are what actually enforce referential integrity here —
+ * a favorite has no &quot;must survive independently&quot; requirement like {@code Booking}/
+ * {@code Review} do, so cascading on delete is the correct behavior.
+ */
+@Entity
+@Table(name = &quot;favorite&quot;, uniqueConstraints = @UniqueConstraint(columnNames = {&quot;user_id&quot;, &quot;property_id&quot;}))
+public class Favorite extends BaseEntity {
+
+    @Column(name = &quot;user_id&quot;, nullable = false)
+    private UUID userId;
+
+    @Column(name = &quot;property_id&quot;, nullable = false)
+    private UUID propertyId;
+
+<span class="nc" id="L28">    protected Favorite() {</span>
+        // JPA
+<span class="nc" id="L30">    }</span>
+
+<span class="nc" id="L32">    public Favorite(UUID userId, UUID propertyId) {</span>
+<span class="nc" id="L33">        this.userId = userId;</span>
+<span class="nc" id="L34">        this.propertyId = propertyId;</span>
+<span class="nc" id="L35">    }</span>
+
+    public UUID getUserId() {
+<span class="nc" id="L38">        return userId;</span>
+    }
+
+    public UUID getPropertyId() {
+<span class="nc" id="L42">        return propertyId;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

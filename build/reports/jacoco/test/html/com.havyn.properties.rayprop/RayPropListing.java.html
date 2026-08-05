@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RayPropListing.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.rayprop</a> &gt; <span class="el_source">RayPropListing.java</span></div><h1>RayPropListing.java</h1><pre class="source lang-java linenums">package com.havyn.properties.rayprop;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * One listing as returned by {@code GET /listings} — fields observed directly from a
+ * real sandbox response (rayprop.io/docs's own pagination sample only shows a partial
+ * field set), same &quot;parse the JsonNode by hand&quot; style as
+ * {@code PaystackPaymentProvider} rather than a Jackson-annotated DTO.
+ *
+ * &lt;p&gt;Titles/descriptions come back with zero-width Unicode characters interleaved
+ * between letters (an anti-scraping measure on RayProp's side) — {@link #from} strips
+ * them so imported listings don't render with invisible garbage in the UI.
+ */
+<span class="fc" id="L18">public record RayPropListing(</span>
+        String id,
+        String title,
+        String description,
+        String currency,
+        int maxGuests,
+        int bedrooms,
+        BigDecimal bathrooms,
+        String city,
+        String state,
+        String neighborhood,
+        String category,
+        long pricePerNightMinorUnits,
+        List&lt;String&gt; imageUrls) {
+
+    // Zero-width space/non-joiner/joiner, BOM, and the invisible-format-character
+    // block RayProp interleaves into every title/description.
+    private static final String ZERO_WIDTH_CHARS = &quot;[\\u200B-\\u200F\\uFEFF\\u2060-\\u206F]&quot;;
+
+    static RayPropListing from(JsonNode node) {
+<span class="fc" id="L38">        List&lt;String&gt; images = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L39">        addImageUrls(images, node.path(&quot;listing_images&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
+<span class="fc" id="L40">        addImageUrls(images, node.path(&quot;images&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
+<span class="fc" id="L41">        addImageUrls(images, node.path(&quot;photos&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
+<span class="fc" id="L42">        addImageUrls(images, node.path(&quot;media&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
+<span class="fc" id="L43">        return new RayPropListing(</span>
+<span class="fc" id="L44">                node.path(&quot;id&quot;).asText(),</span>
+<span class="fc" id="L45">                stripZeroWidth(node.path(&quot;title&quot;).asText(&quot;&quot;)),</span>
+<span class="fc" id="L46">                stripZeroWidth(firstText(node, &quot;description&quot;, &quot;summary&quot;, &quot;details&quot;)),</span>
+<span class="fc" id="L47">                node.path(&quot;currency&quot;).asText(&quot;NGN&quot;),</span>
+<span class="fc" id="L48">                firstInt(node, 1, &quot;max_guests&quot;, &quot;maxGuests&quot;, &quot;guests&quot;),</span>
+<span class="fc" id="L49">                firstInt(node, 0, &quot;bedrooms&quot;, &quot;bedroom_count&quot;),</span>
+<span class="fc" id="L50">                firstDecimal(node, BigDecimal.ONE, &quot;bathrooms&quot;, &quot;bathroom_count&quot;),</span>
+<span class="fc" id="L51">                node.path(&quot;city&quot;).asText(&quot;&quot;),</span>
+<span class="fc" id="L52">                node.path(&quot;state&quot;).asText(&quot;&quot;),</span>
+<span class="fc" id="L53">                node.path(&quot;neighborhood&quot;).asText(&quot;&quot;),</span>
+<span class="fc" id="L54">                firstText(node, &quot;property_category&quot;, &quot;property_type&quot;, &quot;type&quot;, &quot;category&quot;),</span>
+<span class="fc" id="L55">                firstLong(node, 0, &quot;price_per_night&quot;, &quot;pricePerNight&quot;, &quot;nightly_price&quot;),</span>
+                images);
+    }
+
+    private static void addImageUrls(List&lt;String&gt; images, JsonNode nodes, String... fields) {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (!nodes.isArray()) {</span>
+<span class="fc" id="L61">            return;</span>
+        }
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        for (JsonNode image : nodes) {</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            String url = image.isTextual() ? image.asText(null) : firstText(image, fields);</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">            if (url != null &amp;&amp; !url.isBlank()) {</span>
+<span class="nc" id="L66">                images.add(url);</span>
+            }
+<span class="nc" id="L68">        }</span>
+<span class="fc" id="L69">    }</span>
+
+    private static String firstText(JsonNode node, String... fields) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (String field : fields) {</span>
+<span class="fc" id="L73">            String value = node.path(field).asText(&quot;&quot;);</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            if (!value.isBlank()) {</span>
+<span class="nc" id="L75">                return stripZeroWidth(value);</span>
+            }
+        }
+<span class="fc" id="L78">        return &quot;&quot;;</span>
+    }
+
+    private static int firstInt(JsonNode node, int fallback, String... fields) {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        for (String field : fields) {</span>
+<span class="fc" id="L83">            JsonNode value = node.path(field);</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            if (value.isNumber()) {</span>
+<span class="fc" id="L85">                return value.asInt();</span>
+            }
+        }
+<span class="nc" id="L88">        return fallback;</span>
+    }
+
+    private static long firstLong(JsonNode node, long fallback, String... fields) {
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        for (String field : fields) {</span>
+<span class="fc" id="L93">            JsonNode value = node.path(field);</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">            if (value.isNumber()) {</span>
+<span class="fc" id="L95">                return value.asLong();</span>
+            }
+        }
+<span class="nc" id="L98">        return fallback;</span>
+    }
+
+    private static BigDecimal firstDecimal(JsonNode node, BigDecimal fallback, String... fields) {
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        for (String field : fields) {</span>
+<span class="fc" id="L103">            JsonNode value = node.path(field);</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">            if (value.isNumber()) {</span>
+<span class="fc" id="L105">                return value.decimalValue();</span>
+            }
+        }
+<span class="nc" id="L108">        return fallback;</span>
+    }
+
+    private static String stripZeroWidth(String value) {
+<span class="fc" id="L112">        return value.replaceAll(ZERO_WIDTH_CHARS, &quot;&quot;).trim();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

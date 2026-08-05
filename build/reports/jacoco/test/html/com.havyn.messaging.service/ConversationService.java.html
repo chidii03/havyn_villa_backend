@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConversationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.messaging.service</a> &gt; <span class="el_source">ConversationService.java</span></div><h1>ConversationService.java</h1><pre class="source lang-java linenums">package com.havyn.messaging.service;
+
+import com.havyn.booking.domain.Booking;
+import com.havyn.booking.repo.BookingRepository;
+import com.havyn.common.error.BadRequestException;
+import com.havyn.common.error.ForbiddenException;
+import com.havyn.common.error.NotFoundException;
+import com.havyn.messaging.domain.Conversation;
+import com.havyn.messaging.domain.Message;
+import com.havyn.messaging.domain.event.MessageSentEvent;
+import com.havyn.messaging.repo.ConversationRepository;
+import com.havyn.messaging.repo.MessageRepository;
+import com.havyn.properties.domain.Property;
+import com.havyn.properties.repo.PropertyRepository;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Guest↔host messaging — see project-docs/prompts/16-messaging-notifications.md.
+ * Object-level authorization (only conversation participants may read/write) is
+ * enforced here, mirroring {@code BookingService}/{@code PropertyService}'s pattern.
+ * One conversation per (property, guest) pair — {@link #startOrContinue} finds an
+ * existing thread or creates one, rather than ever spawning parallel threads for the
+ * same pairing.
+ */
+@Service
+public class ConversationService {
+
+    private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
+    private final PropertyRepository propertyRepository;
+    private final BookingRepository bookingRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public ConversationService(
+            ConversationRepository conversationRepository,
+            MessageRepository messageRepository,
+            PropertyRepository propertyRepository,
+            BookingRepository bookingRepository,
+<span class="fc" id="L46">            ApplicationEventPublisher eventPublisher) {</span>
+<span class="fc" id="L47">        this.conversationRepository = conversationRepository;</span>
+<span class="fc" id="L48">        this.messageRepository = messageRepository;</span>
+<span class="fc" id="L49">        this.propertyRepository = propertyRepository;</span>
+<span class="fc" id="L50">        this.bookingRepository = bookingRepository;</span>
+<span class="fc" id="L51">        this.eventPublisher = eventPublisher;</span>
+<span class="fc" id="L52">    }</span>
+
+    @Transactional
+    public Conversation startOrContinue(UUID guestId, UUID propertyId, UUID bookingId, String body) {
+<span class="pc" id="L56">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (property.getHostId().equals(guestId)) {</span>
+<span class="fc" id="L58">            throw new BadRequestException(&quot;HOST_CANNOT_MESSAGE_OWN_LISTING&quot;, &quot;You cannot start a conversation on your own listing&quot;);</span>
+        }
+
+<span class="fc" id="L61">        Conversation conversation = conversationRepository.findByPropertyIdAndGuestId(propertyId, guestId)</span>
+<span class="fc" id="L62">                .orElseGet(() -&gt; conversationRepository.save(new Conversation(propertyId, property.getHostId(), guestId)));</span>
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (bookingId != null) {</span>
+<span class="pc" id="L65">            Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
+<span class="pc bpc" id="L66" title="1 of 4 branches missed.">            if (!booking.getGuestId().equals(guestId) || !booking.getPropertyId().equals(propertyId)) {</span>
+<span class="fc" id="L67">                throw new BadRequestException(&quot;BOOKING_PROPERTY_MISMATCH&quot;, &quot;This booking is not yours for this property&quot;);</span>
+            }
+<span class="fc" id="L69">            conversation.linkBooking(bookingId);</span>
+        }
+
+<span class="fc" id="L72">        appendMessage(conversation, guestId, body);</span>
+<span class="fc" id="L73">        return conversation;</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Page&lt;Conversation&gt; listForUser(UUID userId, Pageable pageable) {
+<span class="nc" id="L78">        return conversationRepository.findAllByHostIdOrGuestIdOrderByLastMessageAtDescCreatedAtDesc(userId, userId, pageable);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Conversation getParticipant(UUID userId, UUID conversationId) {
+<span class="nc" id="L83">        return findParticipant(userId, conversationId);</span>
+    }
+
+    @Transactional
+    public Message sendMessage(UUID senderId, UUID conversationId, String body) {
+<span class="fc" id="L88">        Conversation conversation = findParticipant(senderId, conversationId);</span>
+<span class="fc" id="L89">        return appendMessage(conversation, senderId, body);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Page&lt;Message&gt; listMessages(UUID userId, UUID conversationId, Pageable pageable) {
+<span class="nc" id="L94">        findParticipant(userId, conversationId);</span>
+<span class="nc" id="L95">        return messageRepository.findAllByConversationIdOrderByCreatedAtAsc(conversationId, pageable);</span>
+    }
+
+    @Transactional
+    public void markRead(UUID userId, UUID conversationId) {
+<span class="fc" id="L100">        findParticipant(userId, conversationId);</span>
+<span class="fc" id="L101">        List&lt;Message&gt; unread = messageRepository.findAllByConversationIdAndSenderIdNotAndReadAtIsNull(conversationId, userId);</span>
+<span class="fc" id="L102">        Instant now = Instant.now();</span>
+<span class="fc" id="L103">        unread.forEach(message -&gt; message.markRead(now));</span>
+<span class="fc" id="L104">    }</span>
+
+    private Message appendMessage(Conversation conversation, UUID senderId, String body) {
+<span class="fc" id="L107">        Message message = messageRepository.save(new Message(conversation.getId(), senderId, body));</span>
+<span class="fc" id="L108">        conversation.touch(Instant.now());</span>
+<span class="fc" id="L109">        eventPublisher.publishEvent(MessageSentEvent.of(</span>
+<span class="fc" id="L110">                message.getId(), conversation.getId(), senderId, conversation.otherParticipant(senderId), conversation.getPropertyId()));</span>
+<span class="fc" id="L111">        return message;</span>
+    }
+
+    private Conversation findParticipant(UUID userId, UUID conversationId) {
+<span class="fc" id="L115">        Conversation conversation = conversationRepository.findById(conversationId)</span>
+<span class="fc" id="L116">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Conversation&quot;, conversationId));</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (!conversation.isParticipant(userId)) {</span>
+<span class="fc" id="L118">            throw new ForbiddenException(&quot;You do not have access to this conversation&quot;);</span>
+        }
+<span class="fc" id="L120">        return conversation;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

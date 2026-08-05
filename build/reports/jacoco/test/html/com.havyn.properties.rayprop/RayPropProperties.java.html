@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RayPropProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.rayprop</a> &gt; <span class="el_source">RayPropProperties.java</span></div><h1>RayPropProperties.java</h1><pre class="source lang-java linenums">package com.havyn.properties.rayprop;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/** {@code havyn.rayprop.*} — see https://rayprop.io/docs (Testing Guide: base URL is the same for sandbox/live, only the key prefix differs). */
+@ConfigurationProperties(prefix = &quot;havyn.rayprop&quot;)
+<span class="fc" id="L7">public class RayPropProperties {</span>
+
+<span class="fc" id="L9">    private String apiKey = &quot;&quot;;</span>
+<span class="fc" id="L10">    private String baseUrl = &quot;https://api.rayprop.io&quot;;</span>
+<span class="fc" id="L11">    private String listingsPath = &quot;/listings&quot;;</span>
+
+    /** RayProp caps {@code limit} at 50 server-side regardless of what's requested (docs: Pagination). */
+<span class="fc" id="L14">    private int pageSize = 50;</span>
+
+    /** Safety cap on pages walked per sync — matches the lowest documented plan tier (Free: 500 daily unique listings / 50 per page = 10 pages) with headroom. */
+<span class="fc" id="L17">    private int maxPages = 20;</span>
+
+    public String getApiKey() {
+<span class="fc" id="L20">        return apiKey;</span>
+    }
+
+    public void setApiKey(String apiKey) {
+<span class="fc" id="L24">        this.apiKey = apiKey;</span>
+<span class="fc" id="L25">    }</span>
+
+    public String getBaseUrl() {
+<span class="fc" id="L28">        return baseUrl;</span>
+    }
+
+    public void setBaseUrl(String baseUrl) {
+<span class="fc" id="L32">        this.baseUrl = baseUrl;</span>
+<span class="fc" id="L33">    }</span>
+
+    public String getListingsPath() {
+<span class="fc" id="L36">        return listingsPath;</span>
+    }
+
+    public void setListingsPath(String listingsPath) {
+<span class="nc" id="L40">        this.listingsPath = listingsPath;</span>
+<span class="nc" id="L41">    }</span>
+
+    public int getPageSize() {
+<span class="fc" id="L44">        return pageSize;</span>
+    }
+
+    public void setPageSize(int pageSize) {
+<span class="fc" id="L48">        this.pageSize = pageSize;</span>
+<span class="fc" id="L49">    }</span>
+
+    public int getMaxPages() {
+<span class="fc" id="L52">        return maxPages;</span>
+    }
+
+    public void setMaxPages(int maxPages) {
+<span class="fc" id="L56">        this.maxPages = maxPages;</span>
+<span class="fc" id="L57">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

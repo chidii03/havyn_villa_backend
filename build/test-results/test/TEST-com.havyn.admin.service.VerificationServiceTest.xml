@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.havyn.admin.service.VerificationServiceTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:20:28.780Z" hostname="CHIDI" time="0.337">
+  <properties/>
+  <testcase name="submit_savesANewPendingRequest()" classname="com.havyn.admin.service.VerificationServiceTest" time="0.059"/>
+  <testcase name="getOwnedOrAdmin_rejectsAMissingRequest()" classname="com.havyn.admin.service.VerificationServiceTest" time="0.004"/>
+  <testcase name="submit_rejectsASecondPendingRequestFromTheSameUser()" classname="com.havyn.admin.service.VerificationServiceTest" time="0.003"/>
+  <testcase name="reject_marksRejectedWithReviewNotes()" classname="com.havyn.admin.service.VerificationServiceTest" time="0.003"/>
+  <testcase name="getOwnedOrAdmin_rejectsANonOwningCaller()" classname="com.havyn.admin.service.VerificationServiceTest" time="0.002"/>
+  <testcase name="approve_rejectsAnAlreadyReviewedRequest()" classname="com.havyn.admin.service.VerificationServiceTest" time="0.003"/>
+  <testcase name="approve_marksApprovedAndRecordsAudit()" classname="com.havyn.admin.service.VerificationServiceTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

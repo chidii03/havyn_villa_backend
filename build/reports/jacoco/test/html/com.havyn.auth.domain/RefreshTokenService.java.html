@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RefreshTokenService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.auth.domain</a> &gt; <span class="el_source">RefreshTokenService.java</span></div><h1>RefreshTokenService.java</h1><pre class="source lang-java linenums">package com.havyn.auth.domain;
+
+import java.time.Duration;
+import java.util.Set;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+/**
+ * Redis-backed refresh token rotation with reuse detection (&quot;session families&quot;) — see
+ * project-docs/security/01-security-plan.md#authentication--sessions.
+ *
+ * &lt;p&gt;Each login starts a family. {@code havyn:auth:refresh-family:{familyId}} always
+ * points at the one currently-valid {@code tokenId} for that family (TTL = refresh
+ * TTL). Every refresh call rotates it: the presented token must match the pointer, or
+ * the whole family is revoked immediately — that's the reuse-detection signal a stolen
+ * token was used after the legitimate client already rotated past it.
+ * {@code havyn:auth:user-sessions:{userId}} indexes every family a user has open, so a
+ * password reset can revoke all of them at once.
+ */
+@Component
+public class RefreshTokenService {
+
+<span class="fc" id="L26">    private static final Logger log = LoggerFactory.getLogger(RefreshTokenService.class);</span>
+    private static final String FAMILY_KEY_PREFIX = &quot;havyn:auth:refresh-family:&quot;;
+    private static final String USER_SESSIONS_PREFIX = &quot;havyn:auth:user-sessions:&quot;;
+
+    private final StringRedisTemplate redisTemplate;
+    private final JwtService jwtService;
+
+<span class="nc" id="L33">    public RefreshTokenService(StringRedisTemplate redisTemplate, JwtService jwtService) {</span>
+<span class="nc" id="L34">        this.redisTemplate = redisTemplate;</span>
+<span class="nc" id="L35">        this.jwtService = jwtService;</span>
+<span class="nc" id="L36">    }</span>
+
+    public Issued issue(UUID userId) {
+<span class="nc" id="L39">        UUID familyId = UUID.randomUUID();</span>
+<span class="nc" id="L40">        UUID tokenId = UUID.randomUUID();</span>
+<span class="nc" id="L41">        redisTemplate.opsForValue().set(familyKey(familyId), tokenId.toString(), jwtService.refreshTtl());</span>
+<span class="nc" id="L42">        trackSession(userId, familyId);</span>
+<span class="nc" id="L43">        return new Issued(jwtService.issueRefreshToken(userId, familyId, tokenId), userId, familyId);</span>
+    }
+
+    /** @throws InvalidRefreshTokenException if the token is unknown, expired, or already rotated. */
+    public Issued rotate(String refreshToken) {
+<span class="nc" id="L48">        JwtService.RefreshClaims claims = jwtService.parseRefreshToken(refreshToken);</span>
+<span class="nc" id="L49">        String key = familyKey(claims.familyId());</span>
+<span class="nc" id="L50">        String currentTokenId = redisTemplate.opsForValue().get(key);</span>
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (currentTokenId == null) {</span>
+<span class="nc" id="L53">            throw InvalidRefreshTokenException.expiredOrRevoked();</span>
+        }
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (!currentTokenId.equals(claims.tokenId().toString())) {</span>
+<span class="nc" id="L56">            redisTemplate.delete(key);</span>
+            // A stolen/replayed refresh token — the legitimate client already rotated past
+            // this one. Revoking the whole family is the containment; this WARN is the
+            // signal a real security-monitoring setup would alert on.
+<span class="nc" id="L60">            log.warn(&quot;Refresh token reuse detected, family revoked userId={} familyId={}&quot;, claims.userId(), claims.familyId());</span>
+<span class="nc" id="L61">            throw InvalidRefreshTokenException.reuseDetected();</span>
+        }
+
+<span class="nc" id="L64">        UUID newTokenId = UUID.randomUUID();</span>
+<span class="nc" id="L65">        redisTemplate.opsForValue().set(key, newTokenId.toString(), jwtService.refreshTtl());</span>
+<span class="nc" id="L66">        return new Issued(</span>
+<span class="nc" id="L67">                jwtService.issueRefreshToken(claims.userId(), claims.familyId(), newTokenId),</span>
+<span class="nc" id="L68">                claims.userId(),</span>
+<span class="nc" id="L69">                claims.familyId());</span>
+    }
+
+    public void revokeFamily(UUID familyId) {
+<span class="nc" id="L73">        redisTemplate.delete(familyKey(familyId));</span>
+<span class="nc" id="L74">    }</span>
+
+    public void revokeAllForUser(UUID userId) {
+<span class="nc" id="L77">        String sessionsKey = userSessionsKey(userId);</span>
+<span class="nc" id="L78">        Set&lt;String&gt; familyIds = redisTemplate.opsForSet().members(sessionsKey);</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (familyIds != null) {</span>
+<span class="nc" id="L80">            familyIds.forEach(familyId -&gt; redisTemplate.delete(FAMILY_KEY_PREFIX + familyId));</span>
+        }
+<span class="nc" id="L82">        redisTemplate.delete(sessionsKey);</span>
+<span class="nc" id="L83">    }</span>
+
+    private void trackSession(UUID userId, UUID familyId) {
+<span class="nc" id="L86">        String sessionsKey = userSessionsKey(userId);</span>
+<span class="nc" id="L87">        redisTemplate.opsForSet().add(sessionsKey, familyId.toString());</span>
+<span class="nc" id="L88">        redisTemplate.expire(sessionsKey, jwtService.refreshTtl());</span>
+<span class="nc" id="L89">    }</span>
+
+    private String familyKey(UUID familyId) {
+<span class="nc" id="L92">        return FAMILY_KEY_PREFIX + familyId;</span>
+    }
+
+    private String userSessionsKey(UUID userId) {
+<span class="nc" id="L96">        return USER_SESSIONS_PREFIX + userId;</span>
+    }
+
+<span class="fc" id="L99">    public record Issued(String token, UUID userId, UUID familyId) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

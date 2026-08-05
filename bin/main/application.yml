@@ -1,0 +1,175 @@
+spring:
+  application:
+    name: havyn-villa-api
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:havyn_villa}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:chidi03}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: 5000 # fail fast (5s) rather than pile up requests waiting on a starved pool
+      idle-timeout: 300000 # 5m
+      max-lifetime: 1800000 # 30m — stays under most managed Postgres providers' own connection recycling
+      leak-detection-threshold: 30000 # 30s — logs a warning with a stack trace; cheap, catches a real class of bug
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate # Flyway is the source of truth for schema — Hibernate never writes DDL.
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+# Non-standard app-specific keys (not spring.*) live under this namespace.
+havyn:
+  web-base-url: ${WEB_BASE_URL:http://localhost:3000}
+  mail-from: ${MAIL_FROM:no-reply@havynvilla.com}
+
+  jwt:
+    access-secret: ${JWT_ACCESS_SECRET:havynvillaaccesssecret}
+    refresh-secret: ${JWT_REFRESH_SECRET:havynvillarefreshsecret}
+    access-ttl-seconds: ${JWT_ACCESS_TTL_SECONDS:900}
+    refresh-ttl-days: ${JWT_REFRESH_TTL_DAYS:30}
+
+  rate-limit:
+    enabled: true
+    rules:
+      # Rules are matched in order, first-prefix-match wins (RateLimitFilter) — none of
+      # these prefixes overlap, so order doesn't matter here, but keep new rules
+      # non-overlapping with existing ones or put the more specific prefix first.
+      - path-prefix: /api/v1/auth
+        limit: 20
+        window-seconds: 60
+      # Public, high-traffic browsing — generous enough for normal filter/typeahead
+      # use, still a real ceiling against scraping/DoS (prompt 24: "Rate limiting on
+      # auth/search/booking/messaging").
+      - path-prefix: /api/v1/search
+        limit: 60
+        window-seconds: 60
+      # Covers list/get/create/cancel under this prefix — create (POST) is the
+      # sensitive one (a hold-spam attack could exhaust real availability), but the
+      # filter matches on path prefix only, so the limit is shared across the whole
+      # resource rather than per-verb.
+      - path-prefix: /api/v1/bookings
+        limit: 30
+        window-seconds: 60
+
+  booking:
+    hold-duration-minutes: ${BOOKING_HOLD_DURATION_MINUTES:15}
+    hold-sweep-interval-ms: ${BOOKING_HOLD_SWEEP_INTERVAL_MS:60000}
+
+  payments:
+    provider: ${PAYMENTS_PROVIDER:paystack}
+    paystack:
+      secret-key: ${PAYSTACK_SECRET_KEY:}
+      callback-url: ${PAYSTACK_CALLBACK_URL:http://localhost:3000/trips}
+    flutterwave:
+      secret-key: ${FLUTTERWAVE_SECRET_KEY:}
+      webhook-hash: ${FLUTTERWAVE_WEBHOOK_HASH:}
+      redirect-url: ${FLUTTERWAVE_REDIRECT_URL:http://localhost:3000/trips}
+
+  rayprop:
+    api-key: ${RAYPROP_API_KEY:}
+    base-url: ${RAYPROP_BASE_URL:https://api.rayprop.io}
+    listings-path: ${RAYPROP_LISTINGS_PATH:/listings}
+    page-size: ${RAYPROP_PAGE_SIZE:50}
+    max-pages: ${RAYPROP_MAX_PAGES:20}
+    sync-on-startup: ${RAYPROP_SYNC_ON_STARTUP:true}
+
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+
+  auth:
+    cookie:
+      secure: ${AUTH_COOKIE_SECURE:false}
+      same-site: ${AUTH_COOKIE_SAME_SITE:Lax}
+
+  media:
+    max-per-listing: ${MEDIA_MAX_PER_LISTING:20}
+    max-image-bytes: ${MEDIA_MAX_IMAGE_BYTES:10485760}   # 10 MB
+    max-video-bytes: ${MEDIA_MAX_VIDEO_BYTES:209715200}  # 200 MB
+    allowed-image-formats: jpg,jpeg,png,webp
+    allowed-video-formats: mp4,mov
+    cloudinary:
+      cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+      api-key: ${CLOUDINARY_API_KEY:}
+      api-secret: ${CLOUDINARY_API_SECRET:}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # prometheus added (prompt 26) for metrics scraping — NOT in SecurityConfig's
+        # public paths, so a scraper needs a bearer token by default (this API has no
+        # separate internal-only management port to put it behind instead; see
+        # devops/02-observability.md's prompt 26 notes for the reasoning and the
+        # real-deployment follow-up this implies).
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  health:
+    redis:
+      enabled: ${REDIS_HEALTH_ENABLED:false}
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
+  # Golden-signal HTTP metrics get the route template (not raw path, which would
+  # explode cardinality with UUIDs) and a real p95/p99, not just an average.
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      # 100% in dev/test/CI (nothing else is generating traffic to make this
+      # expensive); a real prod deployment should lower this — see
+      # devops/02-observability.md's prompt 26 notes.
+      probability: 1.0
+  # No management.otlp.tracing.endpoint here deliberately — Boot's OTLP exporter
+  # auto-config only activates when that property is genuinely present (an empty-
+  # string default would still count as "present" and attempt to export to nowhere).
+  # Tracing/span-creation/MDC population all work with nothing configured; the
+  # logging exporter (build.gradle's opentelemetry-exporter-logging) prints spans
+  # to the console in the meantime. Set MANAGEMENT_OTLP_TRACING_ENDPOINT at deploy
+  # time to ship real spans to Jaeger/Tempo/Honeycomb/etc. — no code or config
+  # change needed here to enable that later.
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs

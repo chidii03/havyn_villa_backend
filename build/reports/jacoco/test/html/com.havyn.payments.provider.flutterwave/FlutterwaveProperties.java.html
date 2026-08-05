@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlutterwaveProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.payments.provider.flutterwave</a> &gt; <span class="el_source">FlutterwaveProperties.java</span></div><h1>FlutterwaveProperties.java</h1><pre class="source lang-java linenums">package com.havyn.payments.provider.flutterwave;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/** Server-only Flutterwave Standard configuration. */
+@ConfigurationProperties(prefix = &quot;havyn.payments.flutterwave&quot;)
+<span class="fc" id="L7">public class FlutterwaveProperties {</span>
+
+<span class="fc" id="L9">    private String secretKey = &quot;&quot;;</span>
+<span class="fc" id="L10">    private String webhookHash = &quot;&quot;;</span>
+<span class="fc" id="L11">    private String baseUrl = &quot;https://api.flutterwave.com/v3&quot;;</span>
+<span class="fc" id="L12">    private String redirectUrl = &quot;&quot;;</span>
+
+<span class="fc" id="L14">    public String getSecretKey() { return secretKey; }</span>
+<span class="fc" id="L15">    public void setSecretKey(String secretKey) { this.secretKey = secretKey; }</span>
+<span class="fc" id="L16">    public String getWebhookHash() { return webhookHash; }</span>
+<span class="fc" id="L17">    public void setWebhookHash(String webhookHash) { this.webhookHash = webhookHash; }</span>
+<span class="fc" id="L18">    public String getBaseUrl() { return baseUrl; }</span>
+<span class="fc" id="L19">    public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }</span>
+<span class="fc" id="L20">    public String getRedirectUrl() { return redirectUrl; }</span>
+<span class="fc" id="L21">    public void setRedirectUrl(String redirectUrl) { this.redirectUrl = redirectUrl; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

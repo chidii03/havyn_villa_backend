@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RayPropApiException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.rayprop</a> &gt; <span class="el_source">RayPropApiException.java</span></div><h1>RayPropApiException.java</h1><pre class="source lang-java linenums">package com.havyn.properties.rayprop;
+
+/**
+ * RayProp's documented error envelope ({@code {&quot;success&quot;: false, &quot;error&quot;: {&quot;code&quot;,
+ * &quot;message&quot;, &quot;details&quot;}}}, rayprop.io/docs — Error Handling) surfaced as a real typed
+ * exception instead of letting {@link org.springframework.web.client.RestClient}'s
+ * default status handling throw a generic {@code RestClientResponseException} that
+ * discards the actual {@code error.code}/{@code error.message} RayProp sent.
+ *
+ * &lt;p&gt;Two documented codes get special handling in {@link RayPropClient}: {@code
+ * DAILY_LIMIT_REACHED} (stop paginating, not a failure — see {@link
+ * #isDailyLimitReached()}) and a plain HTTP 429 without that code (transient
+ * per-second rate limiting — see {@link #isRateLimited()}, retried with backoff).
+ * Everything else (401 bad key, 400 validation, 404, 500) is a real failure and
+ * propagates as-is.
+ */
+public class RayPropApiException extends RuntimeException {
+
+    private final int httpStatus;
+    private final String errorCode;
+    private final String responseBody;
+
+    public RayPropApiException(int httpStatus, String errorCode, String message) {
+<span class="nc" id="L24">        this(httpStatus, errorCode, message, &quot;&quot;);</span>
+<span class="nc" id="L25">    }</span>
+
+    public RayPropApiException(int httpStatus, String errorCode, String message, String responseBody) {
+<span class="fc" id="L28">        super(message);</span>
+<span class="fc" id="L29">        this.httpStatus = httpStatus;</span>
+<span class="fc" id="L30">        this.errorCode = errorCode;</span>
+<span class="fc" id="L31">        this.responseBody = responseBody;</span>
+<span class="fc" id="L32">    }</span>
+
+    public int getHttpStatus() {
+<span class="fc" id="L35">        return httpStatus;</span>
+    }
+
+    public String getErrorCode() {
+<span class="fc" id="L39">        return errorCode;</span>
+    }
+
+    public String getResponseBody() {
+<span class="fc" id="L43">        return responseBody;</span>
+    }
+
+    public boolean isDailyLimitReached() {
+<span class="fc" id="L47">        return &quot;DAILY_LIMIT_REACHED&quot;.equals(errorCode);</span>
+    }
+
+    /** Per-second throughput limit, distinct from the daily unique-listing quota above. */
+    public boolean isRateLimited() {
+<span class="fc bfc" id="L52" title="All 4 branches covered.">        return httpStatus == 429 &amp;&amp; !isDailyLimitReached();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

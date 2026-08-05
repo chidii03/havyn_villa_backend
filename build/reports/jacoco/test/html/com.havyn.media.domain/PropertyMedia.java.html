@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyMedia.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.media.domain</a> &gt; <span class="el_source">PropertyMedia.java</span></div><h1>PropertyMedia.java</h1><pre class="source lang-java linenums">package com.havyn.media.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.UUID;
+
+/**
+ * A single Cloudinary asset attached to a listing — URL/metadata only, per ADR-005;
+ * see project-docs/prompts/14-media-storage.md. {@code propertyId} is a plain UUID
+ * (not a JPA association) — same reasoning as {@code Booking.propertyId}: this module
+ * lives in {@code media/}, not {@code properties/}.
+ */
+@Entity
+@Table(name = &quot;property_media&quot;)
+public class PropertyMedia extends BaseEntity {
+
+    @Column(name = &quot;property_id&quot;, nullable = false)
+    private UUID propertyId;
+
+    @Column(name = &quot;secure_url&quot;, nullable = false)
+    private String secureUrl;
+
+    @Column(name = &quot;public_id&quot;, nullable = false)
+    private String publicId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;resource_type&quot;, nullable = false, length = 10)
+    private MediaResourceType resourceType;
+
+    @Column(name = &quot;format&quot;, nullable = false, length = 10)
+    private String format;
+
+    @Column(name = &quot;width&quot;)
+    private Integer width;
+
+    @Column(name = &quot;height&quot;)
+    private Integer height;
+
+    @Column(name = &quot;duration&quot;)
+    private BigDecimal duration;
+
+    @Column(name = &quot;bytes&quot;, nullable = false)
+    private long bytes;
+
+    @Column(name = &quot;position&quot;, nullable = false)
+    private int position;
+
+    @Column(name = &quot;alt&quot;)
+    private String alt;
+
+<span class="nc" id="L56">    protected PropertyMedia() {</span>
+        // JPA
+<span class="nc" id="L58">    }</span>
+
+    public PropertyMedia(
+            UUID propertyId,
+            String secureUrl,
+            String publicId,
+            MediaResourceType resourceType,
+            String format,
+            Integer width,
+            Integer height,
+            BigDecimal duration,
+            long bytes,
+            int position,
+<span class="fc" id="L71">            String alt) {</span>
+<span class="fc" id="L72">        this.propertyId = propertyId;</span>
+<span class="fc" id="L73">        this.secureUrl = secureUrl;</span>
+<span class="fc" id="L74">        this.publicId = publicId;</span>
+<span class="fc" id="L75">        this.resourceType = resourceType;</span>
+<span class="fc" id="L76">        this.format = format;</span>
+<span class="fc" id="L77">        this.width = width;</span>
+<span class="fc" id="L78">        this.height = height;</span>
+<span class="fc" id="L79">        this.duration = duration;</span>
+<span class="fc" id="L80">        this.bytes = bytes;</span>
+<span class="fc" id="L81">        this.position = position;</span>
+<span class="fc" id="L82">        this.alt = alt;</span>
+<span class="fc" id="L83">    }</span>
+
+    public UUID getPropertyId() {
+<span class="fc" id="L86">        return propertyId;</span>
+    }
+
+    public String getSecureUrl() {
+<span class="nc" id="L90">        return secureUrl;</span>
+    }
+
+    public String getPublicId() {
+<span class="fc" id="L94">        return publicId;</span>
+    }
+
+    public MediaResourceType getResourceType() {
+<span class="fc" id="L98">        return resourceType;</span>
+    }
+
+    public String getFormat() {
+<span class="nc" id="L102">        return format;</span>
+    }
+
+    public Integer getWidth() {
+<span class="nc" id="L106">        return width;</span>
+    }
+
+    public Integer getHeight() {
+<span class="nc" id="L110">        return height;</span>
+    }
+
+    public BigDecimal getDuration() {
+<span class="nc" id="L114">        return duration;</span>
+    }
+
+    public long getBytes() {
+<span class="nc" id="L118">        return bytes;</span>
+    }
+
+    public int getPosition() {
+<span class="fc" id="L122">        return position;</span>
+    }
+
+    public void setPosition(int position) {
+<span class="nc" id="L126">        this.position = position;</span>
+<span class="nc" id="L127">    }</span>
+
+    public String getAlt() {
+<span class="nc" id="L130">        return alt;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Property.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.domain</a> &gt; <span class="el_source">Property.java</span></div><h1>Property.java</h1><pre class="source lang-java linenums">package com.havyn.properties.domain;
+
+import com.havyn.amenities.domain.Amenity;
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * A host's listing. {@code hostId} references {@code app_user} directly — there is no
+ * {@code HostProfile} entity yet (project-docs/database/01-data-model.md's ERD sketches
+ * one, but it isn't in prompt 10's file scope: {@code hosts/} isn't a &quot;MAY modify&quot;
+ * path). See backend/02-domain-modules.md's properties section for the deviation note.
+ */
+@Entity
+@Table(name = &quot;property&quot;)
+public class Property extends BaseEntity {
+
+    @Column(name = &quot;host_id&quot;, nullable = false)
+    private UUID hostId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;type_id&quot;, nullable = false)
+    private PropertyType type;
+
+    @Column(name = &quot;title&quot;, nullable = false, length = 150)
+    private String title;
+
+    @Column(name = &quot;description&quot;, nullable = false)
+    private String description;
+
+    @Column(name = &quot;address&quot;, nullable = false)
+    private String address;
+
+    @Column(name = &quot;city&quot;, nullable = false, length = 100)
+    private String city;
+
+    @Column(name = &quot;state&quot;, nullable = false, length = 100)
+    private String state;
+
+    @Column(name = &quot;country&quot;, nullable = false, length = 100)
+    private String country;
+
+    @Column(name = &quot;lat&quot;)
+    private BigDecimal lat;
+
+    @Column(name = &quot;lng&quot;)
+    private BigDecimal lng;
+
+<span class="pc" id="L61">    @Column(name = &quot;currency&quot;, nullable = false, length = 3)</span>
+    private String currency = &quot;NGN&quot;;
+
+    @Column(name = &quot;base_price&quot;, nullable = false)
+    private BigDecimal basePrice;
+
+    @Column(name = &quot;capacity&quot;, nullable = false)
+    private int capacity;
+
+    @Column(name = &quot;bedrooms&quot;, nullable = false)
+    private int bedrooms;
+
+    @Column(name = &quot;beds&quot;, nullable = false)
+    private int beds;
+
+    @Column(name = &quot;bathrooms&quot;, nullable = false)
+    private BigDecimal bathrooms;
+
+<span class="pc" id="L79">    @Column(name = &quot;cleaning_fee&quot;, nullable = false)</span>
+    private BigDecimal cleaningFee = BigDecimal.ZERO;
+
+<span class="pc" id="L82">    @Column(name = &quot;service_fee_pct&quot;, nullable = false)</span>
+    private BigDecimal serviceFeePct = BigDecimal.ZERO;
+
+    @Column(name = &quot;house_rules&quot;)
+    private String houseRules;
+
+<span class="pc" id="L88">    @Column(name = &quot;cancellation_policy&quot;, nullable = false, length = 40)</span>
+    private String cancellationPolicy = &quot;FLEXIBLE&quot;;
+
+<span class="pc" id="L91">    @Enumerated(EnumType.STRING)</span>
+    @Column(name = &quot;status&quot;, nullable = false, length = 20)
+    private PropertyStatus status = PropertyStatus.DRAFT;
+
+<span class="pc" id="L95">    @Column(name = &quot;rating_avg&quot;, nullable = false)</span>
+    private BigDecimal ratingAvg = BigDecimal.ZERO;
+
+    @Column(name = &quot;rating_count&quot;, nullable = false)
+    private int ratingCount;
+
+<span class="pc" id="L101">    @ManyToMany(fetch = FetchType.LAZY)</span>
+    @JoinTable(
+            name = &quot;property_amenity&quot;,
+            joinColumns = @JoinColumn(name = &quot;property_id&quot;),
+            inverseJoinColumns = @JoinColumn(name = &quot;amenity_id&quot;))
+    private Set&lt;Amenity&gt; amenities = new LinkedHashSet&lt;&gt;();
+
+    /**
+     * Null for every host-created listing; populated only for rows imported from an
+     * external partner (e.g. {@code &quot;RAYPROP&quot;}) — see V13__rayprop_import.sql and
+     * {@code properties.rayprop.RayPropSyncService}, which upserts on this pair to
+     * keep re-syncs idempotent.
+     */
+    @Column(name = &quot;external_source&quot;, length = 30)
+    private String externalSource;
+
+    @Column(name = &quot;external_id&quot;, length = 100)
+    private String externalId;
+
+<span class="nc" id="L120">    protected Property() {</span>
+        // JPA
+<span class="nc" id="L122">    }</span>
+
+    public Property(UUID hostId, PropertyType type, String title, String description, String address, String city,
+            String state, String country, BigDecimal basePrice, int capacity, int bedrooms, int beds,
+<span class="fc" id="L126">            BigDecimal bathrooms) {</span>
+<span class="fc" id="L127">        this.hostId = hostId;</span>
+<span class="fc" id="L128">        this.type = type;</span>
+<span class="fc" id="L129">        this.title = title;</span>
+<span class="fc" id="L130">        this.description = description;</span>
+<span class="fc" id="L131">        this.address = address;</span>
+<span class="fc" id="L132">        this.city = city;</span>
+<span class="fc" id="L133">        this.state = state;</span>
+<span class="fc" id="L134">        this.country = country;</span>
+<span class="fc" id="L135">        this.basePrice = basePrice;</span>
+<span class="fc" id="L136">        this.capacity = capacity;</span>
+<span class="fc" id="L137">        this.bedrooms = bedrooms;</span>
+<span class="fc" id="L138">        this.beds = beds;</span>
+<span class="fc" id="L139">        this.bathrooms = bathrooms;</span>
+<span class="fc" id="L140">    }</span>
+
+    public UUID getHostId() {
+<span class="fc" id="L143">        return hostId;</span>
+    }
+
+    public PropertyType getType() {
+<span class="fc" id="L147">        return type;</span>
+    }
+
+    public void setType(PropertyType type) {
+<span class="fc" id="L151">        this.type = type;</span>
+<span class="fc" id="L152">    }</span>
+
+    public String getTitle() {
+<span class="fc" id="L155">        return title;</span>
+    }
+
+    public void setTitle(String title) {
+<span class="fc" id="L159">        this.title = title;</span>
+<span class="fc" id="L160">    }</span>
+
+    public String getDescription() {
+<span class="fc" id="L163">        return description;</span>
+    }
+
+    public void setDescription(String description) {
+<span class="fc" id="L167">        this.description = description;</span>
+<span class="fc" id="L168">    }</span>
+
+    public String getAddress() {
+<span class="fc" id="L171">        return address;</span>
+    }
+
+    public void setAddress(String address) {
+<span class="fc" id="L175">        this.address = address;</span>
+<span class="fc" id="L176">    }</span>
+
+    public String getCity() {
+<span class="fc" id="L179">        return city;</span>
+    }
+
+    public void setCity(String city) {
+<span class="fc" id="L183">        this.city = city;</span>
+<span class="fc" id="L184">    }</span>
+
+    public String getState() {
+<span class="fc" id="L187">        return state;</span>
+    }
+
+    public void setState(String state) {
+<span class="fc" id="L191">        this.state = state;</span>
+<span class="fc" id="L192">    }</span>
+
+    public String getCountry() {
+<span class="fc" id="L195">        return country;</span>
+    }
+
+    public void setCountry(String country) {
+<span class="fc" id="L199">        this.country = country;</span>
+<span class="fc" id="L200">    }</span>
+
+    public BigDecimal getLat() {
+<span class="fc" id="L203">        return lat;</span>
+    }
+
+    public void setLat(BigDecimal lat) {
+<span class="fc" id="L207">        this.lat = lat;</span>
+<span class="fc" id="L208">    }</span>
+
+    public BigDecimal getLng() {
+<span class="fc" id="L211">        return lng;</span>
+    }
+
+    public void setLng(BigDecimal lng) {
+<span class="fc" id="L215">        this.lng = lng;</span>
+<span class="fc" id="L216">    }</span>
+
+    public String getCurrency() {
+<span class="fc" id="L219">        return currency;</span>
+    }
+
+    public void setCurrency(String currency) {
+<span class="fc" id="L223">        this.currency = currency;</span>
+<span class="fc" id="L224">    }</span>
+
+    public BigDecimal getBasePrice() {
+<span class="fc" id="L227">        return basePrice;</span>
+    }
+
+    public void setBasePrice(BigDecimal basePrice) {
+<span class="fc" id="L231">        this.basePrice = basePrice;</span>
+<span class="fc" id="L232">    }</span>
+
+    public int getCapacity() {
+<span class="fc" id="L235">        return capacity;</span>
+    }
+
+    public void setCapacity(int capacity) {
+<span class="fc" id="L239">        this.capacity = capacity;</span>
+<span class="fc" id="L240">    }</span>
+
+    public int getBedrooms() {
+<span class="fc" id="L243">        return bedrooms;</span>
+    }
+
+    public void setBedrooms(int bedrooms) {
+<span class="fc" id="L247">        this.bedrooms = bedrooms;</span>
+<span class="fc" id="L248">    }</span>
+
+    public int getBeds() {
+<span class="fc" id="L251">        return beds;</span>
+    }
+
+    public void setBeds(int beds) {
+<span class="fc" id="L255">        this.beds = beds;</span>
+<span class="fc" id="L256">    }</span>
+
+    public BigDecimal getBathrooms() {
+<span class="fc" id="L259">        return bathrooms;</span>
+    }
+
+    public void setBathrooms(BigDecimal bathrooms) {
+<span class="fc" id="L263">        this.bathrooms = bathrooms;</span>
+<span class="fc" id="L264">    }</span>
+
+    public BigDecimal getCleaningFee() {
+<span class="fc" id="L267">        return cleaningFee;</span>
+    }
+
+    public void setCleaningFee(BigDecimal cleaningFee) {
+<span class="fc" id="L271">        this.cleaningFee = cleaningFee;</span>
+<span class="fc" id="L272">    }</span>
+
+    public BigDecimal getServiceFeePct() {
+<span class="fc" id="L275">        return serviceFeePct;</span>
+    }
+
+    public void setServiceFeePct(BigDecimal serviceFeePct) {
+<span class="fc" id="L279">        this.serviceFeePct = serviceFeePct;</span>
+<span class="fc" id="L280">    }</span>
+
+    public String getHouseRules() {
+<span class="fc" id="L283">        return houseRules;</span>
+    }
+
+    public void setHouseRules(String houseRules) {
+<span class="fc" id="L287">        this.houseRules = houseRules;</span>
+<span class="fc" id="L288">    }</span>
+
+    public String getCancellationPolicy() {
+<span class="fc" id="L291">        return cancellationPolicy;</span>
+    }
+
+    public void setCancellationPolicy(String cancellationPolicy) {
+<span class="fc" id="L295">        this.cancellationPolicy = cancellationPolicy;</span>
+<span class="fc" id="L296">    }</span>
+
+    public PropertyStatus getStatus() {
+<span class="fc" id="L299">        return status;</span>
+    }
+
+    public void transitionTo(PropertyStatus target) {
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (!status.canTransitionTo(target)) {</span>
+<span class="fc" id="L304">            throw new IllegalStateException(&quot;Cannot transition property from &quot; + status + &quot; to &quot; + target);</span>
+        }
+<span class="fc" id="L306">        this.status = target;</span>
+<span class="fc" id="L307">    }</span>
+
+    public BigDecimal getRatingAvg() {
+<span class="fc" id="L310">        return ratingAvg;</span>
+    }
+
+    public int getRatingCount() {
+<span class="fc" id="L314">        return ratingCount;</span>
+    }
+
+    /** Called by {@code reviews/} after each new review — recomputed from source (AVG/COUNT), never incremented. */
+    public void applyAggregateRating(BigDecimal ratingAvg, int ratingCount) {
+<span class="fc" id="L319">        this.ratingAvg = ratingAvg;</span>
+<span class="fc" id="L320">        this.ratingCount = ratingCount;</span>
+<span class="fc" id="L321">    }</span>
+
+    public Set&lt;Amenity&gt; getAmenities() {
+<span class="fc" id="L324">        return amenities;</span>
+    }
+
+    public void setAmenities(Set&lt;Amenity&gt; amenities) {
+<span class="fc" id="L328">        this.amenities = amenities;</span>
+<span class="fc" id="L329">    }</span>
+
+    public String getExternalSource() {
+<span class="nc" id="L332">        return externalSource;</span>
+    }
+
+    public String getExternalId() {
+<span class="nc" id="L336">        return externalId;</span>
+    }
+
+    public void setExternalReference(String externalSource, String externalId) {
+<span class="fc" id="L340">        this.externalSource = externalSource;</span>
+<span class="fc" id="L341">        this.externalId = externalId;</span>
+<span class="fc" id="L342">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

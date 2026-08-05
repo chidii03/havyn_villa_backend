@@ -1,0 +1,130 @@
+plugins {
+	id 'java'
+	id 'jacoco'
+	id 'org.springframework.boot' version '3.5.3'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.havyn'
+version = '0.0.1-SNAPSHOT'
+description = 'Havyn Villa API - Spring Boot modular monolith'
+
+java {
+	// Target Java 21 bytecode/source level without pinning a toolchain — this avoids
+	// Gradle toolchain auto-provisioning (no download repository configured in this
+	// environment) while still working on any JDK 21+ (dev machine here has JDK 23).
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+
+	// Observability (prompt 26) — versions for the three below are Spring Boot's own
+	// managed BOM versions (io.spring.dependency-management plugin), same as every
+	// other unversioned `implementation` line here; only logstash-logback-encoder
+	// needs a pinned version since it isn't part of that BOM (verified against Maven
+	// Central before adding, same discipline as every hand-picked dependency in this
+	// project — see the prompt-08 note on fabricated Spring Initializr coordinates).
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+	implementation 'io.opentelemetry:opentelemetry-exporter-logging' // dev-friendly default — logs spans, no external collector required
+	runtimeOnly 'io.opentelemetry:opentelemetry-exporter-otlp' // real backend (Jaeger/Tempo/Honeycomb/...), used only if management.otlp.tracing.endpoint is configured
+	implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	runtimeOnly 'org.postgresql:postgresql'
+	// Spring Security's Argon2PasswordEncoder needs a real Argon2 implementation on the
+	// classpath at runtime — it's an optional dependency of spring-security-crypto, not
+	// pulled in transitively. Without this, encoding/matching throws NoClassDefFoundError.
+	runtimeOnly 'org.bouncycastle:bcprov-jdk18on:1.80'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:postgresql'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	exclude '**/*IT.class'
+	finalizedBy jacocoTestReport
+}
+
+tasks.register('integrationTest', Test) {
+	description = 'Runs Docker-backed integration tests.'
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	useJUnitPlatform()
+	include '**/*IT.class'
+	shouldRunAfter test
+	finalizedBy jacocoTestReport
+}
+
+jacoco {
+	toolVersion = "0.8.13"
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+
+jacocoTestCoverageVerification {
+	dependsOn test, integrationTest
+	executionData tasks.named('test'), tasks.named('integrationTest')
+	violationRules {
+		rule {
+			element = 'PACKAGE'
+			includes = [
+				'com.havyn.pricing.service',
+				'com.havyn.booking.domain',
+				'com.havyn.booking.service',
+				'com.havyn.auth.domain',
+			]
+			limit {
+				counter = 'LINE'
+				minimum = 0.80
+			}
+		}
+	}
+}
+
+tasks.register('integrationCheck') {
+	description = 'Runs unit tests, Docker-backed integration tests, and coverage verification.'
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	dependsOn test, integrationTest, jacocoTestCoverageVerification
+}
+
+tasks.named('bootRun') {
+	def envFile = file('.env').exists() ? file('.env') : file('../../.env')
+	if (envFile.exists()) {
+		envFile.readLines().each { line ->
+			line = line.trim()
+			if (line && !line.startsWith('#') && line.contains('=')) {
+				def (key, value) = line.split('=', 2)
+				environment(key.trim(), value.trim())
+			}
+		}
+	}
+}
+

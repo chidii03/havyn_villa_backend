@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookingStatus.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.booking.domain</a> &gt; <span class="el_source">BookingStatus.java</span></div><h1>BookingStatus.java</h1><pre class="source lang-java linenums">package com.havyn.booking.domain;
+
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * project-docs/database/01-data-model.md#3: {@code pending/confirmed/cancelled/
+ * completed/refunded}. Only {@code PENDING -&gt; CANCELLED} is reachable end-to-end by
+ * this prompt (no payment provider exists yet — prompt 13). {@code PENDING -&gt;
+ * CONFIRMED} is what a future payment webhook will call; {@code CONFIRMED -&gt;
+ * REFUNDED}/{@code COMPLETED -&gt; REFUNDED} model what a post-payment cancellation looks
+ * like so {@link CancellationPolicyCalculator} has something correct to plug into —
+ * see backend/02-domain-modules.md's session 6 notes.
+ */
+<span class="fc" id="L15">public enum BookingStatus {</span>
+<span class="fc" id="L16">    PENDING,</span>
+<span class="fc" id="L17">    CONFIRMED,</span>
+<span class="fc" id="L18">    CANCELLED,</span>
+<span class="fc" id="L19">    COMPLETED,</span>
+<span class="fc" id="L20">    REFUNDED;</span>
+
+<span class="fc" id="L22">    private static final Map&lt;BookingStatus, Set&lt;BookingStatus&gt;&gt; ALLOWED_TRANSITIONS = Map.of(</span>
+<span class="fc" id="L23">            PENDING, Set.of(CONFIRMED, CANCELLED),</span>
+<span class="fc" id="L24">            CONFIRMED, Set.of(CANCELLED, COMPLETED, REFUNDED),</span>
+<span class="fc" id="L25">            CANCELLED, Set.of(),</span>
+<span class="fc" id="L26">            COMPLETED, Set.of(REFUNDED),</span>
+<span class="fc" id="L27">            REFUNDED, Set.of());</span>
+
+    public boolean canTransitionTo(BookingStatus target) {
+<span class="fc" id="L30">        return ALLOWED_TRANSITIONS.getOrDefault(this, Set.of()).contains(target);</span>
+    }
+
+    public boolean isActive() {
+<span class="fc bfc" id="L34" title="All 6 branches covered.">        return this == PENDING || this == CONFIRMED || this == COMPLETED;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

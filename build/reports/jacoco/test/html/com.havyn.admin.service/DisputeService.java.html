@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DisputeService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.admin.service</a> &gt; <span class="el_source">DisputeService.java</span></div><h1>DisputeService.java</h1><pre class="source lang-java linenums">package com.havyn.admin.service;
+
+import com.havyn.admin.domain.Dispute;
+import com.havyn.admin.domain.DisputeStatus;
+import com.havyn.admin.repo.DisputeRepository;
+import com.havyn.audit.service.AuditLogService;
+import com.havyn.booking.domain.Booking;
+import com.havyn.booking.repo.BookingRepository;
+import com.havyn.common.error.ConflictException;
+import com.havyn.common.error.ForbiddenException;
+import com.havyn.common.error.NotFoundException;
+import com.havyn.properties.repo.PropertyRepository;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Booking disputes — see project-docs/prompts/18-admin-platform.md. Only the
+ * booking's guest or the listing's host may raise one — reads {@code booking/}'s and
+ * {@code properties/}'s repositories directly (read-only), the same established
+ * cross-module pattern used throughout this codebase (e.g. {@code ReviewService}
+ * reading {@code BookingRepository}).
+ */
+@Service
+public class DisputeService {
+
+    private final DisputeRepository disputeRepository;
+    private final BookingRepository bookingRepository;
+    private final PropertyRepository propertyRepository;
+    private final AuditLogService auditLogService;
+    private final Clock clock;
+
+    public DisputeService(
+            DisputeRepository disputeRepository,
+            BookingRepository bookingRepository,
+            PropertyRepository propertyRepository,
+            AuditLogService auditLogService,
+<span class="fc" id="L43">            Clock clock) {</span>
+<span class="fc" id="L44">        this.disputeRepository = disputeRepository;</span>
+<span class="fc" id="L45">        this.bookingRepository = bookingRepository;</span>
+<span class="fc" id="L46">        this.propertyRepository = propertyRepository;</span>
+<span class="fc" id="L47">        this.auditLogService = auditLogService;</span>
+<span class="fc" id="L48">        this.clock = clock;</span>
+<span class="fc" id="L49">    }</span>
+
+    @Transactional
+    public Dispute raise(UUID callerId, UUID bookingId, String reason) {
+<span class="fc" id="L53">        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
+<span class="fc" id="L54">        boolean isGuest = booking.getGuestId().equals(callerId);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        boolean isHost = !isGuest</span>
+<span class="fc" id="L56">                &amp;&amp; propertyRepository.findById(booking.getPropertyId())</span>
+<span class="fc" id="L57">                        .map(property -&gt; property.getHostId().equals(callerId))</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                        .orElse(false);</span>
+<span class="fc bfc" id="L59" title="All 4 branches covered.">        if (!isGuest &amp;&amp; !isHost) {</span>
+<span class="fc" id="L60">            throw new ForbiddenException(&quot;You do not have access to this booking&quot;);</span>
+        }
+<span class="fc" id="L62">        return disputeRepository.save(new Dispute(bookingId, callerId, reason));</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Page&lt;Dispute&gt; listOpen(Pageable pageable) {
+<span class="nc" id="L67">        return disputeRepository.findAllByStatusOrderByCreatedAtAsc(DisputeStatus.OPEN, pageable);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public long countOpen() {
+<span class="nc" id="L72">        return disputeRepository.countByStatus(DisputeStatus.OPEN);</span>
+    }
+
+    @Transactional
+    public Dispute resolve(UUID adminId, UUID disputeId, String resolutionNotes) {
+<span class="fc" id="L77">        Dispute dispute = findOpen(disputeId);</span>
+<span class="fc" id="L78">        dispute.resolve(adminId, resolutionNotes, Instant.now(clock));</span>
+<span class="fc" id="L79">        auditLogService.record(</span>
+                adminId, &quot;DISPUTE_RESOLVED&quot;, &quot;Dispute&quot;, disputeId,
+<span class="fc" id="L81">                Map.of(&quot;status&quot;, &quot;OPEN&quot;), Map.of(&quot;status&quot;, &quot;RESOLVED&quot;, &quot;resolutionNotes&quot;, resolutionNotes));</span>
+<span class="fc" id="L82">        return dispute;</span>
+    }
+
+    @Transactional
+    public Dispute dismiss(UUID adminId, UUID disputeId, String resolutionNotes) {
+<span class="nc" id="L87">        Dispute dispute = findOpen(disputeId);</span>
+<span class="nc" id="L88">        dispute.dismiss(adminId, resolutionNotes, Instant.now(clock));</span>
+<span class="nc" id="L89">        auditLogService.record(</span>
+                adminId, &quot;DISPUTE_DISMISSED&quot;, &quot;Dispute&quot;, disputeId,
+<span class="nc" id="L91">                Map.of(&quot;status&quot;, &quot;OPEN&quot;), Map.of(&quot;status&quot;, &quot;DISMISSED&quot;, &quot;resolutionNotes&quot;, resolutionNotes));</span>
+<span class="nc" id="L92">        return dispute;</span>
+    }
+
+    private Dispute findOpen(UUID disputeId) {
+<span class="pc" id="L96">        Dispute dispute = disputeRepository.findById(disputeId).orElseThrow(() -&gt; NotFoundException.of(&quot;Dispute&quot;, disputeId));</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (dispute.getStatus() != DisputeStatus.OPEN) {</span>
+<span class="fc" id="L98">            throw new ConflictException(&quot;DISPUTE_NOT_OPEN&quot;, &quot;This dispute has already been resolved or dismissed&quot;);</span>
+        }
+<span class="fc" id="L100">        return dispute;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

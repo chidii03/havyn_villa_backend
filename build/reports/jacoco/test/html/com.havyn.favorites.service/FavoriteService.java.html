@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FavoriteService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.favorites.service</a> &gt; <span class="el_source">FavoriteService.java</span></div><h1>FavoriteService.java</h1><pre class="source lang-java linenums">package com.havyn.favorites.service;
+
+import com.havyn.common.error.NotFoundException;
+import com.havyn.favorites.domain.Favorite;
+import com.havyn.favorites.repo.FavoriteRepository;
+import com.havyn.properties.repo.PropertyRepository;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Save/unsave + list — see project-docs/prompts/15-reviews-favorites.md. Object-level
+ * authorization is implicit: every query/mutation is scoped to the calling user's own id
+ * (there's no {@code {id}} path variable for a favorite row itself, unlike bookings/media,
+ * so there's no &quot;another user's favorite&quot; a caller could ever address by id). Adding an
+ * already-favorited property is treated as an idempotent no-op (200, not 201) rather than
+ * a conflict — unlike a review, favoriting is a toggle, not a one-time action.
+ */
+@Service
+public class FavoriteService {
+
+    private final FavoriteRepository favoriteRepository;
+    private final PropertyRepository propertyRepository;
+
+<span class="nc" id="L27">    public FavoriteService(FavoriteRepository favoriteRepository, PropertyRepository propertyRepository) {</span>
+<span class="nc" id="L28">        this.favoriteRepository = favoriteRepository;</span>
+<span class="nc" id="L29">        this.propertyRepository = propertyRepository;</span>
+<span class="nc" id="L30">    }</span>
+
+    @Transactional
+    public FavoriteResult add(UUID userId, UUID propertyId) {
+<span class="nc" id="L34">        return favoriteRepository.findByUserIdAndPropertyId(userId, propertyId)</span>
+<span class="nc" id="L35">                .map(existing -&gt; new FavoriteResult(existing, false))</span>
+<span class="nc" id="L36">                .orElseGet(() -&gt; {</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">                    if (!propertyRepository.existsById(propertyId)) {</span>
+<span class="nc" id="L38">                        throw NotFoundException.of(&quot;Property&quot;, propertyId);</span>
+                    }
+<span class="nc" id="L40">                    Favorite saved = favoriteRepository.save(new Favorite(userId, propertyId));</span>
+<span class="nc" id="L41">                    return new FavoriteResult(saved, true);</span>
+                });
+    }
+
+    @Transactional
+    public void remove(UUID userId, UUID propertyId) {
+<span class="nc" id="L47">        Favorite favorite = favoriteRepository.findByUserIdAndPropertyId(userId, propertyId)</span>
+<span class="nc" id="L48">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Favorite&quot;, propertyId));</span>
+<span class="nc" id="L49">        favoriteRepository.delete(favorite);</span>
+<span class="nc" id="L50">    }</span>
+
+    @Transactional(readOnly = true)
+    public Page&lt;Favorite&gt; list(UUID userId, Pageable pageable) {
+<span class="nc" id="L54">        return favoriteRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable);</span>
+    }
+
+<span class="nc" id="L57">    public record FavoriteResult(Favorite favorite, boolean created) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

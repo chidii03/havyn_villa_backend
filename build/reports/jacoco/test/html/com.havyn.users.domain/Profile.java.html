@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Profile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.users.domain</a> &gt; <span class="el_source">Profile.java</span></div><h1>Profile.java</h1><pre class="source lang-java linenums">package com.havyn.users.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = &quot;profile&quot;)
+public class Profile extends BaseEntity {
+
+    @OneToOne
+    @JoinColumn(name = &quot;user_id&quot;, nullable = false, unique = true)
+    private User user;
+
+    @Column(name = &quot;full_name&quot;, nullable = false, length = 120)
+    private String fullName;
+
+    @Column(name = &quot;phone&quot;, length = 30)
+    private String phone;
+
+    @Column(name = &quot;avatar_url&quot;)
+    private String avatarUrl;
+
+<span class="nc" id="L27">    protected Profile() {</span>
+        // JPA
+<span class="nc" id="L29">    }</span>
+
+<span class="nc" id="L31">    public Profile(User user, String fullName) {</span>
+<span class="nc" id="L32">        this.user = user;</span>
+<span class="nc" id="L33">        this.fullName = fullName;</span>
+<span class="nc" id="L34">    }</span>
+
+    public User getUser() {
+<span class="nc" id="L37">        return user;</span>
+    }
+
+    public String getFullName() {
+<span class="nc" id="L41">        return fullName;</span>
+    }
+
+    public void setFullName(String fullName) {
+<span class="nc" id="L45">        this.fullName = fullName;</span>
+<span class="nc" id="L46">    }</span>
+
+    public String getPhone() {
+<span class="nc" id="L49">        return phone;</span>
+    }
+
+    public void setPhone(String phone) {
+<span class="nc" id="L53">        this.phone = phone;</span>
+<span class="nc" id="L54">    }</span>
+
+    public String getAvatarUrl() {
+<span class="nc" id="L57">        return avatarUrl;</span>
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+<span class="nc" id="L61">        this.avatarUrl = avatarUrl;</span>
+<span class="nc" id="L62">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

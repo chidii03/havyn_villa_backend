@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuditLog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.audit.domain</a> &gt; <span class="el_source">AuditLog.java</span></div><h1>AuditLog.java</h1><pre class="source lang-java linenums">package com.havyn.audit.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+/**
+ * A queryable, append-only record of every sensitive admin/moderation action — see
+ * project-docs/prompts/18-admin-platform.md and database/01-data-model.md#6
+ * (&quot;captures actor, action, target type/id, before/after (jsonb), timestamp&quot;). This
+ * is the real table sessions 7/15/16 all deferred, each explicitly noting &quot;no real
+ * jsonb convention exists yet in this schema&quot; — this is where that convention gets
+ * established, using Hibernate 6's native {@code @JdbcTypeCode(SqlTypes.JSON)}
+ * support (no extra dependency needed).
+ *
+ * {@code actorId} is a real, nullable FK (ON DELETE SET NULL — the log entry must
+ * outlive the actor account being later removed). {@code targetType}/{@code targetId}
+ * are a plain, polymorphic pair (no single FK target is possible across the several
+ * tables admin actions touch) — matches the data model's own &quot;polymorphic
+ * actor/target&quot; description. Never updated after creation, despite extending
+ * {@link BaseEntity} (whose {@code updatedAt} simply never moves past creation).
+ */
+@Entity
+@Table(name = &quot;audit_log&quot;)
+public class AuditLog extends BaseEntity {
+
+    @Column(name = &quot;actor_id&quot;)
+    private UUID actorId;
+
+    @Column(name = &quot;action&quot;, nullable = false, length = 60)
+    private String action;
+
+    @Column(name = &quot;target_type&quot;, nullable = false, length = 60)
+    private String targetType;
+
+    @Column(name = &quot;target_id&quot;)
+    private UUID targetId;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = &quot;before&quot;, columnDefinition = &quot;jsonb&quot;)
+    private String before;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = &quot;after&quot;, columnDefinition = &quot;jsonb&quot;)
+    private String after;
+
+<span class="nc" id="L51">    protected AuditLog() {</span>
+        // JPA
+<span class="nc" id="L53">    }</span>
+
+<span class="fc" id="L55">    public AuditLog(UUID actorId, String action, String targetType, UUID targetId, String before, String after) {</span>
+<span class="fc" id="L56">        this.actorId = actorId;</span>
+<span class="fc" id="L57">        this.action = action;</span>
+<span class="fc" id="L58">        this.targetType = targetType;</span>
+<span class="fc" id="L59">        this.targetId = targetId;</span>
+<span class="fc" id="L60">        this.before = before;</span>
+<span class="fc" id="L61">        this.after = after;</span>
+<span class="fc" id="L62">    }</span>
+
+    public UUID getActorId() {
+<span class="fc" id="L65">        return actorId;</span>
+    }
+
+    public String getAction() {
+<span class="fc" id="L69">        return action;</span>
+    }
+
+    public String getTargetType() {
+<span class="fc" id="L73">        return targetType;</span>
+    }
+
+    public UUID getTargetId() {
+<span class="fc" id="L77">        return targetId;</span>
+    }
+
+    public String getBefore() {
+<span class="fc" id="L81">        return before;</span>
+    }
+
+    public String getAfter() {
+<span class="fc" id="L85">        return after;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

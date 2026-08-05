@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Message.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.messaging.domain</a> &gt; <span class="el_source">Message.java</span></div><h1>Message.java</h1><pre class="source lang-java linenums">package com.havyn.messaging.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * A single message within a {@link Conversation} — see
+ * project-docs/prompts/16-messaging-notifications.md. {@code conversationId} is a real
+ * FK (ON DELETE CASCADE — a message is meaningless without its conversation, same
+ * category as {@code property_media.property_id}). {@code senderId} is a plain UUID
+ * column, same historical-record reasoning as {@code Conversation.hostId}/{@code guestId}.
+ */
+@Entity
+@Table(name = &quot;message&quot;)
+public class Message extends BaseEntity {
+
+    @Column(name = &quot;conversation_id&quot;, nullable = false)
+    private UUID conversationId;
+
+    @Column(name = &quot;sender_id&quot;, nullable = false)
+    private UUID senderId;
+
+    @Column(name = &quot;body&quot;, nullable = false)
+    private String body;
+
+    @Column(name = &quot;read_at&quot;)
+    private Instant readAt;
+
+<span class="nc" id="L33">    protected Message() {</span>
+        // JPA
+<span class="nc" id="L35">    }</span>
+
+<span class="fc" id="L37">    public Message(UUID conversationId, UUID senderId, String body) {</span>
+<span class="fc" id="L38">        this.conversationId = conversationId;</span>
+<span class="fc" id="L39">        this.senderId = senderId;</span>
+<span class="fc" id="L40">        this.body = body;</span>
+<span class="fc" id="L41">    }</span>
+
+    public void markRead(Instant when) {
+<span class="fc" id="L44">        this.readAt = when;</span>
+<span class="fc" id="L45">    }</span>
+
+    public UUID getConversationId() {
+<span class="nc" id="L48">        return conversationId;</span>
+    }
+
+    public UUID getSenderId() {
+<span class="nc" id="L52">        return senderId;</span>
+    }
+
+    public String getBody() {
+<span class="nc" id="L56">        return body;</span>
+    }
+
+    public Instant getReadAt() {
+<span class="fc" id="L60">        return readAt;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

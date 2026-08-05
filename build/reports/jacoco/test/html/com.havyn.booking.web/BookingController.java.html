@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookingController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.booking.web</a> &gt; <span class="el_source">BookingController.java</span></div><h1>BookingController.java</h1><pre class="source lang-java linenums">package com.havyn.booking.web;
+
+import com.havyn.auth.domain.AuthenticatedUser;
+import com.havyn.booking.domain.Booking;
+import com.havyn.booking.service.BookingHoldLock;
+import com.havyn.booking.service.BookingService;
+import com.havyn.booking.service.CancellationOutcome;
+import com.havyn.common.web.PageResponse;
+import com.havyn.properties.repo.PropertyRepository;
+import jakarta.validation.Valid;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Guest-facing booking CRUD — see project-docs/prompts/12-booking-engine.md. Every
+ * endpoint requires authentication (the default {@code SecurityConfig} rule already
+ * covers this — no specific role needed, any signed-in account can book).
+ */
+@RestController
+@RequestMapping(&quot;/api/v1/bookings&quot;)
+public class BookingController {
+
+    private final BookingService bookingService;
+    private final BookingHoldLock bookingHoldLock;
+    private final PropertyRepository propertyRepository;
+
+<span class="nc" id="L39">    public BookingController(BookingService bookingService, BookingHoldLock bookingHoldLock, PropertyRepository propertyRepository) {</span>
+<span class="nc" id="L40">        this.bookingService = bookingService;</span>
+<span class="nc" id="L41">        this.bookingHoldLock = bookingHoldLock;</span>
+<span class="nc" id="L42">        this.propertyRepository = propertyRepository;</span>
+<span class="nc" id="L43">    }</span>
+
+    @PostMapping
+    public ResponseEntity&lt;BookingDetail&gt; create(
+            Authentication authentication,
+            @RequestHeader(value = &quot;Idempotency-Key&quot;, required = false) String idempotencyKey,
+            @Valid @RequestBody CreateBookingRequest request) {
+<span class="nc" id="L50">        UUID guestId = principal(authentication);</span>
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (idempotencyKey != null) {</span>
+<span class="nc" id="L53">            Optional&lt;Booking&gt; replay = bookingService.findByIdempotencyKey(guestId, idempotencyKey);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            if (replay.isPresent()) {</span>
+<span class="nc" id="L55">                return ResponseEntity.ok(toDetail(replay.get()));</span>
+            }
+        }
+
+<span class="nc" id="L59">        Booking booking = bookingHoldLock.withLock(request.propertyId(), () -&gt; bookingService.create(guestId, idempotencyKey, request));</span>
+<span class="nc" id="L60">        return ResponseEntity.status(HttpStatus.CREATED).body(toDetail(booking));</span>
+    }
+
+    @GetMapping
+    public PageResponse&lt;BookingDetail&gt; list(Authentication authentication, @PageableDefault(size = 20) Pageable pageable) {
+<span class="nc" id="L65">        return PageResponse.of(bookingService.listOwned(principal(authentication), pageable).map(this::toDetail));</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public BookingDetail get(Authentication authentication, @PathVariable UUID id) {
+<span class="nc" id="L70">        return toDetail(bookingService.getOwned(principal(authentication), id));</span>
+    }
+
+    @PostMapping(&quot;/{id}/cancel&quot;)
+    public CancellationResult cancel(Authentication authentication, @PathVariable UUID id) {
+<span class="nc" id="L75">        CancellationOutcome outcome = bookingService.cancel(principal(authentication), id);</span>
+<span class="nc" id="L76">        return new CancellationResult(toDetail(outcome.booking()), outcome.refundPercentage(), outcome.refundAmount());</span>
+    }
+
+    private BookingDetail toDetail(Booking booking) {
+<span class="nc" id="L80">        BookingPropertySummary property = propertyRepository.findById(booking.getPropertyId())</span>
+<span class="nc" id="L81">                .map(BookingPropertySummary::from)</span>
+<span class="nc" id="L82">                .orElseGet(() -&gt; BookingPropertySummary.unavailable(booking.getPropertyId()));</span>
+<span class="nc" id="L83">        return BookingDetail.from(booking, property);</span>
+    }
+
+    private UUID principal(Authentication authentication) {
+<span class="nc" id="L87">        return ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookingDetail.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.booking.web</a> &gt; <span class="el_source">BookingDetail.java</span></div><h1>BookingDetail.java</h1><pre class="source lang-java linenums">package com.havyn.booking.web;
+
+import com.havyn.booking.domain.Booking;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
+/** Guest-facing booking detail — like {@link QuoteResponse}, no commission line. */
+<span class="nc" id="L10">public record BookingDetail(</span>
+        UUID id,
+        BookingPropertySummary property,
+        LocalDate checkIn,
+        LocalDate checkOut,
+        int nights,
+        int guests,
+        BigDecimal baseTotal,
+        BigDecimal cleaningFee,
+        BigDecimal serviceFee,
+        BigDecimal discountTotal,
+        BigDecimal taxTotal,
+        BigDecimal grandTotal,
+        String currency,
+        String status,
+        Instant holdExpiresAt,
+        Instant createdAt) {
+
+    public static BookingDetail from(Booking booking, BookingPropertySummary property) {
+<span class="nc" id="L29">        return new BookingDetail(</span>
+<span class="nc" id="L30">                booking.getId(),</span>
+                property,
+<span class="nc" id="L32">                booking.getCheckIn(),</span>
+<span class="nc" id="L33">                booking.getCheckOut(),</span>
+<span class="nc" id="L34">                booking.getNights(),</span>
+<span class="nc" id="L35">                booking.getGuestsCount(),</span>
+<span class="nc" id="L36">                booking.getBaseTotal(),</span>
+<span class="nc" id="L37">                booking.getCleaningFee(),</span>
+<span class="nc" id="L38">                booking.getServiceFee(),</span>
+<span class="nc" id="L39">                booking.getDiscountTotal(),</span>
+<span class="nc" id="L40">                booking.getTaxTotal(),</span>
+<span class="nc" id="L41">                booking.getGrandTotal(),</span>
+<span class="nc" id="L42">                booking.getCurrency(),</span>
+<span class="nc" id="L43">                booking.getStatus().name(),</span>
+<span class="nc" id="L44">                booking.getHoldExpiresAt(),</span>
+<span class="nc" id="L45">                booking.getCreatedAt());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

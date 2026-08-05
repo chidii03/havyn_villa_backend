@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Dispute.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.admin.domain</a> &gt; <span class="el_source">Dispute.java</span></div><h1>Dispute.java</h1><pre class="source lang-java linenums">package com.havyn.admin.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * A guest or host dispute over a booking — see project-docs/prompts/18-admin-platform.md.
+ * {@code bookingId} is a real FK (a dispute without a genuine booking behind it isn't
+ * a valid state, same reasoning as {@code payment.booking_id}/{@code review.booking_id}).
+ * {@code raisedBy} is a plain UUID column — could be either the booking's guest or the
+ * property's host (validated at raise-time in {@code DisputeService}, not by a DB
+ * constraint), same historical-record reasoning as {@code booking.guest_id}.
+ */
+@Entity
+@Table(name = &quot;dispute&quot;)
+public class Dispute extends BaseEntity {
+
+    @Column(name = &quot;booking_id&quot;, nullable = false)
+    private UUID bookingId;
+
+    @Column(name = &quot;raised_by&quot;, nullable = false)
+    private UUID raisedBy;
+
+    @Column(name = &quot;reason&quot;, nullable = false)
+    private String reason;
+
+<span class="pc" id="L33">    @Enumerated(EnumType.STRING)</span>
+    @Column(name = &quot;status&quot;, nullable = false, length = 20)
+    private DisputeStatus status = DisputeStatus.OPEN;
+
+    @Column(name = &quot;resolution_notes&quot;)
+    private String resolutionNotes;
+
+    @Column(name = &quot;resolved_by&quot;)
+    private UUID resolvedBy;
+
+    @Column(name = &quot;resolved_at&quot;)
+    private Instant resolvedAt;
+
+<span class="nc" id="L46">    protected Dispute() {</span>
+        // JPA
+<span class="nc" id="L48">    }</span>
+
+<span class="fc" id="L50">    public Dispute(UUID bookingId, UUID raisedBy, String reason) {</span>
+<span class="fc" id="L51">        this.bookingId = bookingId;</span>
+<span class="fc" id="L52">        this.raisedBy = raisedBy;</span>
+<span class="fc" id="L53">        this.reason = reason;</span>
+<span class="fc" id="L54">    }</span>
+
+    public void resolve(UUID adminId, String resolutionNotes, Instant when) {
+<span class="fc" id="L57">        this.status = DisputeStatus.RESOLVED;</span>
+<span class="fc" id="L58">        this.resolutionNotes = resolutionNotes;</span>
+<span class="fc" id="L59">        this.resolvedBy = adminId;</span>
+<span class="fc" id="L60">        this.resolvedAt = when;</span>
+<span class="fc" id="L61">    }</span>
+
+    public void dismiss(UUID adminId, String resolutionNotes, Instant when) {
+<span class="nc" id="L64">        this.status = DisputeStatus.DISMISSED;</span>
+<span class="nc" id="L65">        this.resolutionNotes = resolutionNotes;</span>
+<span class="nc" id="L66">        this.resolvedBy = adminId;</span>
+<span class="nc" id="L67">        this.resolvedAt = when;</span>
+<span class="nc" id="L68">    }</span>
+
+    public UUID getBookingId() {
+<span class="fc" id="L71">        return bookingId;</span>
+    }
+
+    public UUID getRaisedBy() {
+<span class="fc" id="L75">        return raisedBy;</span>
+    }
+
+    public String getReason() {
+<span class="nc" id="L79">        return reason;</span>
+    }
+
+    public DisputeStatus getStatus() {
+<span class="fc" id="L83">        return status;</span>
+    }
+
+    public String getResolutionNotes() {
+<span class="nc" id="L87">        return resolutionNotes;</span>
+    }
+
+    public UUID getResolvedBy() {
+<span class="fc" id="L91">        return resolvedBy;</span>
+    }
+
+    public Instant getResolvedAt() {
+<span class="nc" id="L95">        return resolvedAt;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

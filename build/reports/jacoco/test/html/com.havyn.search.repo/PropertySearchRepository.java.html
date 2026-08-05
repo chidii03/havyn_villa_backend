@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertySearchRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.search.repo</a> &gt; <span class="el_source">PropertySearchRepository.java</span></div><h1>PropertySearchRepository.java</h1><pre class="source lang-java linenums">package com.havyn.search.repo;
+
+import com.havyn.amenities.domain.Amenity;
+import com.havyn.properties.domain.Availability;
+import com.havyn.properties.domain.Property;
+import com.havyn.properties.domain.PropertyStatus;
+import com.havyn.search.service.SearchCriteria;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+
+/**
+ * Dynamic search query building via the JPA Criteria API, operating directly against
+ * {@code properties}' entities without a Spring Data repository — prompt 11's file
+ * scope doesn't include {@code properties/}, so this stays entirely inside {@code
+ * search/} rather than adding a {@code JpaSpecificationExecutor} to {@code
+ * PropertyRepository}. See project-docs/prompts/11-search-discovery.md.
+ */
+@Repository
+<span class="nc" id="L33">public class PropertySearchRepository {</span>
+
+    // Field injection, not the codebase's usual constructor injection — @PersistenceContext
+    // is a JPA container-injection point (processed by PersistenceAnnotationBeanPostProcessor),
+    // not a regular bean lookup, so it needs a field/setter target.
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public Page&lt;Property&gt; search(SearchCriteria criteria, Pageable pageable) {
+<span class="nc" id="L42">        CriteriaBuilder cb = entityManager.getCriteriaBuilder();</span>
+
+<span class="nc" id="L44">        CriteriaQuery&lt;Property&gt; selectQuery = cb.createQuery(Property.class);</span>
+<span class="nc" id="L45">        Root&lt;Property&gt; selectRoot = selectQuery.from(Property.class);</span>
+        // Fetch join, not a plain join — SearchResultItem.from() reads
+        // property.getType().getCode() for every row, and `type` is FetchType.LAZY, so
+        // without this every page of results was N+1: one query for the page of
+        // Properties, then one more per row to lazy-load its PropertyType. Safe with
+        // pageable's setFirstResult/setMaxResults below specifically because `type` is
+        // a @ManyToOne (to-one) — Hibernate only applies pagination in-memory (wrong
+        // results) for a *collection* fetch join, which this isn't.
+<span class="nc" id="L53">        selectRoot.fetch(&quot;type&quot;, JoinType.INNER);</span>
+<span class="nc" id="L54">        selectQuery.select(selectRoot)</span>
+<span class="nc" id="L55">                .where(predicates(cb, selectQuery, selectRoot, criteria))</span>
+<span class="nc" id="L56">                .orderBy(order(cb, selectRoot, criteria));</span>
+
+<span class="nc" id="L58">        List&lt;Property&gt; content = entityManager.createQuery(selectQuery)</span>
+<span class="nc" id="L59">                .setFirstResult((int) pageable.getOffset())</span>
+<span class="nc" id="L60">                .setMaxResults(pageable.getPageSize())</span>
+<span class="nc" id="L61">                .getResultList();</span>
+
+<span class="nc" id="L63">        CriteriaQuery&lt;Long&gt; countQuery = cb.createQuery(Long.class);</span>
+<span class="nc" id="L64">        Root&lt;Property&gt; countRoot = countQuery.from(Property.class);</span>
+<span class="nc" id="L65">        countQuery.select(cb.count(countRoot)).where(predicates(cb, countQuery, countRoot, criteria));</span>
+<span class="nc" id="L66">        long total = entityManager.createQuery(countQuery).getSingleResult();</span>
+
+<span class="nc" id="L68">        return new PageImpl&lt;&gt;(content, pageable, total);</span>
+    }
+
+    private Predicate[] predicates(CriteriaBuilder cb, CriteriaQuery&lt;?&gt; query, Root&lt;Property&gt; root, SearchCriteria c) {
+<span class="nc" id="L72">        List&lt;Predicate&gt; predicates = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L73">        predicates.add(cb.equal(root.get(&quot;status&quot;), PropertyStatus.ACTIVE));</span>
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (c.destination() != null) {</span>
+<span class="nc" id="L76">            String pattern = &quot;%&quot; + c.destination().trim().toLowerCase() + &quot;%&quot;;</span>
+<span class="nc" id="L77">            predicates.add(cb.or(</span>
+<span class="nc" id="L78">                    cb.like(cb.lower(root.get(&quot;city&quot;)), pattern),</span>
+<span class="nc" id="L79">                    cb.like(cb.lower(root.get(&quot;state&quot;)), pattern),</span>
+<span class="nc" id="L80">                    cb.like(cb.lower(root.get(&quot;country&quot;)), pattern)));</span>
+        }
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (c.minPrice() != null) {</span>
+<span class="nc" id="L83">            predicates.add(cb.greaterThanOrEqualTo(root.get(&quot;basePrice&quot;), c.minPrice()));</span>
+        }
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (c.maxPrice() != null) {</span>
+<span class="nc" id="L86">            predicates.add(cb.lessThanOrEqualTo(root.get(&quot;basePrice&quot;), c.maxPrice()));</span>
+        }
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (c.guests() != null) {</span>
+<span class="nc" id="L89">            predicates.add(cb.greaterThanOrEqualTo(root.get(&quot;capacity&quot;), c.guests()));</span>
+        }
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        if (c.bedrooms() != null) {</span>
+<span class="nc" id="L92">            predicates.add(cb.greaterThanOrEqualTo(root.get(&quot;bedrooms&quot;), c.bedrooms()));</span>
+        }
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (c.minRating() != null) {</span>
+<span class="nc" id="L95">            predicates.add(cb.greaterThanOrEqualTo(root.get(&quot;ratingAvg&quot;), c.minRating()));</span>
+        }
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (c.typeCode() != null) {</span>
+<span class="nc" id="L98">            predicates.add(cb.equal(root.get(&quot;type&quot;).get(&quot;code&quot;), c.typeCode()));</span>
+        }
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        for (String amenityCode : c.amenityCodes()) {</span>
+<span class="nc" id="L101">            predicates.add(cb.exists(hasAmenitySubquery(cb, query, root, amenityCode)));</span>
+<span class="nc" id="L102">        }</span>
+<span class="nc bnc" id="L103" title="All 4 branches missed.">        if (c.checkIn() != null &amp;&amp; c.checkOut() != null) {</span>
+<span class="nc" id="L104">            predicates.add(cb.not(cb.exists(unavailableInRangeSubquery(cb, query, root, c))));</span>
+        }
+
+<span class="nc" id="L107">        return predicates.toArray(new Predicate[0]);</span>
+    }
+
+    private Subquery&lt;Long&gt; hasAmenitySubquery(CriteriaBuilder cb, CriteriaQuery&lt;?&gt; query, Root&lt;Property&gt; outer, String amenityCode) {
+<span class="nc" id="L111">        Subquery&lt;Long&gt; subquery = query.subquery(Long.class);</span>
+<span class="nc" id="L112">        Root&lt;Property&gt; correlated = subquery.correlate(outer);</span>
+<span class="nc" id="L113">        Join&lt;Property, Amenity&gt; amenities = correlated.join(&quot;amenities&quot;);</span>
+<span class="nc" id="L114">        subquery.select(cb.literal(1L)).where(cb.equal(amenities.get(&quot;code&quot;), amenityCode));</span>
+<span class="nc" id="L115">        return subquery;</span>
+    }
+
+    private Subquery&lt;Long&gt; unavailableInRangeSubquery(CriteriaBuilder cb, CriteriaQuery&lt;?&gt; query, Root&lt;Property&gt; outer, SearchCriteria c) {
+<span class="nc" id="L119">        Subquery&lt;Long&gt; subquery = query.subquery(Long.class);</span>
+<span class="nc" id="L120">        Root&lt;Availability&gt; availability = subquery.from(Availability.class);</span>
+<span class="nc" id="L121">        Predicate sameProperty = cb.equal(availability.get(&quot;property&quot;).get(&quot;id&quot;), outer.get(&quot;id&quot;));</span>
+        // Checkout night itself isn't occupied — the exclusive upper bound is checkOut - 1 day.
+<span class="nc" id="L123">        Predicate inRange = cb.between(availability.get(&quot;date&quot;), c.checkIn(), c.checkOut().minusDays(1));</span>
+<span class="nc" id="L124">        Predicate unavailable = cb.or(cb.isTrue(availability.get(&quot;blocked&quot;)), availability.get(&quot;bookingId&quot;).isNotNull());</span>
+<span class="nc" id="L125">        subquery.select(cb.literal(1L)).where(cb.and(sameProperty, inRange, unavailable));</span>
+<span class="nc" id="L126">        return subquery;</span>
+    }
+
+    private Order[] order(CriteriaBuilder cb, Root&lt;Property&gt; root, SearchCriteria c) {
+<span class="nc bnc" id="L130" title="All 4 branches missed.">        return switch (c.sort()) {</span>
+<span class="nc" id="L131">            case PRICE_ASC -&gt; new Order[] {cb.asc(root.get(&quot;basePrice&quot;))};</span>
+<span class="nc" id="L132">            case PRICE_DESC -&gt; new Order[] {cb.desc(root.get(&quot;basePrice&quot;))};</span>
+<span class="nc" id="L133">            case RATING_DESC -&gt; new Order[] {cb.desc(root.get(&quot;ratingAvg&quot;)), cb.desc(root.get(&quot;createdAt&quot;))};</span>
+<span class="nc" id="L134">            case NEWEST -&gt; new Order[] {cb.desc(root.get(&quot;createdAt&quot;))};</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

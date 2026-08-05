@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Payout.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.payments.domain</a> &gt; <span class="el_source">Payout.java</span></div><h1>Payout.java</h1><pre class="source lang-java linenums">package com.havyn.payments.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.UUID;
+
+/** Accrues per (host, period, currency) as payments succeed — see {@code PayoutStatus}'s Javadoc for why every row stays {@code PENDING} today. */
+@Entity
+@Table(name = &quot;payout&quot;)
+public class Payout extends BaseEntity {
+
+    @Column(name = &quot;host_id&quot;, nullable = false)
+    private UUID hostId;
+
+    @Column(name = &quot;period&quot;, nullable = false, length = 7)
+    private String period;
+
+<span class="pc" id="L23">    @Column(name = &quot;amount&quot;, nullable = false)</span>
+    private BigDecimal amount = BigDecimal.ZERO;
+
+    @Column(name = &quot;currency&quot;, nullable = false, length = 3)
+    private String currency;
+
+<span class="pc" id="L29">    @Enumerated(EnumType.STRING)</span>
+    @Column(name = &quot;status&quot;, nullable = false, length = 20)
+    private PayoutStatus status = PayoutStatus.PENDING;
+
+<span class="nc" id="L33">    protected Payout() {</span>
+        // JPA
+<span class="nc" id="L35">    }</span>
+
+<span class="fc" id="L37">    public Payout(UUID hostId, String period, String currency) {</span>
+<span class="fc" id="L38">        this.hostId = hostId;</span>
+<span class="fc" id="L39">        this.period = period;</span>
+<span class="fc" id="L40">        this.currency = currency;</span>
+<span class="fc" id="L41">    }</span>
+
+    public UUID getHostId() {
+<span class="nc" id="L44">        return hostId;</span>
+    }
+
+    public String getPeriod() {
+<span class="nc" id="L48">        return period;</span>
+    }
+
+    public BigDecimal getAmount() {
+<span class="fc" id="L52">        return amount;</span>
+    }
+
+    public String getCurrency() {
+<span class="fc" id="L56">        return currency;</span>
+    }
+
+    public PayoutStatus getStatus() {
+<span class="fc" id="L60">        return status;</span>
+    }
+
+    public void accrue(BigDecimal additionalAmount) {
+<span class="fc" id="L64">        this.amount = this.amount.add(additionalAmount);</span>
+<span class="fc" id="L65">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RayPropClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.rayprop</a> &gt; <span class="el_source">RayPropClient.java</span></div><h1>RayPropClient.java</h1><pre class="source lang-java linenums">package com.havyn.properties.rayprop;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.MissingNode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+/**
+ * REST client for https://rayprop.io/docs. Sandbox keys ({@code rp_sandbox_*}) only
+ * grant GET access (search/availability/quotes) — this client never calls a
+ * write endpoint, matching what this integration actually needs (import, not booking).
+ *
+ * &lt;p&gt;&lt;strong&gt;Pagination is page-based, not cursor-based&lt;/strong&gt; — confirmed directly
+ * against the live docs (Pagination page): {@code page}/{@code limit} request params,
+ * {@code meta.hasMore} response field, {@code limit} silently capped at 50 server-side.
+ * There is no {@code next_cursor} anywhere in RayProp's API.
+ *
+ * &lt;p&gt;&lt;strong&gt;The real ceiling is a daily unique-listing quota, not a page-depth
+ * limit.&lt;/strong&gt; Every {@code /listings} response carries a {@code dataAccess} block
+ * ({@code accessedToday}/{@code dailyLimit}/{@code remainingToday}); RayProp's docs
+ * state plainly: &quot;Sandbox uses Free tier limits&quot; (500 unique listings/day), scaling up
+ * to 5,000/day only on their paid Growth tier with a live key. Hitting that cap returns
+ * a documented {@code DAILY_LIMIT_REACHED} error — handled here as a graceful stop
+ * ({@link RayPropFetchResult#stoppedEarlyDueToQuota()}), not a failure. No amount of
+ * extra pagination, city iteration, or additional endpoints changes this: the quota is
+ * account-wide, and RayProp has no other listing-returning endpoint (Availability/
+ * Quotes/Holds/Reservations/Payments/Reviews are booking-flow endpoints, not inventory
+ * discovery) — see project-docs's RayProp integration notes for the full audit.
+ *
+ * &lt;p&gt;Deliberately synchronous ({@link RestClient}, not {@code WebClient}) — this is an
+ * admin-triggered, sequential sync job, not a high-throughput streaming consumer,  and
+ * RayProp's own rate limit (5 req/sec on sandbox) means added parallelism would only
+ * reach the account-wide daily quota faster, not retrieve more inventory. WebClient's
+ * reactive overhead buys nothing here.
+ */
+@Component
+public class RayPropClient {
+
+<span class="fc" id="L46">    private static final Logger log = LoggerFactory.getLogger(RayPropClient.class);</span>
+
+    /** RayProp's rate-limit section documents 429 as transient (per-second) — worth one retry, not a real failure. */
+    private static final int MAX_RATE_LIMIT_RETRIES = 3;
+<span class="fc" id="L50">    private static final long[] RETRY_BACKOFF_MS = {500, 1500, 3000};</span>
+    /** Guards against an implausible/clock-skewed X-RateLimit-Reset turning into an hours-long wait. */
+    private static final long MAX_BACKOFF_MS = 10_000;
+
+    private final RestClient restClient;
+    private final RayPropProperties properties;
+    private final ObjectMapper objectMapper;
+
+    /**
+     * Takes the Spring Boot auto-configured {@link RestClient.Builder} — same reasoning
+     * as {@code PaystackPaymentProvider}: lets a test bind a {@code MockRestServiceServer}
+     * to this exact client without a live RayProp account.
+     */
+<span class="fc" id="L63">    public RayPropClient(RestClient.Builder restClientBuilder, RayPropProperties properties, ObjectMapper objectMapper) {</span>
+<span class="fc" id="L64">        this.properties = properties;</span>
+<span class="fc" id="L65">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L66">        this.restClient = restClientBuilder</span>
+<span class="fc" id="L67">                .baseUrl(properties.getBaseUrl())</span>
+<span class="fc" id="L68">                .defaultHeader(&quot;x-api-key&quot;, properties.getApiKey())</span>
+<span class="fc" id="L69">                .defaultHeader(HttpHeaders.AUTHORIZATION, &quot;Bearer &quot; + properties.getApiKey())</span>
+<span class="fc" id="L70">                .requestInterceptors(interceptors -&gt; {</span>
+<span class="fc" id="L71">                    log.info(&quot;RayProp RestClient interceptors before diagnostic logger: {}&quot;, interceptorNames(interceptors));</span>
+<span class="fc" id="L72">                    interceptors.add((request, body, execution) -&gt; {</span>
+<span class="fc" id="L73">                        log.info(</span>
+                                &quot;RayProp outgoing request: method={} uri={} headers={}&quot;,
+<span class="fc" id="L75">                                request.getMethod(), request.getURI(), redactedHeaders(request.getHeaders()));</span>
+<span class="fc" id="L76">                        return execution.execute(request, body);</span>
+                    });
+<span class="fc" id="L78">                    log.info(&quot;RayProp RestClient interceptors after diagnostic logger: {}&quot;, interceptorNames(interceptors));</span>
+<span class="fc" id="L79">                })</span>
+<span class="fc" id="L80">                .build();</span>
+<span class="fc" id="L81">    }</span>
+
+    /**
+     * Walks every page of {@code GET /listings} up to {@code havyn.rayprop.max-pages},
+     * stopping when RayProp's own {@code meta.hasMore} says there's nothing left, or
+     * earlier if the account's daily unique-listing quota is reached first (the more
+     * likely stop condition in practice — see the class doc).
+     */
+    public RayPropFetchResult fetchAllListings() {
+<span class="fc" id="L90">        List&lt;RayPropListing&gt; listings = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L91">        RayPropDataAccess lastDataAccess = null;</span>
+<span class="fc" id="L92">        int pagesFetched = 0;</span>
+<span class="fc" id="L93">        String cursor = null;</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        while (pagesFetched &lt; properties.getMaxPages()) {</span>
+            RayPropPageResult result;
+            try {
+<span class="fc" id="L98">                result = fetchPage(cursor, pagesFetched + 1);</span>
+<span class="fc" id="L99">            } catch (RayPropApiException ex) {</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                if (ex.isDailyLimitReached()) {</span>
+<span class="fc" id="L101">                    log.warn(</span>
+                            &quot;RayProp sync: daily unique-listing quota reached after {} page(s), {} listings fetched — stopping early (resets midnight UTC). {}&quot;,
+<span class="fc" id="L103">                            pagesFetched, listings.size(), ex.getMessage());</span>
+<span class="fc" id="L104">                    return new RayPropFetchResult(listings, pagesFetched, true, lastDataAccess);</span>
+                }
+<span class="fc" id="L106">                throw ex; // auth/validation/server errors are real failures — let them propagate</span>
+<span class="fc" id="L107">            }</span>
+
+<span class="fc" id="L109">            listings.addAll(result.listings());</span>
+<span class="fc" id="L110">            pagesFetched++;</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            lastDataAccess = result.dataAccess() != null ? result.dataAccess() : lastDataAccess;</span>
+<span class="fc" id="L112">            int page = pagesFetched;</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (result.dataAccess() != null) {</span>
+<span class="fc" id="L114">                log.info(</span>
+                        &quot;RayProp sync: page {} fetched — {} listings so far, daily quota {}/{} used&quot;,
+<span class="fc" id="L116">                        pagesFetched, listings.size(), result.dataAccess().accessedToday(), result.dataAccess().dailyLimit());</span>
+            } else {
+<span class="fc" id="L118">                log.info(&quot;RayProp sync: page {} fetched — {} listings so far&quot;, page, listings.size());</span>
+            }
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">            if (!result.hasMore()) {</span>
+<span class="fc" id="L122">                return new RayPropFetchResult(listings, pagesFetched, false, lastDataAccess);</span>
+            }
+<span class="fc" id="L124">            cursor = result.nextCursor();</span>
+<span class="fc" id="L125">        }</span>
+
+<span class="fc" id="L127">        log.warn(</span>
+                &quot;RayProp sync: hit the configured safety cap of {} pages ({} listings) with more pages still available — raise havyn.rayprop.max-pages if the daily quota allows it&quot;,
+<span class="fc" id="L129">                properties.getMaxPages(), listings.size());</span>
+<span class="fc" id="L130">        return new RayPropFetchResult(listings, pagesFetched, false, lastDataAccess);</span>
+    }
+
+    private RayPropPageResult fetchPage(String cursor, int pageNumber) {
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        for (int attempt = 1; attempt &lt;= MAX_RATE_LIMIT_RETRIES; attempt++) {</span>
+            try {
+<span class="fc" id="L136">                return doFetchPage(cursor, pageNumber);</span>
+<span class="fc" id="L137">            } catch (RayPropApiException ex) {</span>
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">                if (!ex.isRateLimited() || attempt == MAX_RATE_LIMIT_RETRIES) {</span>
+<span class="fc" id="L139">                    throw ex;</span>
+                }
+<span class="fc" id="L141">                long backoffMs = RETRY_BACKOFF_MS[Math.min(attempt - 1, RETRY_BACKOFF_MS.length - 1)];</span>
+<span class="fc" id="L142">                log.warn(&quot;RayProp sync: rate limited fetching page {} (attempt {}/{}), retrying in {}ms&quot;,</span>
+<span class="fc" id="L143">                        pageNumber, attempt, MAX_RATE_LIMIT_RETRIES, backoffMs);</span>
+<span class="fc" id="L144">                sleep(backoffMs);</span>
+            }
+        }
+        // Unreachable — the loop always either returns or throws on its final attempt.
+<span class="nc" id="L148">        throw new IllegalStateException(&quot;Unreachable&quot;);</span>
+    }
+
+    private RayPropPageResult doFetchPage(String cursor, int pageNumber) {
+<span class="fc" id="L152">        return restClient.get()</span>
+<span class="fc" id="L153">                .uri(uriBuilder -&gt; {</span>
+<span class="fc" id="L154">                    var builder = uriBuilder.path(properties.getListingsPath()).queryParam(&quot;limit&quot;, properties.getPageSize());</span>
+<span class="pc bpc" id="L155" title="1 of 4 branches missed.">                    if (cursor != null &amp;&amp; !cursor.isBlank()) {</span>
+<span class="fc" id="L156">                        builder.queryParam(&quot;cursor&quot;, cursor);</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                    } else if (pageNumber &gt; 1) {</span>
+<span class="fc" id="L158">                        builder.queryParam(&quot;page&quot;, pageNumber);</span>
+                    }
+<span class="fc" id="L160">                    return builder.build();</span>
+                })
+<span class="fc" id="L162">                .exchange((request, response) -&gt; {</span>
+<span class="fc" id="L163">                    JsonNode body = response.bodyTo(JsonNode.class);</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">                    if (body == null) {</span>
+<span class="nc" id="L165">                        body = MissingNode.getInstance();</span>
+                    }
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                    if (response.getStatusCode().isError()) {</span>
+<span class="fc" id="L168">                        String code = body.path(&quot;error&quot;).path(&quot;code&quot;).asText(response.getStatusCode().toString());</span>
+<span class="fc" id="L169">                        String message = body.path(&quot;error&quot;).path(&quot;message&quot;).asText(&quot;RayProp API request failed&quot;);</span>
+<span class="fc" id="L170">                        String responseBody = rawBody(body);</span>
+<span class="fc" id="L171">                        log.warn(</span>
+                                &quot;RayProp API request failed: status={} code={} body={}&quot;,
+<span class="fc" id="L173">                                response.getStatusCode().value(), code, responseBody);</span>
+<span class="fc" id="L174">                        throw new RayPropApiException(response.getStatusCode().value(), code, message, responseBody);</span>
+                    }
+<span class="fc" id="L176">                    logRateLimitHeadersIfLow(response.getHeaders());</span>
+<span class="fc" id="L177">                    return RayPropPageResult.from(body);</span>
+                });
+    }
+
+    private void logRateLimitHeadersIfLow(HttpHeaders headers) {
+<span class="fc" id="L182">        String limitHeader = headers.getFirst(&quot;X-RateLimit-Limit&quot;);</span>
+<span class="fc" id="L183">        String remainingHeader = headers.getFirst(&quot;X-RateLimit-Remaining&quot;);</span>
+<span class="pc bpc" id="L184" title="3 of 4 branches missed.">        if (limitHeader == null || remainingHeader == null) {</span>
+<span class="fc" id="L185">            return;</span>
+        }
+        try {
+<span class="nc" id="L188">            int limit = Integer.parseInt(limitHeader);</span>
+<span class="nc" id="L189">            int remaining = Integer.parseInt(remainingHeader);</span>
+<span class="nc bnc" id="L190" title="All 4 branches missed.">            if (limit &gt; 0 &amp;&amp; remaining &lt;= limit / 5) { // proactively flag the last 20% of the per-second budget</span>
+<span class="nc" id="L191">                log.warn(&quot;RayProp sync: rate limit budget running low — {}/{} remaining this window&quot;, remaining, limit);</span>
+            }
+<span class="nc" id="L193">        } catch (NumberFormatException ignored) {</span>
+            // Header present but not a plain integer — not worth failing the sync over a logging nicety.
+<span class="nc" id="L195">        }</span>
+<span class="nc" id="L196">    }</span>
+
+    private static void sleep(long millis) {
+        try {
+<span class="fc" id="L200">            Thread.sleep(Math.min(millis, MAX_BACKOFF_MS));</span>
+<span class="nc" id="L201">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L202">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L203">            throw new IllegalStateException(&quot;Interrupted while backing off a RayProp rate limit retry&quot;, e);</span>
+<span class="fc" id="L204">        }</span>
+<span class="fc" id="L205">    }</span>
+
+    /** One page's worth of {@code GET /listings} — internal to this class, {@link RayPropFetchResult} is the public shape. */
+<span class="fc" id="L208">    private record RayPropPageResult(List&lt;RayPropListing&gt; listings, String nextCursor, boolean hasMore, RayPropDataAccess dataAccess) {</span>
+        static RayPropPageResult from(JsonNode body) {
+<span class="fc" id="L210">            List&lt;RayPropListing&gt; listings = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            for (JsonNode listingNode : body.path(&quot;data&quot;)) {</span>
+<span class="fc" id="L212">                listings.add(RayPropListing.from(listingNode));</span>
+<span class="fc" id="L213">            }</span>
+<span class="fc" id="L214">            String nextCursor = body.path(&quot;next_cursor&quot;).asText(null);</span>
+<span class="pc bpc" id="L215" title="1 of 4 branches missed.">            boolean hasMore = (nextCursor != null &amp;&amp; !nextCursor.isBlank())</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                    || body.path(&quot;meta&quot;).path(&quot;hasMore&quot;).asBoolean(false);</span>
+<span class="fc" id="L217">            return new RayPropPageResult(listings, nextCursor, hasMore, RayPropDataAccess.from(body));</span>
+        }
+    }
+
+    private String rawBody(JsonNode body) {
+<span class="pc bpc" id="L222" title="3 of 6 branches missed.">        if (body == null || body.isMissingNode() || body.isNull()) {</span>
+<span class="nc" id="L223">            return &quot;&lt;empty&gt;&quot;;</span>
+        }
+        try {
+<span class="fc" id="L226">            String value = objectMapper.writeValueAsString(body);</span>
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">            return value.length() &lt;= 2_000 ? value : value.substring(0, 2_000) + &quot;...&quot;;</span>
+<span class="nc" id="L228">        } catch (Exception ignored) {</span>
+<span class="nc" id="L229">            return body.toString();</span>
+        }
+    }
+
+    private static List&lt;String&gt; interceptorNames(List&lt;?&gt; interceptors) {
+<span class="fc" id="L234">        return interceptors.stream()</span>
+<span class="fc" id="L235">                .map(interceptor -&gt; interceptor.getClass().getName())</span>
+<span class="fc" id="L236">                .toList();</span>
+    }
+
+    private static Map&lt;String, List&lt;String&gt;&gt; redactedHeaders(HttpHeaders headers) {
+<span class="fc" id="L240">        Map&lt;String, List&lt;String&gt;&gt; redacted = new java.util.LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L241">        headers.forEach((name, values) -&gt; redacted.put(name, values.stream()</span>
+<span class="fc" id="L242">                .map(value -&gt; redactedHeaderValue(name, value))</span>
+<span class="fc" id="L243">                .toList()));</span>
+<span class="fc" id="L244">        return redacted;</span>
+    }
+
+    private static String redactedHeaderValue(String name, String value) {
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L249">            return &quot;&lt;null&gt;&quot;;</span>
+        }
+<span class="fc bfc" id="L251" title="All 2 branches covered.">        if (&quot;x-api-key&quot;.equalsIgnoreCase(name)) {</span>
+<span class="fc" id="L252">            return redactedSecret(value);</span>
+        }
+<span class="fc bfc" id="L254" title="All 2 branches covered.">        if (HttpHeaders.AUTHORIZATION.equalsIgnoreCase(name)) {</span>
+<span class="fc" id="L255">            String prefix = &quot;Bearer &quot;;</span>
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">            if (value.startsWith(prefix)) {</span>
+<span class="fc" id="L257">                return prefix + redactedSecret(value.substring(prefix.length()));</span>
+            }
+<span class="nc" id="L259">            return redactedSecret(value);</span>
+        }
+<span class="fc" id="L261">        return value;</span>
+    }
+
+    private static String redactedSecret(String value) {
+<span class="fc" id="L265">        int prefixLength = Math.min(5, value.length());</span>
+<span class="fc" id="L266">        String prefix = value.substring(0, prefixLength);</span>
+<span class="fc" id="L267">        return &quot;&lt;redacted length=&quot; + value.length() + &quot; prefix=&quot; + prefix + &quot;&gt;&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

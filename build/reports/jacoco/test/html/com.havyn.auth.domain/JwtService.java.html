@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JwtService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.auth.domain</a> &gt; <span class="el_source">JwtService.java</span></div><h1>JwtService.java</h1><pre class="source lang-java linenums">package com.havyn.auth.domain;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+/**
+ * Signs and verifies the two token types. Access tokens carry role claims so
+ * authorization never needs a DB round trip; refresh tokens carry a
+ * {@code familyId}/{@code tokenId} pair that {@link RefreshTokenService} checks
+ * against Redis for rotation + reuse detection.
+ */
+@Component
+public class JwtService {
+
+    private static final String CLAIM_EMAIL = &quot;email&quot;;
+    private static final String CLAIM_ROLES = &quot;roles&quot;;
+    private static final String CLAIM_TYPE = &quot;typ&quot;;
+    private static final String CLAIM_FAMILY_ID = &quot;fid&quot;;
+    private static final String TYPE_ACCESS = &quot;access&quot;;
+    private static final String TYPE_REFRESH = &quot;refresh&quot;;
+
+    private final SecretKey accessKey;
+    private final SecretKey refreshKey;
+    private final Duration accessTtl;
+    private final Duration refreshTtl;
+    private final Clock clock;
+
+    public JwtService(
+            @Value(&quot;${havyn.jwt.access-secret}&quot;) String accessSecret,
+            @Value(&quot;${havyn.jwt.refresh-secret}&quot;) String refreshSecret,
+            @Value(&quot;${havyn.jwt.access-ttl-seconds}&quot;) long accessTtlSeconds,
+            @Value(&quot;${havyn.jwt.refresh-ttl-days}&quot;) long refreshTtlDays,
+<span class="fc" id="L48">            Clock clock) {</span>
+<span class="fc" id="L49">        this.accessKey = deriveKey(accessSecret);</span>
+<span class="fc" id="L50">        this.refreshKey = deriveKey(refreshSecret);</span>
+<span class="fc" id="L51">        this.accessTtl = Duration.ofSeconds(accessTtlSeconds);</span>
+<span class="fc" id="L52">        this.refreshTtl = Duration.ofDays(refreshTtlDays);</span>
+<span class="fc" id="L53">        this.clock = clock;</span>
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * HS256 requires a &gt;=256-bit key. Hashing whatever secret is configured always
+     * yields exactly 32 bytes, so a short local dev placeholder never crashes the app
+     * — but the configured secret still needs to be high-entropy in production; this
+     * only fixes length, not secrecy.
+     */
+    private static SecretKey deriveKey(String secret) {
+        try {
+<span class="fc" id="L64">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
+<span class="fc" id="L65">            return Keys.hmacShaKeyFor(digest.digest(secret.getBytes(StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L66">        } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L67">            throw new IllegalStateException(&quot;SHA-256 must be available&quot;, e);</span>
+        }
+    }
+
+    public Duration accessTtl() {
+<span class="nc" id="L72">        return accessTtl;</span>
+    }
+
+    public Duration refreshTtl() {
+<span class="nc" id="L76">        return refreshTtl;</span>
+    }
+
+    public String issueAccessToken(UUID userId, String email, Set&lt;String&gt; roles) {
+<span class="fc" id="L80">        Instant now = clock.instant();</span>
+<span class="fc" id="L81">        return Jwts.builder()</span>
+<span class="fc" id="L82">                .subject(userId.toString())</span>
+<span class="fc" id="L83">                .claim(CLAIM_EMAIL, email)</span>
+<span class="fc" id="L84">                .claim(CLAIM_ROLES, List.copyOf(roles))</span>
+<span class="fc" id="L85">                .claim(CLAIM_TYPE, TYPE_ACCESS)</span>
+<span class="fc" id="L86">                .issuedAt(Date.from(now))</span>
+<span class="fc" id="L87">                .expiration(Date.from(now.plus(accessTtl)))</span>
+<span class="fc" id="L88">                .signWith(accessKey)</span>
+<span class="fc" id="L89">                .compact();</span>
+    }
+
+    public AccessClaims parseAccessToken(String token) {
+<span class="fc" id="L93">        Claims claims = Jwts.parser().verifyWith(accessKey).build().parseSignedClaims(token).getPayload();</span>
+<span class="fc" id="L94">        requireType(claims, TYPE_ACCESS);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L96">        List&lt;String&gt; roles = claims.get(CLAIM_ROLES, List.class);</span>
+<span class="fc" id="L97">        return new AccessClaims(</span>
+<span class="fc" id="L98">                UUID.fromString(claims.getSubject()),</span>
+<span class="fc" id="L99">                claims.get(CLAIM_EMAIL, String.class),</span>
+<span class="fc" id="L100">                Set.copyOf(roles));</span>
+    }
+
+    public String issueRefreshToken(UUID userId, UUID familyId, UUID tokenId) {
+<span class="fc" id="L104">        Instant now = clock.instant();</span>
+<span class="fc" id="L105">        return Jwts.builder()</span>
+<span class="fc" id="L106">                .subject(userId.toString())</span>
+<span class="fc" id="L107">                .id(tokenId.toString())</span>
+<span class="fc" id="L108">                .claim(CLAIM_FAMILY_ID, familyId.toString())</span>
+<span class="fc" id="L109">                .claim(CLAIM_TYPE, TYPE_REFRESH)</span>
+<span class="fc" id="L110">                .issuedAt(Date.from(now))</span>
+<span class="fc" id="L111">                .expiration(Date.from(now.plus(refreshTtl)))</span>
+<span class="fc" id="L112">                .signWith(refreshKey)</span>
+<span class="fc" id="L113">                .compact();</span>
+    }
+
+    /** @throws JwtException if the signature is invalid, the token is expired, or malformed. */
+    public RefreshClaims parseRefreshToken(String token) {
+<span class="fc" id="L118">        Claims claims = Jwts.parser().verifyWith(refreshKey).build().parseSignedClaims(token).getPayload();</span>
+<span class="fc" id="L119">        requireType(claims, TYPE_REFRESH);</span>
+<span class="fc" id="L120">        return new RefreshClaims(</span>
+<span class="fc" id="L121">                UUID.fromString(claims.getSubject()),</span>
+<span class="fc" id="L122">                UUID.fromString(claims.get(CLAIM_FAMILY_ID, String.class)),</span>
+<span class="fc" id="L123">                UUID.fromString(claims.getId()));</span>
+    }
+
+    private void requireType(Claims claims, String expected) {
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        if (!expected.equals(claims.get(CLAIM_TYPE, String.class))) {</span>
+<span class="nc" id="L128">            throw new JwtException(&quot;Unexpected token type — expected '&quot; + expected + &quot;'&quot;);</span>
+        }
+<span class="fc" id="L130">    }</span>
+
+<span class="fc" id="L132">    public record AccessClaims(UUID userId, String email, Set&lt;String&gt; roles) {</span>
+    }
+
+<span class="fc" id="L135">    public record RefreshClaims(UUID userId, UUID familyId, UUID tokenId) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

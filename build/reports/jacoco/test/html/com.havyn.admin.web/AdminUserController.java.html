@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminUserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.admin.web</a> &gt; <span class="el_source">AdminUserController.java</span></div><h1>AdminUserController.java</h1><pre class="source lang-java linenums">package com.havyn.admin.web;
+
+import com.havyn.admin.service.AdminUserService;
+import com.havyn.auth.domain.AuthenticatedUser;
+import com.havyn.common.web.PageResponse;
+import com.havyn.users.domain.Profile;
+import com.havyn.users.domain.User;
+import com.havyn.users.repo.ProfileRepository;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+/** Admin user management — see project-docs/prompts/18-admin-platform.md. */
+@RestController
+@RequestMapping(&quot;/api/v1/admin/users&quot;)
+@PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+public class AdminUserController {
+
+    private final AdminUserService adminUserService;
+    private final ProfileRepository profileRepository;
+
+<span class="nc" id="L35">    public AdminUserController(AdminUserService adminUserService, ProfileRepository profileRepository) {</span>
+<span class="nc" id="L36">        this.adminUserService = adminUserService;</span>
+<span class="nc" id="L37">        this.profileRepository = profileRepository;</span>
+<span class="nc" id="L38">    }</span>
+
+    @GetMapping
+    public PageResponse&lt;AdminUserSummary&gt; list(
+            @RequestParam(required = false) String email, @PageableDefault(size = 20) Pageable pageable) {
+<span class="nc" id="L43">        Page&lt;User&gt; users = adminUserService.list(email, pageable);</span>
+<span class="nc" id="L44">        List&lt;UUID&gt; userIds = users.getContent().stream().map(User::getId).toList();</span>
+<span class="nc" id="L45">        Map&lt;UUID, String&gt; fullNames = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L46">        profileRepository.findAllByUser_IdIn(userIds).forEach(profile -&gt; fullNames.put(profile.getUser().getId(), profile.getFullName()));</span>
+<span class="nc" id="L47">        return PageResponse.of(users.map(user -&gt; AdminUserSummary.from(user, fullNames.get(user.getId()))));</span>
+    }
+
+    @PostMapping(&quot;/{id}/roles/{roleCode}&quot;)
+    public AdminUserSummary grantRole(Authentication authentication, @PathVariable UUID id, @PathVariable String roleCode) {
+<span class="nc" id="L52">        User user = adminUserService.grantRole(principal(authentication), id, roleCode);</span>
+<span class="nc" id="L53">        return toSummary(user);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}/roles/{roleCode}&quot;)
+    public AdminUserSummary revokeRole(Authentication authentication, @PathVariable UUID id, @PathVariable String roleCode) {
+<span class="nc" id="L58">        User user = adminUserService.revokeRole(principal(authentication), id, roleCode);</span>
+<span class="nc" id="L59">        return toSummary(user);</span>
+    }
+
+    @PostMapping(&quot;/{id}/suspend&quot;)
+    public AdminUserSummary suspend(Authentication authentication, @PathVariable UUID id) {
+<span class="nc" id="L64">        return toSummary(adminUserService.suspend(principal(authentication), id));</span>
+    }
+
+    @PostMapping(&quot;/{id}/reactivate&quot;)
+    public AdminUserSummary reactivate(Authentication authentication, @PathVariable UUID id) {
+<span class="nc" id="L69">        return toSummary(adminUserService.reactivate(principal(authentication), id));</span>
+    }
+
+    private AdminUserSummary toSummary(User user) {
+<span class="nc" id="L73">        String fullName = profileRepository.findByUser_Id(user.getId()).map(Profile::getFullName).orElse(null);</span>
+<span class="nc" id="L74">        return AdminUserSummary.from(user, fullName);</span>
+    }
+
+    private UUID principal(Authentication authentication) {
+<span class="nc" id="L78">        return ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

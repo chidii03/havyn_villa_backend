@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MediaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.media.service</a> &gt; <span class="el_source">MediaService.java</span></div><h1>MediaService.java</h1><pre class="source lang-java linenums">package com.havyn.media.service;
+
+import com.havyn.common.error.BadRequestException;
+import com.havyn.common.error.ForbiddenException;
+import com.havyn.common.error.NotFoundException;
+import com.havyn.media.domain.MediaResourceType;
+import com.havyn.media.domain.PropertyMedia;
+import com.havyn.media.repo.PropertyMediaRepository;
+import com.havyn.media.storage.MediaStorage;
+import com.havyn.media.storage.SignedUpload;
+import com.havyn.media.web.AddMediaRequest;
+import com.havyn.properties.domain.Property;
+import com.havyn.properties.domain.PropertyStatus;
+import com.havyn.properties.repo.PropertyRepository;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Signed uploads, metadata persistence, reordering, and deletion — see
+ * project-docs/prompts/14-media-storage.md. Object-level authorization (only the
+ * owning host) mirrors {@code PropertyService}'s pattern; {@code PropertyRepository}
+ * is a cross-module read (same established pattern as booking/search/payments).
+ */
+@Service
+public class MediaService {
+
+    private final PropertyMediaRepository propertyMediaRepository;
+    private final PropertyRepository propertyRepository;
+    private final MediaStorage mediaStorage;
+    private final MediaProperties properties;
+
+    public MediaService(
+            PropertyMediaRepository propertyMediaRepository,
+            PropertyRepository propertyRepository,
+            MediaStorage mediaStorage,
+<span class="fc" id="L40">            MediaProperties properties) {</span>
+<span class="fc" id="L41">        this.propertyMediaRepository = propertyMediaRepository;</span>
+<span class="fc" id="L42">        this.propertyRepository = propertyRepository;</span>
+<span class="fc" id="L43">        this.mediaStorage = mediaStorage;</span>
+<span class="fc" id="L44">        this.properties = properties;</span>
+<span class="fc" id="L45">    }</span>
+
+    @Transactional(readOnly = true)
+    public SignedUpload generateUploadSignature(UUID hostId, UUID propertyId) {
+<span class="fc" id="L49">        findOwned(hostId, propertyId);</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (propertyMediaRepository.countByPropertyId(propertyId) &gt;= properties.getMaxPerListing()) {</span>
+<span class="fc" id="L51">            throw mediaLimitReached();</span>
+        }
+<span class="fc" id="L53">        return mediaStorage.createSignedUpload(&quot;properties/&quot; + propertyId);</span>
+    }
+
+    @Transactional
+    public PropertyMedia addMedia(UUID hostId, UUID propertyId, AddMediaRequest request) {
+<span class="fc" id="L58">        findOwned(hostId, propertyId);</span>
+
+<span class="fc" id="L60">        validateFormat(request.resourceType(), request.format());</span>
+
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        long maxBytes = request.resourceType() == MediaResourceType.VIDEO ? properties.getMaxVideoBytes() : properties.getMaxImageBytes();</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (request.bytes() &gt; maxBytes) {</span>
+<span class="fc" id="L64">            mediaStorage.deleteAsset(request.publicId(), request.resourceType());</span>
+<span class="fc" id="L65">            throw new BadRequestException(&quot;MEDIA_TOO_LARGE&quot;, &quot;That file exceeds the &quot; + maxBytes + &quot; byte limit&quot;);</span>
+        }
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (!mediaStorage.isValidAssetUrl(request.secureUrl())) {</span>
+<span class="fc" id="L69">            throw new BadRequestException(&quot;INVALID_MEDIA_SOURCE&quot;, &quot;This file wasn't uploaded to the configured storage&quot;);</span>
+        }
+
+<span class="fc" id="L72">        long currentCount = propertyMediaRepository.countByPropertyId(propertyId);</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        if (currentCount &gt;= properties.getMaxPerListing()) {</span>
+<span class="nc" id="L74">            mediaStorage.deleteAsset(request.publicId(), request.resourceType());</span>
+<span class="nc" id="L75">            throw mediaLimitReached();</span>
+        }
+
+<span class="fc" id="L78">        PropertyMedia media = new PropertyMedia(</span>
+                propertyId,
+<span class="fc" id="L80">                request.secureUrl(),</span>
+<span class="fc" id="L81">                request.publicId(),</span>
+<span class="fc" id="L82">                request.resourceType(),</span>
+<span class="fc" id="L83">                request.format().toLowerCase(),</span>
+<span class="fc" id="L84">                request.width(),</span>
+<span class="fc" id="L85">                request.height(),</span>
+<span class="fc" id="L86">                request.duration(),</span>
+<span class="fc" id="L87">                request.bytes(),</span>
+                (int) currentCount,
+<span class="fc" id="L89">                request.alt());</span>
+<span class="fc" id="L90">        return propertyMediaRepository.save(media);</span>
+    }
+
+    @Transactional
+    public List&lt;PropertyMedia&gt; reorder(UUID hostId, UUID propertyId, List&lt;UUID&gt; orderedMediaIds) {
+<span class="fc" id="L95">        findOwned(hostId, propertyId);</span>
+<span class="fc" id="L96">        List&lt;PropertyMedia&gt; existing = propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
+
+<span class="fc" id="L98">        Set&lt;UUID&gt; existingIds = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L99">        existing.forEach(media -&gt; existingIds.add(media.getId()));</span>
+<span class="fc" id="L100">        Set&lt;UUID&gt; requestedIds = new HashSet&lt;&gt;(orderedMediaIds);</span>
+<span class="pc bpc" id="L101" title="1 of 4 branches missed.">        if (!existingIds.equals(requestedIds) || orderedMediaIds.size() != existing.size()) {</span>
+<span class="fc" id="L102">            throw new BadRequestException(</span>
+                    &quot;INVALID_MEDIA_ORDER&quot;, &quot;orderedMediaIds must list exactly this listing's media, each exactly once&quot;);
+        }
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        for (PropertyMedia media : existing) {</span>
+<span class="fc" id="L107">            media.setPosition(orderedMediaIds.indexOf(media.getId()));</span>
+<span class="fc" id="L108">        }</span>
+<span class="fc" id="L109">        return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
+    }
+
+    @Transactional
+    public void delete(UUID hostId, UUID propertyId, UUID mediaId) {
+<span class="fc" id="L114">        findOwned(hostId, propertyId);</span>
+<span class="fc" id="L115">        PropertyMedia media = propertyMediaRepository.findByIdAndPropertyId(mediaId, propertyId)</span>
+<span class="pc" id="L116">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Media&quot;, mediaId));</span>
+<span class="fc" id="L117">        mediaStorage.deleteAsset(media.getPublicId(), media.getResourceType());</span>
+<span class="fc" id="L118">        propertyMediaRepository.delete(media);</span>
+<span class="fc" id="L119">    }</span>
+
+    @Transactional(readOnly = true)
+    public List&lt;PropertyMedia&gt; list(UUID hostId, UUID propertyId) {
+<span class="nc" id="L123">        findOwned(hostId, propertyId);</span>
+<span class="nc" id="L124">        return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
+    }
+
+    /** Public read — only for listings the public can already see (matches PropertyController's ACTIVE-only 404 story, no info leak on draft/suspended). */
+    @Transactional(readOnly = true)
+    public List&lt;PropertyMedia&gt; listPublic(UUID propertyId) {
+<span class="pc" id="L130">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        if (property.getStatus() != PropertyStatus.ACTIVE) {</span>
+<span class="fc" id="L132">            throw NotFoundException.of(&quot;Property&quot;, propertyId);</span>
+        }
+<span class="fc" id="L134">        return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
+    }
+
+    private Property findOwned(UUID hostId, UUID propertyId) {
+<span class="pc" id="L138">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (!property.getHostId().equals(hostId)) {</span>
+<span class="fc" id="L140">            throw new ForbiddenException(&quot;You do not have access to this listing's media&quot;);</span>
+        }
+<span class="fc" id="L142">        return property;</span>
+    }
+
+    private void validateFormat(MediaResourceType resourceType, String format) {
+<span class="fc" id="L146">        String normalized = format.toLowerCase();</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        List&lt;String&gt; allowed = resourceType == MediaResourceType.VIDEO</span>
+<span class="nc" id="L148">                ? properties.getAllowedVideoFormats()</span>
+<span class="fc" id="L149">                : properties.getAllowedImageFormats();</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (!allowed.contains(normalized)) {</span>
+<span class="fc" id="L151">            throw new BadRequestException(</span>
+<span class="fc" id="L152">                    &quot;UNSUPPORTED_MEDIA_FORMAT&quot;, &quot;\&quot;&quot; + format + &quot;\&quot; isn't an allowed &quot; + resourceType.name().toLowerCase() + &quot; format&quot;);</span>
+        }
+<span class="fc" id="L154">    }</span>
+
+    private BadRequestException mediaLimitReached() {
+<span class="fc" id="L157">        return new BadRequestException(</span>
+<span class="fc" id="L158">                &quot;MEDIA_LIMIT_REACHED&quot;, &quot;This listing already has the maximum of &quot; + properties.getMaxPerListing() + &quot; photos/videos&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

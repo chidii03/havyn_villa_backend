@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VerificationRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.admin.domain</a> &gt; <span class="el_source">VerificationRequest.java</span></div><h1>VerificationRequest.java</h1><pre class="source lang-java linenums">package com.havyn.admin.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Host identity/KYC verification — see project-docs/prompts/18-admin-platform.md and
+ * security/01-security-plan.md's &quot;Host verification workflow (VerificationRequest)
+ * with admin review; store minimal PII, restrict access, audit all access.&quot; Storing
+ * only a {@code documentUrl} (wherever the host uploaded their ID — no new Cloudinary
+ * integration added here for a single URL field) plus free-text notes is the
+ * &quot;minimal PII&quot; this document is stored as; access is restricted to the owning user
+ * and admins only (see {@code VerificationService}), and every admin review action is
+ * audit-logged (see {@code AdminVerificationController}).
+ */
+@Entity
+@Table(name = &quot;verification_request&quot;)
+public class VerificationRequest extends BaseEntity {
+
+    @Column(name = &quot;user_id&quot;, nullable = false)
+    private UUID userId;
+
+    @Column(name = &quot;document_url&quot;, nullable = false)
+    private String documentUrl;
+
+    @Column(name = &quot;notes&quot;)
+    private String notes;
+
+<span class="pc" id="L35">    @Enumerated(EnumType.STRING)</span>
+    @Column(name = &quot;status&quot;, nullable = false, length = 20)
+    private VerificationStatus status = VerificationStatus.PENDING;
+
+    @Column(name = &quot;review_notes&quot;)
+    private String reviewNotes;
+
+    @Column(name = &quot;reviewed_by&quot;)
+    private UUID reviewedBy;
+
+    @Column(name = &quot;reviewed_at&quot;)
+    private Instant reviewedAt;
+
+<span class="nc" id="L48">    protected VerificationRequest() {</span>
+        // JPA
+<span class="nc" id="L50">    }</span>
+
+<span class="fc" id="L52">    public VerificationRequest(UUID userId, String documentUrl, String notes) {</span>
+<span class="fc" id="L53">        this.userId = userId;</span>
+<span class="fc" id="L54">        this.documentUrl = documentUrl;</span>
+<span class="fc" id="L55">        this.notes = notes;</span>
+<span class="fc" id="L56">    }</span>
+
+    public void approve(UUID adminId, Instant when) {
+<span class="fc" id="L59">        this.status = VerificationStatus.APPROVED;</span>
+<span class="fc" id="L60">        this.reviewedBy = adminId;</span>
+<span class="fc" id="L61">        this.reviewedAt = when;</span>
+<span class="fc" id="L62">    }</span>
+
+    public void reject(UUID adminId, String reviewNotes, Instant when) {
+<span class="fc" id="L65">        this.status = VerificationStatus.REJECTED;</span>
+<span class="fc" id="L66">        this.reviewNotes = reviewNotes;</span>
+<span class="fc" id="L67">        this.reviewedBy = adminId;</span>
+<span class="fc" id="L68">        this.reviewedAt = when;</span>
+<span class="fc" id="L69">    }</span>
+
+    public UUID getUserId() {
+<span class="fc" id="L72">        return userId;</span>
+    }
+
+    public String getDocumentUrl() {
+<span class="nc" id="L76">        return documentUrl;</span>
+    }
+
+    public String getNotes() {
+<span class="nc" id="L80">        return notes;</span>
+    }
+
+    public VerificationStatus getStatus() {
+<span class="fc" id="L84">        return status;</span>
+    }
+
+    public String getReviewNotes() {
+<span class="fc" id="L88">        return reviewNotes;</span>
+    }
+
+    public UUID getReviewedBy() {
+<span class="fc" id="L92">        return reviewedBy;</span>
+    }
+
+    public Instant getReviewedAt() {
+<span class="nc" id="L96">        return reviewedAt;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

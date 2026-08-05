@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.havyn.config.SecurityHeadersTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:21:25.118Z" hostname="CHIDI" time="0.117">
+  <properties/>
+  <testcase name="everyResponseCarriesTheBaselineSecurityHeaders_regardlessOfAuthOutcome()" classname="com.havyn.config.SecurityHeadersTest" time="0.037"/>
+  <testcase name="hstsIsSentOverHttps_browsersIgnoreItOverPlainHttpAnyway()" classname="com.havyn.config.SecurityHeadersTest" time="0.015"/>
+  <system-out><![CDATA[{"@timestamp":"2026-08-05T03:21:25.1230568Z","@version":"1","message":"Could not detect default configuration classes for test class [com.havyn.config.SecurityHeadersTest]: SecurityHeadersTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.","logger_name":"org.springframework.test.context.support.AnnotationConfigContextLoaderUtils","thread_name":"Test worker","level":"INFO","level_value":20000,"service":"havyn-villa-api"}
+{"@timestamp":"2026-08-05T03:21:25.1750611Z","@version":"1","message":"Found @SpringBootConfiguration com.havyn.ApiApplication for test class com.havyn.config.SecurityHeadersTest","logger_name":"org.springframework.boot.test.context.SpringBootTestContextBootstrapper","thread_name":"Test worker","level":"INFO","level_value":20000,"service":"havyn-villa-api"}
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

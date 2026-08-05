@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MessageSentEvent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.messaging.domain.event</a> &gt; <span class="el_source">MessageSentEvent.java</span></div><h1>MessageSentEvent.java</h1><pre class="source lang-java linenums">package com.havyn.messaging.domain.event;
+
+import com.havyn.common.events.DomainEvent;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Published whenever a message is appended to a conversation — see
+ * {@code ConversationService#appendMessage}. The {@code notifications} module (prompt
+ * 16) listens for this to notify the other participant, so messaging/ never needs to
+ * know notifications/ exists — same cross-module pattern as
+ * {@code BookingConfirmedEvent}/{@code BookingCancelledEvent}.
+ */
+<span class="fc" id="L14">public record MessageSentEvent(UUID messageId, UUID conversationId, UUID senderId, UUID recipientId, UUID propertyId, Instant occurredAt)</span>
+        implements DomainEvent {
+
+    public static MessageSentEvent of(UUID messageId, UUID conversationId, UUID senderId, UUID recipientId, UUID propertyId) {
+<span class="fc" id="L18">        return new MessageSentEvent(messageId, conversationId, senderId, recipientId, propertyId, Instant.now());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RayPropSyncService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.properties.rayprop</a> &gt; <span class="el_source">RayPropSyncService.java</span></div><h1>RayPropSyncService.java</h1><pre class="source lang-java linenums">package com.havyn.properties.rayprop;
+
+import com.havyn.media.domain.MediaResourceType;
+import com.havyn.media.domain.PropertyMedia;
+import com.havyn.media.repo.PropertyMediaRepository;
+import com.havyn.properties.domain.Property;
+import com.havyn.properties.domain.PropertyStatus;
+import com.havyn.properties.domain.PropertyType;
+import com.havyn.properties.repo.PropertyRepository;
+import com.havyn.properties.repo.PropertyTypeRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Maps {@link RayPropListing} onto our own {@code property}/{@code property_media}
+ * tables and upserts by {@code (external_source, external_id)} — see
+ * V13__rayprop_import.sql. Triggered on-demand via {@code POST
+ * /api/v1/admin/rayprop/sync} (see {@code AdminRayPropController}) rather than a
+ * scheduled job, so the first import can be verified before automating it.
+ *
+ * &lt;p&gt;A sync that returns far fewer than RayProp's advertised &quot;5,000+ verified
+ * listings&quot; is expected, not a bug — {@link RayPropSyncResult#stoppedEarlyDueToQuota()}
+ * says whether this run stopped because RayProp's inventory was exhausted
+ * ({@code false}) or because the account hit its daily unique-listing quota
+ * ({@code true}, 500/day on the sandbox key this integration currently uses — see
+ * {@link RayPropClient}'s class doc for the full evidence trail).
+ */
+@Service
+public class RayPropSyncService {
+
+<span class="fc" id="L42">    private static final Logger log = LoggerFactory.getLogger(RayPropSyncService.class);</span>
+    private static final String SOURCE = &quot;RAYPROP&quot;;
+    private static final String COUNTRY = &quot;Nigeria&quot;; // RayProp is Nigeria-only (NGN, Nigerian bank codes throughout its docs).
+<span class="fc" id="L45">    private static final List&lt;String&gt; DISPLAY_TYPE_CODES =</span>
+<span class="fc" id="L46">            List.of(&quot;APARTMENT&quot;, &quot;CABIN&quot;, &quot;CONDO&quot;, &quot;GUESTHOUSE&quot;, &quot;HOUSE&quot;, &quot;SHORTLET&quot;, &quot;STUDIO&quot;);</span>
+
+    /** Seeded by V13__rayprop_import.sql — the {@code app_user} row every RayProp-imported listing attaches to as its {@code host_id}. */
+<span class="fc" id="L49">    private static final UUID SYSTEM_HOST_ID = UUID.fromString(&quot;a11a11a1-1a11-4a11-a11a-11a11a11a11a&quot;);</span>
+
+    private final RayPropClient client;
+    private final PropertyRepository propertyRepository;
+    private final PropertyTypeRepository propertyTypeRepository;
+    private final PropertyMediaRepository propertyMediaRepository;
+
+    public RayPropSyncService(
+            RayPropClient client,
+            PropertyRepository propertyRepository,
+            PropertyTypeRepository propertyTypeRepository,
+<span class="fc" id="L60">            PropertyMediaRepository propertyMediaRepository) {</span>
+<span class="fc" id="L61">        this.client = client;</span>
+<span class="fc" id="L62">        this.propertyRepository = propertyRepository;</span>
+<span class="fc" id="L63">        this.propertyTypeRepository = propertyTypeRepository;</span>
+<span class="fc" id="L64">        this.propertyMediaRepository = propertyMediaRepository;</span>
+<span class="fc" id="L65">    }</span>
+
+    @Transactional
+    public RayPropSyncResult sync() {
+<span class="fc" id="L69">        Map&lt;String, PropertyType&gt; propertyTypes = loadDisplayPropertyTypes();</span>
+
+<span class="fc" id="L71">        RayPropFetchResult fetchResult = client.fetchAllListings();</span>
+<span class="fc" id="L72">        List&lt;RayPropListing&gt; listings = fetchResult.listings();</span>
+<span class="fc" id="L73">        int created = 0;</span>
+<span class="fc" id="L74">        int updated = 0;</span>
+
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (RayPropListing listing : listings) {</span>
+<span class="fc" id="L77">            Optional&lt;Property&gt; existing = propertyRepository.findByExternalSourceAndExternalId(SOURCE, listing.id());</span>
+            Property property;
+<span class="fc" id="L79">            PropertyType displayType = displayTypeFor(listing, propertyTypes);</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (existing.isPresent()) {</span>
+<span class="fc" id="L82">                property = existing.get();</span>
+<span class="fc" id="L83">                applyFields(property, listing, displayType);</span>
+<span class="fc" id="L84">                updated++;</span>
+            } else {
+<span class="fc" id="L86">                property = new Property(</span>
+                        SYSTEM_HOST_ID,
+                        displayType,
+<span class="fc" id="L89">                        truncate(orPlaceholder(listing.title(), &quot;Untitled shortlet&quot;), 150),</span>
+<span class="fc" id="L90">                        orPlaceholder(listing.description(), &quot;No description provided.&quot;),</span>
+<span class="fc" id="L91">                        addressFrom(listing),</span>
+<span class="fc" id="L92">                        orPlaceholder(listing.city(), &quot;Lagos&quot;),</span>
+<span class="fc" id="L93">                        orPlaceholder(listing.state(), &quot;Lagos&quot;),</span>
+                        COUNTRY,
+<span class="fc" id="L95">                        priceInNaira(listing),</span>
+<span class="fc" id="L96">                        Math.max(listing.maxGuests(), 1),</span>
+<span class="fc" id="L97">                        Math.max(listing.bedrooms(), 0),</span>
+<span class="fc" id="L98">                        Math.max(listing.bedrooms(), 0), // RayProp doesn't expose a separate &quot;beds&quot; count — bedrooms is the closest real signal.</span>
+<span class="fc" id="L99">                        bathroomsOrDefault(listing));</span>
+<span class="fc" id="L100">                property.setExternalReference(SOURCE, listing.id());</span>
+                // A fresh import is &quot;verified inventory&quot; per RayProp's own docs — publish
+                // straight through DRAFT -&gt; PENDING -&gt; ACTIVE rather than leaving it in
+                // a state a host would normally still need to submit/publish.
+<span class="fc" id="L104">                property.transitionTo(PropertyStatus.PENDING);</span>
+<span class="fc" id="L105">                property.transitionTo(PropertyStatus.ACTIVE);</span>
+<span class="fc" id="L106">                created++;</span>
+            }
+
+<span class="fc" id="L109">            Property saved = propertyRepository.save(property);</span>
+<span class="fc" id="L110">            syncMedia(saved.getId(), listing.imageUrls());</span>
+<span class="fc" id="L111">        }</span>
+
+<span class="fc" id="L113">        RayPropDataAccess dataAccess = fetchResult.lastDataAccess();</span>
+<span class="fc" id="L114">        log.info(</span>
+                &quot;RayProp sync complete: fetched={} created={} updated={} pagesFetched={} stoppedEarlyDueToQuota={}&quot;,
+<span class="fc" id="L116">                listings.size(), created, updated, fetchResult.pagesFetched(), fetchResult.stoppedEarlyDueToQuota());</span>
+<span class="fc" id="L117">        return new RayPropSyncResult(</span>
+<span class="fc" id="L118">                listings.size(),</span>
+                created,
+                updated,
+<span class="fc" id="L121">                fetchResult.pagesFetched(),</span>
+<span class="fc" id="L122">                fetchResult.stoppedEarlyDueToQuota(),</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">                dataAccess != null ? dataAccess.accessedToday() : null,</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                dataAccess != null ? dataAccess.dailyLimit() : null);</span>
+    }
+
+    private void applyFields(Property property, RayPropListing listing, PropertyType displayType) {
+<span class="fc" id="L128">        property.setType(displayType);</span>
+<span class="fc" id="L129">        property.setTitle(truncate(orPlaceholder(listing.title(), property.getTitle()), 150));</span>
+<span class="fc" id="L130">        property.setDescription(orPlaceholder(listing.description(), property.getDescription()));</span>
+<span class="fc" id="L131">        property.setAddress(addressFrom(listing));</span>
+<span class="fc" id="L132">        property.setCity(orPlaceholder(listing.city(), property.getCity()));</span>
+<span class="fc" id="L133">        property.setState(orPlaceholder(listing.state(), property.getState()));</span>
+<span class="fc" id="L134">        property.setCountry(COUNTRY);</span>
+<span class="fc" id="L135">        property.setCurrency(listing.currency());</span>
+<span class="fc" id="L136">        property.setBasePrice(priceInNaira(listing));</span>
+<span class="fc" id="L137">        property.setCapacity(Math.max(listing.maxGuests(), 1));</span>
+<span class="fc" id="L138">        property.setBedrooms(Math.max(listing.bedrooms(), 0));</span>
+<span class="fc" id="L139">        property.setBeds(Math.max(listing.bedrooms(), 0));</span>
+<span class="fc" id="L140">        property.setBathrooms(bathroomsOrDefault(listing));</span>
+<span class="fc" id="L141">    }</span>
+
+    private Map&lt;String, PropertyType&gt; loadDisplayPropertyTypes() {
+<span class="fc" id="L144">        Map&lt;String, PropertyType&gt; propertyTypes = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        for (String code : DISPLAY_TYPE_CODES) {</span>
+<span class="fc" id="L146">            propertyTypes.put(code, propertyTypeRepository.findByCodeIgnoreCase(code)</span>
+<span class="pc" id="L147">                    .orElseThrow(() -&gt; new IllegalStateException(code + &quot; property type is not seeded&quot;)));</span>
+<span class="fc" id="L148">        }</span>
+<span class="fc" id="L149">        return propertyTypes;</span>
+    }
+
+    private static PropertyType displayTypeFor(RayPropListing listing, Map&lt;String, PropertyType&gt; propertyTypes) {
+<span class="fc" id="L153">        String haystack = String.join(&quot; &quot;,</span>
+<span class="fc" id="L154">                        orPlaceholder(listing.category(), &quot;&quot;),</span>
+<span class="fc" id="L155">                        orPlaceholder(listing.title(), &quot;&quot;),</span>
+<span class="fc" id="L156">                        orPlaceholder(listing.description(), &quot;&quot;))</span>
+<span class="fc" id="L157">                .toLowerCase(Locale.ROOT);</span>
+
+<span class="fc" id="L159">        String matchedCode = null;</span>
+<span class="pc bpc" id="L160" title="2 of 4 branches missed.">        if (haystack.contains(&quot;studio&quot;) || listing.bedrooms() == 0) {</span>
+<span class="nc" id="L161">            matchedCode = &quot;STUDIO&quot;;</span>
+<span class="pc bpc" id="L162" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;cabin&quot;) || haystack.contains(&quot;chalet&quot;)) {</span>
+<span class="nc" id="L163">            matchedCode = &quot;CABIN&quot;;</span>
+<span class="pc bpc" id="L164" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;condo&quot;) || haystack.contains(&quot;condominium&quot;)) {</span>
+<span class="nc" id="L165">            matchedCode = &quot;CONDO&quot;;</span>
+<span class="pc bpc" id="L166" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;guesthouse&quot;) || haystack.contains(&quot;guest house&quot;)) {</span>
+<span class="nc" id="L167">            matchedCode = &quot;GUESTHOUSE&quot;;</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        } else if (haystack.contains(&quot;duplex&quot;)</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                || haystack.contains(&quot;terrace&quot;)</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">                || haystack.contains(&quot;house&quot;)</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">                || haystack.contains(&quot;home&quot;)) {</span>
+<span class="nc" id="L172">            matchedCode = &quot;HOUSE&quot;;</span>
+<span class="pc bpc" id="L173" title="1 of 4 branches missed.">        } else if (haystack.contains(&quot;apartment&quot;) || haystack.contains(&quot;flat&quot;)) {</span>
+<span class="fc" id="L174">            matchedCode = &quot;APARTMENT&quot;;</span>
+<span class="pc bpc" id="L175" title="3 of 4 branches missed.">        } else if (haystack.contains(&quot;shortlet&quot;) || haystack.contains(&quot;short let&quot;)) {</span>
+<span class="fc" id="L176">            matchedCode = &quot;SHORTLET&quot;;</span>
+        }
+
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (matchedCode == null) {</span>
+<span class="nc" id="L180">            int index = Math.floorMod(listing.id().hashCode(), DISPLAY_TYPE_CODES.size());</span>
+<span class="nc" id="L181">            matchedCode = DISPLAY_TYPE_CODES.get(index);</span>
+        }
+<span class="fc" id="L183">        return propertyTypes.get(matchedCode);</span>
+    }
+
+    private void syncMedia(UUID propertyId, List&lt;String&gt; imageUrls) {
+        // Simplest correct way to keep media in sync with the source on every re-run:
+        // clear and re-insert rather than diffing — RayProp doesn't give us a stable
+        // per-image id to diff against, only a URL list.
+<span class="fc" id="L190">        propertyMediaRepository.deleteAllByPropertyId(propertyId);</span>
+<span class="fc" id="L191">        int position = 0;</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        for (String url : normalizedUniqueImageUrls(imageUrls)) {</span>
+<span class="fc" id="L193">            propertyMediaRepository.save(new PropertyMedia(</span>
+                    propertyId,
+                    url,
+<span class="fc" id="L196">                    SOURCE.toLowerCase() + &quot;:&quot; + propertyId + &quot;:&quot; + position,</span>
+                    MediaResourceType.IMAGE,
+<span class="fc" id="L198">                    extensionOf(url),</span>
+                    null, // width unknown — RayProp doesn't expose image dimensions
+                    null, // height unknown
+                    null, // not video
+                    0L, // bytes unknown — RayProp doesn't expose file size at listing time, and a HEAD-per-image round trip isn't worth it for a Phase-1 import
+                    position,
+                    null));
+<span class="fc" id="L205">            position++;</span>
+<span class="fc" id="L206">        }</span>
+<span class="fc" id="L207">    }</span>
+
+    private static List&lt;String&gt; normalizedUniqueImageUrls(List&lt;String&gt; imageUrls) {
+<span class="pc bpc" id="L210" title="1 of 4 branches missed.">        if (imageUrls == null || imageUrls.isEmpty()) {</span>
+<span class="fc" id="L211">            return List.of();</span>
+        }
+<span class="fc" id="L213">        LinkedHashSet&lt;String&gt; normalized = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        for (String imageUrl : imageUrls) {</span>
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">            if (imageUrl == null) {</span>
+<span class="nc" id="L216">                continue;</span>
+            }
+<span class="fc" id="L218">            String value = imageUrl.trim();</span>
+<span class="pc bpc" id="L219" title="3 of 4 branches missed.">            if (value.startsWith(&quot;https://&quot;) || value.startsWith(&quot;http://&quot;)) {</span>
+<span class="fc" id="L220">                normalized.add(value);</span>
+            }
+<span class="fc" id="L222">        }</span>
+<span class="fc" id="L223">        return List.copyOf(normalized);</span>
+    }
+
+    private static String addressFrom(RayPropListing listing) {
+        // RayProp never gives a street address (guest/host PII is only released after
+        // a real booking, per its webhooks docs) — this is the most specific location
+        // string available pre-booking.
+<span class="fc" id="L230">        String neighborhood = listing.neighborhood();</span>
+<span class="fc" id="L231">        String city = orPlaceholder(listing.city(), &quot;Lagos&quot;);</span>
+<span class="pc bpc" id="L232" title="2 of 4 branches missed.">        return (neighborhood == null || neighborhood.isBlank()) ? city : neighborhood + &quot;, &quot; + city;</span>
+    }
+
+    private static BigDecimal priceInNaira(RayPropListing listing) {
+<span class="fc" id="L236">        return BigDecimal.valueOf(listing.pricePerNightMinorUnits(), 2).setScale(2, RoundingMode.HALF_UP);</span>
+    }
+
+    private static BigDecimal bathroomsOrDefault(RayPropListing listing) {
+<span class="fc" id="L240">        BigDecimal bathrooms = listing.bathrooms();</span>
+<span class="pc bpc" id="L241" title="2 of 4 branches missed.">        return (bathrooms == null || bathrooms.signum() &lt;= 0) ? BigDecimal.ONE : bathrooms;</span>
+    }
+
+    private static String extensionOf(String url) {
+<span class="fc" id="L245">        int dot = url.lastIndexOf('.');</span>
+<span class="fc" id="L246">        int query = url.indexOf('?', dot);</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">        if (dot &lt; 0) {</span>
+<span class="nc" id="L248">            return &quot;jpg&quot;;</span>
+        }
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">        String ext = query &gt; dot ? url.substring(dot + 1, query) : url.substring(dot + 1);</span>
+<span class="pc bpc" id="L251" title="2 of 4 branches missed.">        return ext.isBlank() || ext.length() &gt; 10 ? &quot;jpg&quot; : ext.toLowerCase();</span>
+    }
+
+    private static String orPlaceholder(String value, String placeholder) {
+<span class="pc bpc" id="L255" title="2 of 4 branches missed.">        return (value == null || value.isBlank()) ? placeholder : value;</span>
+    }
+
+    private static String truncate(String value, int maxLength) {
+<span class="pc bpc" id="L259" title="1 of 2 branches missed.">        return value.length() &lt;= maxLength ? value : value.substring(0, maxLength);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

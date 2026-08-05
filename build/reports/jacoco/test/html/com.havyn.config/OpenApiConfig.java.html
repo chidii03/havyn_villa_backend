@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenApiConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.config</a> &gt; <span class="el_source">OpenApiConfig.java</span></div><h1>OpenApiConfig.java</h1><pre class="source lang-java linenums">package com.havyn.config;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/** springdoc OpenAPI metadata, served at /swagger-ui and /v3/api-docs. */
+@Configuration
+<span class="nc" id="L12">public class OpenApiConfig {</span>
+
+    private static final String BEARER_SCHEME = &quot;bearerAuth&quot;;
+
+    @Bean
+    public OpenAPI havynOpenApi() {
+<span class="nc" id="L18">        return new OpenAPI()</span>
+<span class="nc" id="L19">                .info(new Info()</span>
+<span class="nc" id="L20">                        .title(&quot;Havyn Villa API&quot;)</span>
+<span class="nc" id="L21">                        .description(&quot;Premium property marketplace — short-lets, apartments, villas, vacation stays.&quot;)</span>
+<span class="nc" id="L22">                        .version(&quot;v1&quot;))</span>
+<span class="nc" id="L23">                .addSecurityItem(new SecurityRequirement().addList(BEARER_SCHEME))</span>
+<span class="nc" id="L24">                .schemaRequirement(BEARER_SCHEME, new SecurityScheme()</span>
+<span class="nc" id="L25">                        .name(BEARER_SCHEME)</span>
+<span class="nc" id="L26">                        .type(SecurityScheme.Type.HTTP)</span>
+<span class="nc" id="L27">                        .scheme(&quot;bearer&quot;)</span>
+<span class="nc" id="L28">                        .bearerFormat(&quot;JWT&quot;));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

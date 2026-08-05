@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PaymentService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.payments.service</a> &gt; <span class="el_source">PaymentService.java</span></div><h1>PaymentService.java</h1><pre class="source lang-java linenums">package com.havyn.payments.service;
+
+import com.havyn.booking.domain.Booking;
+import com.havyn.booking.domain.BookingStatus;
+import com.havyn.booking.domain.event.BookingRefundDueEvent;
+import com.havyn.booking.repo.BookingRepository;
+import com.havyn.booking.service.BookingService;
+import com.havyn.common.error.ConflictException;
+import com.havyn.common.error.ForbiddenException;
+import com.havyn.common.error.NotFoundException;
+import com.havyn.payments.domain.Payment;
+import com.havyn.payments.domain.PaymentStatus;
+import com.havyn.payments.domain.Payout;
+import com.havyn.payments.domain.Refund;
+import com.havyn.payments.domain.Transaction;
+import com.havyn.payments.domain.TransactionType;
+import com.havyn.payments.provider.PaymentIntentRequest;
+import com.havyn.payments.provider.PaymentIntentResult;
+import com.havyn.payments.provider.PaymentProvider;
+import com.havyn.payments.provider.RefundRequest;
+import com.havyn.payments.provider.RefundResult;
+import com.havyn.payments.provider.WebhookEvent;
+import com.havyn.payments.repo.PaymentRepository;
+import com.havyn.payments.repo.PayoutRepository;
+import com.havyn.payments.repo.RefundRepository;
+import com.havyn.payments.repo.TransactionRepository;
+import com.havyn.payments.web.PaymentIntentResponse;
+import com.havyn.properties.domain.Property;
+import com.havyn.properties.repo.PropertyRepository;
+import com.havyn.users.domain.User;
+import com.havyn.users.repo.UserRepository;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.YearMonth;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+/**
+ * Orchestrates the payment lifecycle — see project-docs/prompts/13-payments.md.
+ * Consumes {@code booking}/{@code properties}/{@code users} read-only (established
+ * cross-module pattern, e.g. search/booking already read properties this way); the
+ * only booking/ *write* is the single {@code confirmPayment}/event-publish hook added
+ * for this prompt — see backend/02-domain-modules.md's session 7 notes.
+ */
+@Service
+public class PaymentService {
+
+<span class="fc" id="L61">    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);</span>
+    private static final String NO_REFUND_YET_REASON = &quot;Booking cancelled&quot;;
+
+    private final PaymentRepository paymentRepository;
+    private final TransactionRepository transactionRepository;
+    private final RefundRepository refundRepository;
+    private final PayoutRepository payoutRepository;
+    private final BookingRepository bookingRepository;
+    private final PropertyRepository propertyRepository;
+    private final UserRepository userRepository;
+    private final BookingService bookingService;
+    private final List&lt;PaymentProvider&gt; providers;
+    private final Clock clock;
+    private final String defaultProviderName;
+    private final MeterRegistry meterRegistry;
+
+    public PaymentService(
+            PaymentRepository paymentRepository,
+            TransactionRepository transactionRepository,
+            RefundRepository refundRepository,
+            PayoutRepository payoutRepository,
+            BookingRepository bookingRepository,
+            PropertyRepository propertyRepository,
+            UserRepository userRepository,
+            BookingService bookingService,
+            List&lt;PaymentProvider&gt; providers,
+            Clock clock,
+            @Value(&quot;${havyn.payments.provider:paystack}&quot;) String defaultProviderName,
+<span class="fc" id="L89">            MeterRegistry meterRegistry) {</span>
+<span class="fc" id="L90">        this.paymentRepository = paymentRepository;</span>
+<span class="fc" id="L91">        this.transactionRepository = transactionRepository;</span>
+<span class="fc" id="L92">        this.refundRepository = refundRepository;</span>
+<span class="fc" id="L93">        this.payoutRepository = payoutRepository;</span>
+<span class="fc" id="L94">        this.bookingRepository = bookingRepository;</span>
+<span class="fc" id="L95">        this.propertyRepository = propertyRepository;</span>
+<span class="fc" id="L96">        this.userRepository = userRepository;</span>
+<span class="fc" id="L97">        this.bookingService = bookingService;</span>
+<span class="fc" id="L98">        this.providers = providers;</span>
+<span class="fc" id="L99">        this.clock = clock;</span>
+<span class="fc" id="L100">        this.defaultProviderName = defaultProviderName;</span>
+<span class="fc" id="L101">        this.meterRegistry = meterRegistry;</span>
+<span class="fc" id="L102">    }</span>
+
+    @Transactional
+    public PaymentIntentResponse createIntent(UUID guestId, UUID bookingId) {
+<span class="pc" id="L106">        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (!booking.getGuestId().equals(guestId)) {</span>
+<span class="fc" id="L108">            throw new ForbiddenException(&quot;You do not have access to this booking&quot;);</span>
+        }
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (booking.getStatus() != BookingStatus.PENDING) {</span>
+<span class="fc" id="L111">            throw new ConflictException(&quot;BOOKING_NOT_PAYABLE&quot;, &quot;This booking isn't awaiting payment&quot;);</span>
+        }
+<span class="pc bpc" id="L113" title="1 of 4 branches missed.">        if (booking.getHoldExpiresAt() != null &amp;&amp; booking.getHoldExpiresAt().isBefore(clock.instant())) {</span>
+<span class="fc" id="L114">            throw new ConflictException(&quot;HOLD_EXPIRED&quot;, &quot;The hold on these dates has expired — please reserve again&quot;);</span>
+        }
+
+<span class="pc" id="L117">        User guest = userRepository.findById(guestId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, guestId));</span>
+<span class="fc" id="L118">        PaymentProvider provider = resolveProvider(defaultProviderName);</span>
+
+<span class="fc" id="L120">        String reference = UUID.randomUUID().toString();</span>
+<span class="fc" id="L121">        Payment payment = paymentRepository.save(</span>
+<span class="fc" id="L122">                new Payment(bookingId, provider.name(), reference, booking.getGrandTotal(), booking.getCurrency()));</span>
+
+<span class="fc" id="L124">        PaymentIntentResult result = provider.createIntent(</span>
+<span class="fc" id="L125">                new PaymentIntentRequest(payment.getId(), booking.getGrandTotal(), booking.getCurrency(), guest.getEmail(), reference));</span>
+
+<span class="fc" id="L127">        transactionRepository.save(new Transaction(</span>
+<span class="fc" id="L128">                payment.getId(), TransactionType.CHARGE_INTENT_CREATED, reference, booking.getGrandTotal(), booking.getCurrency(), null));</span>
+
+<span class="fc" id="L130">        return new PaymentIntentResponse(payment.getId(), provider.name(), result.checkoutUrl());</span>
+    }
+
+    @Transactional
+    public void handleWebhook(String providerName, String rawBody, HttpHeaders headers) {
+<span class="fc" id="L135">        PaymentProvider provider = resolveProvider(providerName);</span>
+<span class="fc" id="L136">        WebhookEvent event = provider.parseWebhook(rawBody, headers);</span>
+<span class="fc" id="L137">        log.info(&quot;Received {} webhook type={} ref={}&quot;, providerName, event.type(), event.providerRef());</span>
+
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (event.providerRef() == null) {</span>
+<span class="nc" id="L140">            return; // nothing to correlate this event to</span>
+        }
+<span class="fc" id="L142">        Optional&lt;Payment&gt; maybePayment = paymentRepository.findByProviderAndProviderRef(providerName, event.providerRef());</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (maybePayment.isEmpty()) {</span>
+<span class="fc" id="L144">            log.warn(&quot;Webhook ref={} doesn't match any known payment — ignoring&quot;, event.providerRef());</span>
+<span class="fc" id="L145">            meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, providerName, &quot;outcome&quot;, &quot;unmatched_ref&quot;).increment();</span>
+<span class="fc" id="L146">            return; // unknown reference — not one of ours (or already-deleted test data); nothing to do</span>
+        }
+<span class="fc" id="L148">        Payment payment = maybePayment.get();</span>
+
+<span class="fc" id="L150">        transactionRepository.save(new Transaction(</span>
+<span class="fc" id="L151">                payment.getId(),</span>
+<span class="fc" id="L152">                transactionTypeFor(event),</span>
+<span class="fc" id="L153">                event.providerRef(),</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">                event.amount() != null ? event.amount() : payment.getAmount(),</span>
+<span class="fc" id="L155">                payment.getCurrency(),</span>
+                rawBody));
+
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        if (payment.isTerminal()) {</span>
+<span class="fc" id="L159">            log.info(&quot;Ignoring webhook for already-terminal paymentId={} (retried/duplicate delivery)&quot;, payment.getId());</span>
+<span class="fc" id="L160">            meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, providerName, &quot;outcome&quot;, &quot;already_terminal&quot;).increment();</span>
+<span class="fc" id="L161">            return; // idempotent no-op — a retried/duplicate webhook delivery for an already-resolved payment</span>
+        }
+
+<span class="pc bpc" id="L164" title="1 of 3 branches missed.">        switch (event.type()) {</span>
+            case CHARGE_SUCCEEDED -&gt; {
+<span class="fc" id="L166">                payment.markSucceeded();</span>
+<span class="fc" id="L167">                boolean bookingWasConfirmed = bookingService.confirmPayment(payment.getBookingId());</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">                if (bookingWasConfirmed) {</span>
+<span class="fc" id="L169">                    accruePayout(payment);</span>
+                }
+<span class="fc" id="L171">                meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, providerName, &quot;outcome&quot;, &quot;charge_succeeded&quot;).increment();</span>
+<span class="fc" id="L172">            }</span>
+            case CHARGE_FAILED -&gt; {
+<span class="fc" id="L174">                payment.markFailed();</span>
+<span class="fc" id="L175">                meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, providerName, &quot;outcome&quot;, &quot;charge_failed&quot;).increment();</span>
+<span class="fc" id="L176">            }</span>
+            default -&gt; {
+                // REFUND_PROCESSED/UNKNOWN — recorded above for audit; refund state itself is
+                // updated synchronously from the provider's refund response (see
+                // onBookingRefundDue below), not from this async webhook.
+<span class="nc" id="L181">                meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, providerName, &quot;outcome&quot;, &quot;other&quot;).increment();</span>
+            }
+        }
+<span class="fc" id="L184">    }</span>
+
+    /**
+     * {@code fallbackExecution = true}/{@code AFTER_COMMIT} — same reasoning as
+     * {@code SearchCacheService}'s listener (prompt 11): don't call out to a real
+     * payment provider for a cancellation that ends up rolling back.
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onBookingRefundDue(BookingRefundDueEvent event) {
+<span class="fc" id="L194">        List&lt;Payment&gt; payments = paymentRepository.findAllByBookingIdOrderByCreatedAtDesc(event.bookingId());</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        Payment succeededPayment = payments.stream().filter(p -&gt; p.getStatus() == PaymentStatus.SUCCEEDED).findFirst().orElse(null);</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        if (succeededPayment == null) {</span>
+<span class="fc" id="L197">            return; // defensive — a CONFIRMED booking should always have one, but never assume</span>
+        }
+
+<span class="fc" id="L200">        Refund refund = refundRepository.save(new Refund(succeededPayment.getId(), event.refundAmount(), NO_REFUND_YET_REASON));</span>
+<span class="fc" id="L201">        PaymentProvider provider = resolveProvider(succeededPayment.getProvider());</span>
+<span class="fc" id="L202">        RefundResult result = provider.refund(new RefundRequest(succeededPayment.getProviderRef(), event.refundAmount(), NO_REFUND_YET_REASON));</span>
+
+        TransactionType transactionType;
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        if (result.succeeded()) {</span>
+<span class="fc" id="L206">            refund.markSucceeded(result.providerRefundRef());</span>
+<span class="fc" id="L207">            transactionType = TransactionType.REFUND_SUCCEEDED;</span>
+        } else {
+<span class="nc" id="L209">            refund.markFailed();</span>
+<span class="nc" id="L210">            transactionType = TransactionType.REFUND_FAILED;</span>
+        }
+<span class="fc" id="L212">        transactionRepository.save(new Transaction(</span>
+<span class="fc" id="L213">                succeededPayment.getId(), transactionType, result.providerRefundRef(), event.refundAmount(), succeededPayment.getCurrency(), null));</span>
+<span class="fc" id="L214">    }</span>
+
+    /** Paginated payout history for a host — see project-docs/prompts/17-host-dashboard.md. */
+    @Transactional(readOnly = true)
+    public Page&lt;Payout&gt; listPayoutsForHost(UUID hostId, Pageable pageable) {
+<span class="nc" id="L219">        return payoutRepository.findAllByHostIdOrderByPeriodDesc(hostId, pageable);</span>
+    }
+
+    /** Unpaged — for {@code hosts/}'s dashboard summary to fold into a total-by-currency figure itself. */
+    @Transactional(readOnly = true)
+    public List&lt;Payout&gt; listAllPayoutsForHost(UUID hostId) {
+<span class="nc" id="L225">        return payoutRepository.findAllByHostId(hostId);</span>
+    }
+
+    private void accruePayout(Payment payment) {
+<span class="fc" id="L229">        Booking booking = bookingRepository.findById(payment.getBookingId()).orElse(null);</span>
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">        if (booking == null) {</span>
+<span class="nc" id="L231">            return;</span>
+        }
+<span class="fc" id="L233">        Property property = propertyRepository.findById(booking.getPropertyId()).orElse(null);</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">        if (property == null) {</span>
+<span class="nc" id="L235">            return; // can't determine which host to credit — nothing sensible to do</span>
+        }
+
+<span class="fc" id="L238">        BigDecimal netAmount = booking.getGrandTotal().subtract(booking.getCommissionAmount());</span>
+<span class="fc" id="L239">        String period = YearMonth.now(clock).toString();</span>
+<span class="fc" id="L240">        Payout payout = payoutRepository.findByHostIdAndPeriodAndCurrency(property.getHostId(), period, booking.getCurrency())</span>
+<span class="fc" id="L241">                .orElseGet(() -&gt; payoutRepository.save(new Payout(property.getHostId(), period, booking.getCurrency())));</span>
+<span class="fc" id="L242">        payout.accrue(netAmount);</span>
+<span class="fc" id="L243">    }</span>
+
+    private TransactionType transactionTypeFor(WebhookEvent event) {
+<span class="pc bpc" id="L246" title="2 of 4 branches missed.">        return switch (event.type()) {</span>
+<span class="fc" id="L247">            case CHARGE_SUCCEEDED -&gt; TransactionType.CHARGE_SUCCEEDED;</span>
+<span class="fc" id="L248">            case CHARGE_FAILED -&gt; TransactionType.CHARGE_FAILED;</span>
+<span class="nc" id="L249">            case REFUND_PROCESSED -&gt; TransactionType.REFUND_SUCCEEDED;</span>
+<span class="nc" id="L250">            case UNKNOWN -&gt; TransactionType.WEBHOOK_UNRECOGNIZED;</span>
+        };
+    }
+
+    private PaymentProvider resolveProvider(String name) {
+<span class="fc" id="L255">        return providers.stream()</span>
+<span class="fc" id="L256">                .filter(provider -&gt; provider.name().equals(name))</span>
+<span class="fc" id="L257">                .findFirst()</span>
+<span class="pc" id="L258">                .orElseThrow(() -&gt; new IllegalStateException(&quot;No PaymentProvider registered for: &quot; + name));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

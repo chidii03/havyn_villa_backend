@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HostReservationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.hosts.web</a> &gt; <span class="el_source">HostReservationController.java</span></div><h1>HostReservationController.java</h1><pre class="source lang-java linenums">package com.havyn.hosts.web;
+
+import com.havyn.auth.domain.AuthenticatedUser;
+import com.havyn.booking.domain.Booking;
+import com.havyn.booking.service.BookingService;
+import com.havyn.common.web.PageResponse;
+import com.havyn.properties.repo.PropertyRepository;
+import com.havyn.users.repo.ProfileRepository;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Reservations across every listing a host owns — see
+ * project-docs/prompts/17-host-dashboard.md. Batch-resolves property titles and guest
+ * names for the current page (two small {@code IN (...)} queries) rather than one
+ * lookup per row, the same N+1-avoidance discipline documented in
+ * architecture/01-system-architecture.md's session 11 notes.
+ */
+@RestController
+@RequestMapping(&quot;/api/v1/host/reservations&quot;)
+@PreAuthorize(&quot;hasRole('HOST')&quot;)
+public class HostReservationController {
+
+    private final BookingService bookingService;
+    private final PropertyRepository propertyRepository;
+    private final ProfileRepository profileRepository;
+
+    public HostReservationController(
+<span class="nc" id="L40">            BookingService bookingService, PropertyRepository propertyRepository, ProfileRepository profileRepository) {</span>
+<span class="nc" id="L41">        this.bookingService = bookingService;</span>
+<span class="nc" id="L42">        this.propertyRepository = propertyRepository;</span>
+<span class="nc" id="L43">        this.profileRepository = profileRepository;</span>
+<span class="nc" id="L44">    }</span>
+
+    @GetMapping
+    public PageResponse&lt;HostReservationSummary&gt; list(
+            Authentication authentication,
+            @RequestParam(required = false) UUID propertyId,
+            @PageableDefault(size = 20) Pageable pageable) {
+<span class="nc" id="L51">        Page&lt;Booking&gt; bookings = bookingService.listForHost(principal(authentication), propertyId, pageable);</span>
+
+<span class="nc" id="L53">        List&lt;UUID&gt; propertyIds = bookings.getContent().stream().map(Booking::getPropertyId).distinct().toList();</span>
+<span class="nc" id="L54">        List&lt;UUID&gt; guestIds = bookings.getContent().stream().map(Booking::getGuestId).distinct().toList();</span>
+<span class="nc" id="L55">        Map&lt;UUID, String&gt; propertyTitles = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L56">        propertyRepository.findAllById(propertyIds).forEach(property -&gt; propertyTitles.put(property.getId(), property.getTitle()));</span>
+<span class="nc" id="L57">        Map&lt;UUID, String&gt; guestNames = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L58">        profileRepository.findAllByUser_IdIn(guestIds)</span>
+<span class="nc" id="L59">                .forEach(profile -&gt; guestNames.put(profile.getUser().getId(), profile.getFullName()));</span>
+
+<span class="nc" id="L61">        return PageResponse.of(bookings.map(booking -&gt; HostReservationSummary.from(</span>
+                booking,
+<span class="nc" id="L63">                propertyTitles.getOrDefault(booking.getPropertyId(), &quot;Listing no longer available&quot;),</span>
+<span class="nc" id="L64">                guestNames.getOrDefault(booking.getGuestId(), &quot;Guest&quot;))));</span>
+    }
+
+    private UUID principal(Authentication authentication) {
+<span class="nc" id="L68">        return ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

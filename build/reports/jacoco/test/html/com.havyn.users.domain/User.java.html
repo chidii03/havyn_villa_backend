@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>User.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.users.domain</a> &gt; <span class="el_source">User.java</span></div><h1>User.java</h1><pre class="source lang-java linenums">package com.havyn.users.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import com.havyn.common.reference.Role;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * An account. RBAC roles are loaded eagerly (small set, needed on every authenticated
+ * request to mint JWT claims) — see project-docs/database/01-data-model.md#1.
+ */
+@Entity
+@Table(name = &quot;app_user&quot;)
+public class User extends BaseEntity {
+
+    @Column(name = &quot;email&quot;, nullable = false, unique = true)
+    private String email;
+
+    @Column(name = &quot;password_hash&quot;, nullable = false)
+    private String passwordHash;
+
+<span class="pc" id="L32">    @Enumerated(EnumType.STRING)</span>
+    @Column(name = &quot;status&quot;, nullable = false, length = 30)
+    private UserStatus status = UserStatus.PENDING_VERIFICATION;
+
+    @Column(name = &quot;email_verified_at&quot;)
+    private Instant emailVerifiedAt;
+
+<span class="pc" id="L39">    @ManyToMany(fetch = FetchType.EAGER)</span>
+    @JoinTable(
+            name = &quot;user_role&quot;,
+            joinColumns = @JoinColumn(name = &quot;user_id&quot;),
+            inverseJoinColumns = @JoinColumn(name = &quot;role_id&quot;))
+    private Set&lt;Role&gt; roles = new HashSet&lt;&gt;();
+
+<span class="nc" id="L46">    protected User() {</span>
+        // JPA
+<span class="nc" id="L48">    }</span>
+
+<span class="fc" id="L50">    public User(String email, String passwordHash) {</span>
+<span class="fc" id="L51">        this.email = email;</span>
+<span class="fc" id="L52">        this.passwordHash = passwordHash;</span>
+<span class="fc" id="L53">    }</span>
+
+    public String getEmail() {
+<span class="fc" id="L56">        return email;</span>
+    }
+
+    public String getPasswordHash() {
+<span class="nc" id="L60">        return passwordHash;</span>
+    }
+
+    public void setPasswordHash(String passwordHash) {
+<span class="nc" id="L64">        this.passwordHash = passwordHash;</span>
+<span class="nc" id="L65">    }</span>
+
+    public UserStatus getStatus() {
+<span class="fc" id="L68">        return status;</span>
+    }
+
+    /** Admin-initiated account status change (suspend/reactivate) — see admin.service.AdminUserService, prompt 18. */
+    public void setStatus(UserStatus status) {
+<span class="fc" id="L73">        this.status = status;</span>
+<span class="fc" id="L74">    }</span>
+
+    public Instant getEmailVerifiedAt() {
+<span class="nc" id="L77">        return emailVerifiedAt;</span>
+    }
+
+    public boolean isEmailVerified() {
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        return emailVerifiedAt != null;</span>
+    }
+
+    public void markEmailVerified(Instant when) {
+<span class="fc" id="L85">        this.emailVerifiedAt = when;</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (this.status == UserStatus.PENDING_VERIFICATION) {</span>
+<span class="fc" id="L87">            this.status = UserStatus.ACTIVE;</span>
+        }
+<span class="fc" id="L89">    }</span>
+
+    public Set&lt;Role&gt; getRoles() {
+<span class="fc" id="L92">        return roles;</span>
+    }
+
+    public void addRole(Role role) {
+<span class="fc" id="L96">        roles.add(role);</span>
+<span class="fc" id="L97">    }</span>
+
+    /** Admin-initiated role revocation — see admin.service.AdminUserService, prompt 18. */
+    public void removeRole(Role role) {
+<span class="fc" id="L101">        roles.remove(role);</span>
+<span class="fc" id="L102">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
