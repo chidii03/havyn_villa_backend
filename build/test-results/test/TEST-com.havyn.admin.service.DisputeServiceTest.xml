@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.admin.service.DisputeServiceTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:20:27.611Z" hostname="CHIDI" time="1.164">
+<testsuite name="com.havyn.admin.service.DisputeServiceTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:18:59.860Z" hostname="CHIDI" time="1.15">
   <properties/>
-  <testcase name="resolve_marksResolvedAndRecordsAudit()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.04"/>
-  <testcase name="raise_rejectsAnUnrelatedCaller()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.009"/>
-  <testcase name="raise_rejectsAMissingBooking()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.006"/>
-  <testcase name="dismiss_rejectsAnAlreadyResolvedDispute()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.008"/>
-  <testcase name="raise_allowsThePropertysHost()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.007"/>
-  <testcase name="raise_allowsTheBookingsGuest()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.004"/>
+  <testcase name="resolve_marksResolvedAndRecordsAudit()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.008"/>
+  <testcase name="raise_rejectsAnUnrelatedCaller()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.011"/>
+  <testcase name="raise_rejectsAMissingBooking()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.004"/>
+  <testcase name="dismiss_rejectsAnAlreadyResolvedDispute()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.004"/>
+  <testcase name="raise_allowsThePropertysHost()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.015"/>
+  <testcase name="raise_allowsTheBookingsGuest()" classname="com.havyn.admin.service.DisputeServiceTest" time="0.015"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

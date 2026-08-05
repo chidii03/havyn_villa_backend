@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.media.service.CloudinaryUrlBuilderTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:21:25.694Z" hostname="CHIDI" time="0.009">
+<testsuite name="com.havyn.media.service.CloudinaryUrlBuilderTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:44.748Z" hostname="CHIDI" time="0.024">
   <properties/>
-  <testcase name="heroUrlUsesTheWidescreenSize()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.002"/>
-  <testcase name="cardUrlInsertsTheFillTransformationRightAfterUpload()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.001"/>
-  <testcase name="thumbUrlUsesTheSmallSize()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.001"/>
-  <testcase name="returnsTheUrlUnchangedWhenItIsNotARecognizableCloudinaryDeliveryUrl()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.0"/>
-  <testcase name="videoPosterUrlKeepsTheVideoResourceTypeButSwapsTheExtensionToJpg()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.001"/>
+  <testcase name="heroUrlUsesTheWidescreenSize()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.004"/>
+  <testcase name="cardUrlInsertsTheFillTransformationRightAfterUpload()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.002"/>
+  <testcase name="thumbUrlUsesTheSmallSize()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.005"/>
+  <testcase name="returnsTheUrlUnchangedWhenItIsNotARecognizableCloudinaryDeliveryUrl()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.002"/>
+  <testcase name="videoPosterUrlKeepsTheVideoResourceTypeButSwapsTheExtensionToJpg()" classname="com.havyn.media.service.CloudinaryUrlBuilderTest" time="0.002"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

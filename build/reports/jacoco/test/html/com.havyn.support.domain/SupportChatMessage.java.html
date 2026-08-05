@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SupportChatMessage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.support.domain</a> &gt; <span class="el_source">SupportChatMessage.java</span></div><h1>SupportChatMessage.java</h1><pre class="source lang-java linenums">package com.havyn.support.domain;
+
+import com.havyn.common.persistence.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import java.util.UUID;
+
+@Entity
+@Table(name = &quot;support_chat_message&quot;)
+public class SupportChatMessage extends BaseEntity {
+
+    @Column(name = &quot;user_id&quot;, nullable = false)
+    private UUID userId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;role&quot;, nullable = false, length = 20)
+    private SupportChatRole role;
+
+    @Column(name = &quot;body&quot;, nullable = false)
+    private String body;
+
+<span class="nc" id="L25">    protected SupportChatMessage() {</span>
+        // JPA
+<span class="nc" id="L27">    }</span>
+
+<span class="nc" id="L29">    public SupportChatMessage(UUID userId, SupportChatRole role, String body) {</span>
+<span class="nc" id="L30">        this.userId = userId;</span>
+<span class="nc" id="L31">        this.role = role;</span>
+<span class="nc" id="L32">        this.body = body;</span>
+<span class="nc" id="L33">    }</span>
+
+    public UUID getUserId() {
+<span class="nc" id="L36">        return userId;</span>
+    }
+
+    public SupportChatRole getRole() {
+<span class="nc" id="L40">        return role;</span>
+    }
+
+    public String getBody() {
+<span class="nc" id="L44">        return body;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

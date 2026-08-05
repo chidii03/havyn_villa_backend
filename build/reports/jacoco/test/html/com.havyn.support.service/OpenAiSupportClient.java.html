@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenAiSupportClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.support.service</a> &gt; <span class="el_source">OpenAiSupportClient.java</span></div><h1>OpenAiSupportClient.java</h1><pre class="source lang-java linenums">package com.havyn.support.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.havyn.common.error.ServiceUnavailableException;
+import com.havyn.support.domain.SupportChatMessage;
+import com.havyn.support.domain.SupportChatRole;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+@Component
+public class OpenAiSupportClient {
+
+    private static final String SYSTEM_PROMPT = &quot;&quot;&quot;
+            You are Havyn Villa's AI Assistant. Help guests and hosts with bookings, properties,
+            cancellations, payments, wishlists, account questions, and general support. Be concise,
+            friendly, and practical. If a request needs a human or private account action you cannot
+            perform, say so clearly and suggest the next step.
+            &quot;&quot;&quot;;
+
+    private final RestClient restClient;
+    private final String apiKey;
+    private final String model;
+
+    public OpenAiSupportClient(
+            RestClient.Builder restClientBuilder,
+            @Value(&quot;${havyn.openai.api-key:}&quot;) String apiKey,
+<span class="nc" id="L31">            @Value(&quot;${havyn.openai.model:gpt-4o-mini}&quot;) String model) {</span>
+<span class="nc" id="L32">        this.apiKey = apiKey;</span>
+<span class="nc" id="L33">        this.model = model;</span>
+<span class="nc" id="L34">        this.restClient = restClientBuilder.baseUrl(&quot;https://api.openai.com/v1&quot;).build();</span>
+<span class="nc" id="L35">    }</span>
+
+    public String respond(List&lt;SupportChatMessage&gt; history) {
+<span class="nc bnc" id="L38" title="All 4 branches missed.">        if (apiKey == null || apiKey.isBlank()) {</span>
+<span class="nc" id="L39">            throw new ServiceUnavailableException(&quot;OPENAI_NOT_CONFIGURED&quot;, &quot;AI support chat is not configured yet&quot;);</span>
+        }
+
+<span class="nc" id="L42">        List&lt;Map&lt;String, String&gt;&gt; messages = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L43">        messages.add(Map.of(&quot;role&quot;, &quot;system&quot;, &quot;content&quot;, SYSTEM_PROMPT));</span>
+<span class="nc" id="L44">        history.stream().skip(Math.max(0, history.size() - 20)).forEach(message -&gt; messages.add(Map.of(</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">                &quot;role&quot;, message.getRole() == SupportChatRole.USER ? &quot;user&quot; : &quot;assistant&quot;,</span>
+<span class="nc" id="L46">                &quot;content&quot;, message.getBody())));</span>
+
+<span class="nc" id="L48">        JsonNode response = restClient.post()</span>
+<span class="nc" id="L49">                .uri(&quot;/chat/completions&quot;)</span>
+<span class="nc" id="L50">                .header(&quot;Authorization&quot;, &quot;Bearer &quot; + apiKey)</span>
+<span class="nc" id="L51">                .body(Map.of(&quot;model&quot;, model, &quot;messages&quot;, messages, &quot;temperature&quot;, 0.4))</span>
+<span class="nc" id="L52">                .retrieve()</span>
+<span class="nc" id="L53">                .body(JsonNode.class);</span>
+
+<span class="nc" id="L55">        String content = response.path(&quot;choices&quot;).path(0).path(&quot;message&quot;).path(&quot;content&quot;).asText(&quot;&quot;);</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (content.isBlank()) {</span>
+<span class="nc" id="L57">            throw new ServiceUnavailableException(&quot;OPENAI_EMPTY_RESPONSE&quot;, &quot;AI support chat returned an empty response&quot;);</span>
+        }
+<span class="nc" id="L59">        return content.trim();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

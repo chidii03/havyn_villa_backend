@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.properties.domain.PropertyStatusTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:21:28.301Z" hostname="CHIDI" time="0.048">
+<testsuite name="com.havyn.properties.domain.PropertyStatusTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:47.371Z" hostname="CHIDI" time="0.09">
   <properties/>
-  <testcase name="[1] status=DRAFT" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.002"/>
-  <testcase name="[2] status=PENDING" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.001"/>
-  <testcase name="[3] status=ACTIVE" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.0"/>
+  <testcase name="[1] status=DRAFT" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.003"/>
+  <testcase name="[2] status=PENDING" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.009"/>
+  <testcase name="[3] status=ACTIVE" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.003"/>
   <testcase name="[4] status=SUSPENDED" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.001"/>
-  <testcase name="[1] from=DRAFT, to=PENDING, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.007"/>
-  <testcase name="[2] from=DRAFT, to=ACTIVE, allowed=false" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.0"/>
-  <testcase name="[3] from=DRAFT, to=SUSPENDED, allowed=false" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.001"/>
-  <testcase name="[4] from=PENDING, to=ACTIVE, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.002"/>
-  <testcase name="[5] from=PENDING, to=DRAFT, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.001"/>
-  <testcase name="[6] from=PENDING, to=SUSPENDED, allowed=false" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.003"/>
-  <testcase name="[7] from=ACTIVE, to=SUSPENDED, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.001"/>
+  <testcase name="[1] from=DRAFT, to=PENDING, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.006"/>
+  <testcase name="[2] from=DRAFT, to=ACTIVE, allowed=false" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.001"/>
+  <testcase name="[3] from=DRAFT, to=SUSPENDED, allowed=false" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.003"/>
+  <testcase name="[4] from=PENDING, to=ACTIVE, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.003"/>
+  <testcase name="[5] from=PENDING, to=DRAFT, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.002"/>
+  <testcase name="[6] from=PENDING, to=SUSPENDED, allowed=false" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.002"/>
+  <testcase name="[7] from=ACTIVE, to=SUSPENDED, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.002"/>
   <testcase name="[8] from=ACTIVE, to=PENDING, allowed=false" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.001"/>
   <testcase name="[9] from=ACTIVE, to=DRAFT, allowed=false" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.001"/>
   <testcase name="[10] from=SUSPENDED, to=ACTIVE, allowed=true" classname="com.havyn.properties.domain.PropertyStatusTest" time="0.002"/>

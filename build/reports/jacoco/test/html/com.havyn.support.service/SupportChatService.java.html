@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SupportChatService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.support.service</a> &gt; <span class="el_source">SupportChatService.java</span></div><h1>SupportChatService.java</h1><pre class="source lang-java linenums">package com.havyn.support.service;
+
+import com.havyn.support.domain.SupportChatMessage;
+import com.havyn.support.domain.SupportChatRole;
+import com.havyn.support.repo.SupportChatMessageRepository;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class SupportChatService {
+
+    public static final String GREETING = &quot;Hi, I'm Havyn Villa's AI Assistant. How can I help you today?&quot;;
+
+    private final SupportChatMessageRepository messageRepository;
+    private final OpenAiSupportClient openAiSupportClient;
+
+<span class="nc" id="L19">    public SupportChatService(SupportChatMessageRepository messageRepository, OpenAiSupportClient openAiSupportClient) {</span>
+<span class="nc" id="L20">        this.messageRepository = messageRepository;</span>
+<span class="nc" id="L21">        this.openAiSupportClient = openAiSupportClient;</span>
+<span class="nc" id="L22">    }</span>
+
+    @Transactional(readOnly = true)
+    public List&lt;SupportChatMessage&gt; history(UUID userId) {
+<span class="nc" id="L26">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
+    }
+
+    @Transactional
+    public List&lt;SupportChatMessage&gt; send(UUID userId, String body) {
+<span class="nc" id="L31">        SupportChatMessage userMessage = messageRepository.save(new SupportChatMessage(userId, SupportChatRole.USER, body.trim()));</span>
+<span class="nc" id="L32">        List&lt;SupportChatMessage&gt; history = messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
+<span class="nc" id="L33">        String answer = openAiSupportClient.respond(history);</span>
+<span class="nc" id="L34">        messageRepository.save(new SupportChatMessage(userId, SupportChatRole.ASSISTANT, answer));</span>
+<span class="nc" id="L35">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userMessage.getUserId());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

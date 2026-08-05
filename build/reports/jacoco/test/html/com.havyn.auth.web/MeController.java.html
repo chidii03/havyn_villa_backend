@@ -37,34 +37,36 @@ public class MeController {
     @PatchMapping
     public UserSummary updateMe(Authentication authentication, @Valid @RequestBody UpdateMeRequest request) {
 <span class="nc" id="L39">        AuthenticatedUser principal = principal(authentication);</span>
-<span class="nc" id="L40">        Profile profile = profileRepository.findByUser_Id(principal.userId())</span>
-<span class="nc" id="L41">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Profile&quot;, principal.userId()));</span>
-<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (request.fullName() != null) {</span>
-<span class="nc" id="L43">            profile.setFullName(request.fullName());</span>
+<span class="nc" id="L40">        User user = userRepository.findById(principal.userId())</span>
+<span class="nc" id="L41">                .orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, principal.userId()));</span>
+<span class="nc" id="L42">        Profile profile = profileRepository.findByUser_Id(principal.userId())</span>
+<span class="nc bnc" id="L43" title="All 4 branches missed.">                .orElseGet(() -&gt; new Profile(user, request.fullName() != null &amp;&amp; !request.fullName().isBlank() ? request.fullName() : user.getEmail()));</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (request.fullName() != null) {</span>
+<span class="nc" id="L45">            profile.setFullName(request.fullName());</span>
         }
-<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (request.phone() != null) {</span>
-<span class="nc" id="L46">            profile.setPhone(request.phone());</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (request.phone() != null) {</span>
+<span class="nc" id="L48">            profile.setPhone(request.phone());</span>
         }
-<span class="nc" id="L48">        profileRepository.save(profile);</span>
-<span class="nc" id="L49">        return loadSummary(principal);</span>
+<span class="nc" id="L50">        profileRepository.save(profile);</span>
+<span class="nc" id="L51">        return loadSummary(principal);</span>
     }
 
     private UserSummary loadSummary(AuthenticatedUser principal) {
-<span class="nc" id="L53">        User user = userRepository.findById(principal.userId())</span>
-<span class="nc" id="L54">                .orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, principal.userId()));</span>
-<span class="nc" id="L55">        Profile profile = profileRepository.findByUser_Id(user.getId()).orElse(null);</span>
-<span class="nc" id="L56">        return new UserSummary(</span>
-<span class="nc" id="L57">                user.getId(),</span>
-<span class="nc" id="L58">                user.getEmail(),</span>
-<span class="nc" id="L59">                user.isEmailVerified(),</span>
-<span class="nc" id="L60">                user.getRoles().stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet()),</span>
-<span class="nc bnc" id="L61" title="All 2 branches missed.">                profile != null ? profile.getFullName() : null,</span>
-<span class="nc bnc" id="L62" title="All 2 branches missed.">                profile != null ? profile.getPhone() : null,</span>
-<span class="nc bnc" id="L63" title="All 2 branches missed.">                profile != null ? profile.getAvatarUrl() : null);</span>
+<span class="nc" id="L55">        User user = userRepository.findById(principal.userId())</span>
+<span class="nc" id="L56">                .orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, principal.userId()));</span>
+<span class="nc" id="L57">        Profile profile = profileRepository.findByUser_Id(user.getId()).orElse(null);</span>
+<span class="nc" id="L58">        return new UserSummary(</span>
+<span class="nc" id="L59">                user.getId(),</span>
+<span class="nc" id="L60">                user.getEmail(),</span>
+<span class="nc" id="L61">                user.isEmailVerified(),</span>
+<span class="nc" id="L62">                user.getRoles().stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet()),</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">                profile != null ? profile.getFullName() : null,</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                profile != null ? profile.getPhone() : null,</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                profile != null ? profile.getAvatarUrl() : null);</span>
     }
 
     private AuthenticatedUser principal(Authentication authentication) {
-<span class="nc" id="L67">        return (AuthenticatedUser) authentication.getPrincipal();</span>
+<span class="nc" id="L69">        return (AuthenticatedUser) authentication.getPrincipal();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

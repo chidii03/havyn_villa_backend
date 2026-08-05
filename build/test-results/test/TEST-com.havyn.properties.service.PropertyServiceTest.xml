@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.properties.service.PropertyServiceTest" tests="21" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:21:29.431Z" hostname="CHIDI" time="0.368">
+<testsuite name="com.havyn.properties.service.PropertyServiceTest" tests="21" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:48.972Z" hostname="CHIDI" time="0.489">
   <properties/>
-  <testcase name="getActiveDetail_stillThrowsNotFoundOnACacheMissForANonActiveListing()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.008"/>
-  <testcase name="create_resolvesTypeAndAmenitiesThenSavesAndPublishesEvent()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.071"/>
+  <testcase name="getActiveDetail_stillThrowsNotFoundOnACacheMissForANonActiveListing()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.007"/>
+  <testcase name="create_resolvesTypeAndAmenitiesThenSavesAndPublishesEvent()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.072"/>
   <testcase name="getActiveDetail_showsExactLocationToAnAdmin_regardlessOfOwnershipOrBooking()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.008"/>
-  <testcase name="transition_rejectsAnInvalidTransition()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
-  <testcase name="getActiveDetail_onACacheHit_neverTouchesTheRepository()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.002"/>
-  <testcase name="update_throwsForbiddenWhenCallerIsNotTheOwningHost()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
-  <testcase name="update_appliesOnlyProvidedFieldsAndPublishesEvent()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
+  <testcase name="transition_rejectsAnInvalidTransition()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.004"/>
+  <testcase name="getActiveDetail_onACacheHit_neverTouchesTheRepository()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.005"/>
+  <testcase name="update_throwsForbiddenWhenCallerIsNotTheOwningHost()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.014"/>
+  <testcase name="update_appliesOnlyProvidedFieldsAndPublishesEvent()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.008"/>
   <testcase name="getActive_returnsAnActiveListing()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.002"/>
-  <testcase name="getActive_throwsNotFoundForADraftListing_noInfoLeak()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
+  <testcase name="getActive_throwsNotFoundForADraftListing_noInfoLeak()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.009"/>
   <testcase name="create_rejectsUnknownPropertyType()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.004"/>
-  <testcase name="getActiveDetail_redactsForAGuestWithOnlyAPendingHold_notYetPaid()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
-  <testcase name="create_rejectsUnknownAmenityCode()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
-  <testcase name="update_throwsNotFoundWhenListingDoesNotExist()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.002"/>
-  <testcase name="transition_rejectsWhenCallerDoesNotOwnTheListing()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.002"/>
-  <testcase name="setAvailability_createsANewDayAndUpdatesAnExistingOne()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.005"/>
-  <testcase name="transition_appliesValidTransition()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.002"/>
-  <testcase name="getAvailability_rejectsAnInvertedRange()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.008"/>
-  <testcase name="getActiveDetail_redactsAddressAndRoundsCoordinatesForAnAnonymousViewer()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
-  <testcase name="getActiveDetail_showsExactLocationToAGuestWithAConfirmedBooking()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
-  <testcase name="getActiveDetail_onACacheMiss_queriesAndThenPopulatesTheCache()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
-  <testcase name="getActive_throwsNotFoundWhenNoSuchListing()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.002"/>
+  <testcase name="getActiveDetail_redactsForAGuestWithOnlyAPendingHold_notYetPaid()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.006"/>
+  <testcase name="create_rejectsUnknownAmenityCode()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.007"/>
+  <testcase name="update_throwsNotFoundWhenListingDoesNotExist()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.004"/>
+  <testcase name="transition_rejectsWhenCallerDoesNotOwnTheListing()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.005"/>
+  <testcase name="setAvailability_createsANewDayAndUpdatesAnExistingOne()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.009"/>
+  <testcase name="transition_appliesValidTransition()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.004"/>
+  <testcase name="getAvailability_rejectsAnInvertedRange()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.005"/>
+  <testcase name="getActiveDetail_redactsAddressAndRoundsCoordinatesForAnAnonymousViewer()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.006"/>
+  <testcase name="getActiveDetail_showsExactLocationToAGuestWithAConfirmedBooking()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.009"/>
+  <testcase name="getActiveDetail_onACacheMiss_queriesAndThenPopulatesTheCache()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.002"/>
+  <testcase name="getActive_throwsNotFoundWhenNoSuchListing()" classname="com.havyn.properties.service.PropertyServiceTest" time="0.003"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

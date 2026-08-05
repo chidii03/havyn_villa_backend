@@ -102,6 +102,10 @@ havyn:
     client-id: ${GOOGLE_CLIENT_ID:}
     client-secret: ${GOOGLE_CLIENT_SECRET:}
 
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+
   auth:
     cookie:
       secure: ${AUTH_COOKIE_SECURE:false}

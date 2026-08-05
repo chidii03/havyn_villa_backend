@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.payments.provider.flutterwave.FlutterwavePaymentProviderTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:21:27.331Z" hostname="CHIDI" time="0.135">
+<testsuite name="com.havyn.payments.provider.flutterwave.FlutterwavePaymentProviderTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:46.152Z" hostname="CHIDI" time="0.096">
   <properties/>
-  <testcase name="createIntent_createsAHostedCheckoutLink()" classname="com.havyn.payments.provider.flutterwave.FlutterwavePaymentProviderTest" time="0.096"/>
-  <testcase name="parseWebhook_rejectsInvalidHash()" classname="com.havyn.payments.provider.flutterwave.FlutterwavePaymentProviderTest" time="0.01"/>
-  <testcase name="parseWebhook_acceptsConfiguredHashAndMapsSuccess()" classname="com.havyn.payments.provider.flutterwave.FlutterwavePaymentProviderTest" time="0.026"/>
+  <testcase name="createIntent_createsAHostedCheckoutLink()" classname="com.havyn.payments.provider.flutterwave.FlutterwavePaymentProviderTest" time="0.048"/>
+  <testcase name="parseWebhook_rejectsInvalidHash()" classname="com.havyn.payments.provider.flutterwave.FlutterwavePaymentProviderTest" time="0.017"/>
+  <testcase name="parseWebhook_acceptsConfiguredHashAndMapsSuccess()" classname="com.havyn.payments.provider.flutterwave.FlutterwavePaymentProviderTest" time="0.023"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

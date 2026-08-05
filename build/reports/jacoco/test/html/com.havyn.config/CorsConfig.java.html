@@ -13,20 +13,20 @@ import org.springframework.web.filter.CorsFilter;
  * project-docs/security/01-security-plan.md#input--data.
  */
 @Configuration
-<span class="nc" id="L16">public class CorsConfig {</span>
+<span class="fc" id="L16">public class CorsConfig {</span>
 
     @Bean
     public CorsFilter corsFilter(@Value(&quot;${havyn.web-base-url:http://localhost:3000}&quot;) String webBaseUrl) {
-<span class="nc" id="L20">        CorsConfiguration configuration = new CorsConfiguration();</span>
-<span class="nc" id="L21">        configuration.setAllowedOrigins(List.of(webBaseUrl));</span>
-<span class="nc" id="L22">        configuration.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;, &quot;PATCH&quot;, &quot;PUT&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
-<span class="nc" id="L23">        configuration.setAllowedHeaders(List.of(&quot;Authorization&quot;, &quot;Content-Type&quot;, &quot;Idempotency-Key&quot;, &quot;X-Correlation-Id&quot;));</span>
-<span class="nc" id="L24">        configuration.setExposedHeaders(List.of(&quot;X-Correlation-Id&quot;));</span>
-<span class="nc" id="L25">        configuration.setAllowCredentials(true);</span>
+<span class="fc" id="L20">        CorsConfiguration configuration = new CorsConfiguration();</span>
+<span class="fc" id="L21">        configuration.setAllowedOrigins(List.of(webBaseUrl));</span>
+<span class="fc" id="L22">        configuration.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;, &quot;PATCH&quot;, &quot;PUT&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
+<span class="fc" id="L23">        configuration.setAllowedHeaders(List.of(&quot;Authorization&quot;, &quot;Content-Type&quot;, &quot;Idempotency-Key&quot;, &quot;X-Correlation-Id&quot;));</span>
+<span class="fc" id="L24">        configuration.setExposedHeaders(List.of(&quot;X-Correlation-Id&quot;));</span>
+<span class="fc" id="L25">        configuration.setAllowCredentials(true);</span>
 
-<span class="nc" id="L27">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
-<span class="nc" id="L28">        source.registerCorsConfiguration(&quot;/**&quot;, configuration);</span>
-<span class="nc" id="L29">        return new CorsFilter(source);</span>
+<span class="fc" id="L27">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
+<span class="fc" id="L28">        source.registerCorsConfiguration(&quot;/**&quot;, configuration);</span>
+<span class="fc" id="L29">        return new CorsFilter(source);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

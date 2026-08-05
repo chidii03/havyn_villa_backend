@@ -37,8 +37,10 @@ public class MeController {
     @PatchMapping
     public UserSummary updateMe(Authentication authentication, @Valid @RequestBody UpdateMeRequest request) {
         AuthenticatedUser principal = principal(authentication);
+        User user = userRepository.findById(principal.userId())
+                .orElseThrow(() -> NotFoundException.of("User", principal.userId()));
         Profile profile = profileRepository.findByUser_Id(principal.userId())
-                .orElseThrow(() -> NotFoundException.of("Profile", principal.userId()));
+                .orElseGet(() -> new Profile(user, request.fullName() != null && !request.fullName().isBlank() ? request.fullName() : user.getEmail()));
         if (request.fullName() != null) {
             profile.setFullName(request.fullName());
         }

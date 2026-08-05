@@ -23,8 +23,12 @@ import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 /**
  * Real Paystack REST integration (https://paystack.com/docs/api/) — "Initialize
@@ -70,7 +74,11 @@ public class PaystackPaymentProvider implements PaymentProvider {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.meterRegistry = meterRegistry;
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(properties.getConnectTimeout());
+        requestFactory.setReadTimeout(properties.getReadTimeout());
         this.restClient = restClientBuilder
+                .requestFactory(requestFactory)
                 .baseUrl(properties.getBaseUrl())
                 .defaultHeader("Authorization", "Bearer " + properties.getSecretKey())
                 .build();
@@ -88,16 +96,35 @@ public class PaystackPaymentProvider implements PaymentProvider {
         }
         Map<String, Object> body = Map.of(
                 "email", request.customerEmail(),
-                "amount", toSmallestUnit(request.amount()),
+                "amount", String.valueOf(toSmallestUnit(request.amount())),
                 "currency", request.currency(),
                 "reference", request.reference(),
                 "callback_url", properties.getCallbackUrl());
 
-        JsonNode response = restClient.post()
-                .uri("/transaction/initialize")
-                .body(body)
-                .retrieve()
-                .body(JsonNode.class);
+        JsonNode response;
+        try {
+            response = restClient.post()
+                    .uri("/transaction/initialize")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(JsonNode.class);
+        } catch (RestClientResponseException ex) {
+            String message = "Paystack checkout could not be started";
+            try {
+                JsonNode error = objectMapper.readTree(ex.getResponseBodyAsString());
+                if (error.hasNonNull("message")) {
+                    message = error.path("message").asText(message);
+                }
+            } catch (Exception ignored) {
+                // Keep the stable API error below when Paystack returns non-JSON.
+            }
+            throw new ServiceUnavailableException("PAYSTACK_INITIALIZE_FAILED", message);
+        } catch (ResourceAccessException ex) {
+            throw new ServiceUnavailableException(
+                    "PAYSTACK_INITIALIZE_TIMEOUT",
+                    "Paystack checkout timed out. Please try again in a moment.");
+        }
 
         JsonNode data = response.path("data");
         String checkoutUrl = data.path("authorization_url").asText();

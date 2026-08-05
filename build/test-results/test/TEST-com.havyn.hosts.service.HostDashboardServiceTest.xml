@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.hosts.service.HostDashboardServiceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:21:25.243Z" hostname="CHIDI" time="0.327">
+<testsuite name="com.havyn.hosts.service.HostDashboardServiceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:43.506Z" hostname="CHIDI" time="1.041">
   <properties/>
-  <testcase name="summary_returnsZeroesForAHostWithNoDataYet()" classname="com.havyn.hosts.service.HostDashboardServiceTest" time="0.043"/>
-  <testcase name="summary_sumsEarningsByCurrencyAndCountsPendingPayouts()" classname="com.havyn.hosts.service.HostDashboardServiceTest" time="0.005"/>
-  <testcase name="summary_countsActiveAndTotalListingsAndAveragesOnlyRatedOnes()" classname="com.havyn.hosts.service.HostDashboardServiceTest" time="0.004"/>
+  <testcase name="summary_returnsZeroesForAHostWithNoDataYet()" classname="com.havyn.hosts.service.HostDashboardServiceTest" time="0.183"/>
+  <testcase name="summary_sumsEarningsByCurrencyAndCountsPendingPayouts()" classname="com.havyn.hosts.service.HostDashboardServiceTest" time="0.009"/>
+  <testcase name="summary_countsActiveAndTotalListingsAndAveragesOnlyRatedOnes()" classname="com.havyn.hosts.service.HostDashboardServiceTest" time="0.007"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

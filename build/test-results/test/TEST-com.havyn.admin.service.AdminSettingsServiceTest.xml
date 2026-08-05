@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.admin.service.AdminSettingsServiceTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:20:25.833Z" hostname="CHIDI" time="1.067">
+<testsuite name="com.havyn.admin.service.AdminSettingsServiceTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:18:57.788Z" hostname="CHIDI" time="1.221">
   <properties/>
-  <testcase name="update_rejectsANonNumericCommissionPct()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.075"/>
-  <testcase name="update_rejectsANonBooleanValueForBookingsEnabled()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.004"/>
-  <testcase name="update_rejectsACommissionPctOutOfRange()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.008"/>
-  <testcase name="update_appliesTheBookingsEnabledKillSwitch_launchChecklistFix()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.067"/>
-  <testcase name="update_appliesAValidNewCommissionPct()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.005"/>
-  <testcase name="update_rejectsABlankValue()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.004"/>
-  <testcase name="update_rejectsAMissingSetting()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.01"/>
+  <testcase name="update_rejectsANonNumericCommissionPct()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.135"/>
+  <testcase name="update_rejectsANonBooleanValueForBookingsEnabled()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.008"/>
+  <testcase name="update_rejectsACommissionPctOutOfRange()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.012"/>
+  <testcase name="update_appliesTheBookingsEnabledKillSwitch_launchChecklistFix()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.113"/>
+  <testcase name="update_appliesAValidNewCommissionPct()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.007"/>
+  <testcase name="update_rejectsABlankValue()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.008"/>
+  <testcase name="update_rejectsAMissingSetting()" classname="com.havyn.admin.service.AdminSettingsServiceTest" time="0.007"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -1,30 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.booking.domain.BookingStatusTest" tests="24" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:20:34.770Z" hostname="CHIDI" time="2.875">
+<testsuite name="com.havyn.booking.domain.BookingStatusTest" tests="24" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:07.849Z" hostname="CHIDI" time="0.774">
   <properties/>
-  <testcase name="[1] status=PENDING, active=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.331"/>
-  <testcase name="[2] status=CONFIRMED, active=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[3] status=COMPLETED, active=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[4] status=CANCELLED, active=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[5] status=REFUNDED, active=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[1] status=PENDING" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[2] status=CONFIRMED" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[3] status=CANCELLED" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
-  <testcase name="[4] status=COMPLETED" classname="com.havyn.booking.domain.BookingStatusTest" time="0.003"/>
-  <testcase name="[5] status=REFUNDED" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[1] from=PENDING, to=CONFIRMED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.007"/>
-  <testcase name="[2] from=PENDING, to=CANCELLED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
-  <testcase name="[3] from=PENDING, to=COMPLETED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[4] from=PENDING, to=REFUNDED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
-  <testcase name="[5] from=CONFIRMED, to=CANCELLED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.004"/>
-  <testcase name="[6] from=CONFIRMED, to=COMPLETED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[7] from=CONFIRMED, to=REFUNDED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[8] from=CONFIRMED, to=PENDING, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
-  <testcase name="[9] from=CANCELLED, to=PENDING, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
-  <testcase name="[10] from=CANCELLED, to=CONFIRMED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.004"/>
-  <testcase name="[11] from=COMPLETED, to=REFUNDED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[12] from=COMPLETED, to=CANCELLED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.001"/>
-  <testcase name="[13] from=REFUNDED, to=CANCELLED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
-  <testcase name="[14] from=REFUNDED, to=CONFIRMED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
+  <testcase name="[1] status=PENDING, active=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.067"/>
+  <testcase name="[2] status=CONFIRMED, active=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
+  <testcase name="[3] status=COMPLETED, active=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.003"/>
+  <testcase name="[4] status=CANCELLED, active=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.003"/>
+  <testcase name="[5] status=REFUNDED, active=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.004"/>
+  <testcase name="[1] status=PENDING" classname="com.havyn.booking.domain.BookingStatusTest" time="0.005"/>
+  <testcase name="[2] status=CONFIRMED" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
+  <testcase name="[3] status=CANCELLED" classname="com.havyn.booking.domain.BookingStatusTest" time="0.013"/>
+  <testcase name="[4] status=COMPLETED" classname="com.havyn.booking.domain.BookingStatusTest" time="0.005"/>
+  <testcase name="[5] status=REFUNDED" classname="com.havyn.booking.domain.BookingStatusTest" time="0.01"/>
+  <testcase name="[1] from=PENDING, to=CONFIRMED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.011"/>
+  <testcase name="[2] from=PENDING, to=CANCELLED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.014"/>
+  <testcase name="[3] from=PENDING, to=COMPLETED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.013"/>
+  <testcase name="[4] from=PENDING, to=REFUNDED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.003"/>
+  <testcase name="[5] from=CONFIRMED, to=CANCELLED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
+  <testcase name="[6] from=CONFIRMED, to=COMPLETED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.003"/>
+  <testcase name="[7] from=CONFIRMED, to=REFUNDED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.002"/>
+  <testcase name="[8] from=CONFIRMED, to=PENDING, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.004"/>
+  <testcase name="[9] from=CANCELLED, to=PENDING, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.008"/>
+  <testcase name="[10] from=CANCELLED, to=CONFIRMED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.005"/>
+  <testcase name="[11] from=COMPLETED, to=REFUNDED, allowed=true" classname="com.havyn.booking.domain.BookingStatusTest" time="0.008"/>
+  <testcase name="[12] from=COMPLETED, to=CANCELLED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.003"/>
+  <testcase name="[13] from=REFUNDED, to=CANCELLED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.008"/>
+  <testcase name="[14] from=REFUNDED, to=CONFIRMED, allowed=false" classname="com.havyn.booking.domain.BookingStatusTest" time="0.003"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

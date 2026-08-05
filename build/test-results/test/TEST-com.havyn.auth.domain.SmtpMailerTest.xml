@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.auth.domain.SmtpMailerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-05T03:20:34.534Z" hostname="CHIDI" time="0.229">
+<testsuite name="com.havyn.auth.domain.SmtpMailerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:07.580Z" hostname="CHIDI" time="0.257">
   <properties/>
-  <testcase name="sendPasswordReset_doesNotThrow_whenTheMailServerIsUnreachable()" classname="com.havyn.auth.domain.SmtpMailerTest" time="0.114"/>
-  <testcase name="sendEmailVerification_doesNotThrow_whenTheMailServerIsUnreachable()" classname="com.havyn.auth.domain.SmtpMailerTest" time="0.007"/>
-  <testcase name="sendEmailVerification_stillSendsNormally_whenTheMailServerWorks()" classname="com.havyn.auth.domain.SmtpMailerTest" time="0.002"/>
-  <system-out><![CDATA[04:20:34.752 [Test worker] WARN com.havyn.auth.domain.SmtpMailer -- Failed to send email (subject="Reset your Havyn Villa password"), continuing without it: Couldn't connect to host, port: localhost, 1025
-04:20:34.756 [Test worker] WARN com.havyn.auth.domain.SmtpMailer -- Failed to send email (subject="Verify your Havyn Villa email"), continuing without it: Couldn't connect to host, port: localhost, 1025
+  <testcase name="sendPasswordReset_doesNotThrow_whenTheMailServerIsUnreachable()" classname="com.havyn.auth.domain.SmtpMailerTest" time="0.057"/>
+  <testcase name="sendEmailVerification_doesNotThrow_whenTheMailServerIsUnreachable()" classname="com.havyn.auth.domain.SmtpMailerTest" time="0.008"/>
+  <testcase name="sendEmailVerification_stillSendsNormally_whenTheMailServerWorks()" classname="com.havyn.auth.domain.SmtpMailerTest" time="0.009"/>
+  <system-out><![CDATA[09:19:07.792 [Test worker] WARN com.havyn.auth.domain.SmtpMailer -- Failed to send email (subject="Reset your Havyn Villa password"), continuing without it: Couldn't connect to host, port: localhost, 1025
+09:19:07.802 [Test worker] WARN com.havyn.auth.domain.SmtpMailer -- Failed to send email (subject="Verify your Havyn Villa email"), continuing without it: Couldn't connect to host, port: localhost, 1025
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
