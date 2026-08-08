@@ -10,8 +10,11 @@ import com.havyn.properties.repo.PropertyRepository;
 import com.havyn.properties.repo.PropertyTypeRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -39,7 +42,8 @@ public class RayPropSyncService {
     private static final Logger log = LoggerFactory.getLogger(RayPropSyncService.class);
     private static final String SOURCE = "RAYPROP";
     private static final String COUNTRY = "Nigeria"; // RayProp is Nigeria-only (NGN, Nigerian bank codes throughout its docs).
-    private static final BigDecimal MINOR_UNIT_DIVISOR = BigDecimal.valueOf(100);
+    private static final List<String> DISPLAY_TYPE_CODES =
+            List.of("APARTMENT", "CABIN", "CONDO", "GUESTHOUSE", "HOUSE", "SHORTLET", "STUDIO");
 
     /** Seeded by V13__rayprop_import.sql — the {@code app_user} row every RayProp-imported listing attaches to as its {@code host_id}. */
     private static final UUID SYSTEM_HOST_ID = UUID.fromString("a11a11a1-1a11-4a11-a11a-11a11a11a11a");
@@ -62,9 +66,7 @@ public class RayPropSyncService {
 
     @Transactional
     public RayPropSyncResult sync() {
-        PropertyType shortlet = propertyTypeRepository.findByCodeIgnoreCase("SHORTLET")
-                .orElseThrow(() -> new IllegalStateException(
-                        "SHORTLET property type not seeded — V13__rayprop_import.sql didn't run"));
+        Map<String, PropertyType> propertyTypes = loadDisplayPropertyTypes();
 
         RayPropFetchResult fetchResult = client.fetchAllListings();
         List<RayPropListing> listings = fetchResult.listings();
@@ -74,15 +76,16 @@ public class RayPropSyncService {
         for (RayPropListing listing : listings) {
             Optional<Property> existing = propertyRepository.findByExternalSourceAndExternalId(SOURCE, listing.id());
             Property property;
+            PropertyType displayType = displayTypeFor(listing, propertyTypes);
 
             if (existing.isPresent()) {
                 property = existing.get();
-                applyFields(property, listing, shortlet);
+                applyFields(property, listing, displayType);
                 updated++;
             } else {
                 property = new Property(
                         SYSTEM_HOST_ID,
-                        shortlet,
+                        displayType,
                         truncate(orPlaceholder(listing.title(), "Untitled shortlet"), 150),
                         orPlaceholder(listing.description(), "No description provided."),
                         addressFrom(listing),
@@ -121,8 +124,8 @@ public class RayPropSyncService {
                 dataAccess != null ? dataAccess.dailyLimit() : null);
     }
 
-    private void applyFields(Property property, RayPropListing listing, PropertyType shortlet) {
-        property.setType(shortlet);
+    private void applyFields(Property property, RayPropListing listing, PropertyType displayType) {
+        property.setType(displayType);
         property.setTitle(truncate(orPlaceholder(listing.title(), property.getTitle()), 150));
         property.setDescription(orPlaceholder(listing.description(), property.getDescription()));
         property.setAddress(addressFrom(listing));
@@ -135,6 +138,49 @@ public class RayPropSyncService {
         property.setBedrooms(Math.max(listing.bedrooms(), 0));
         property.setBeds(Math.max(listing.bedrooms(), 0));
         property.setBathrooms(bathroomsOrDefault(listing));
+    }
+
+    private Map<String, PropertyType> loadDisplayPropertyTypes() {
+        Map<String, PropertyType> propertyTypes = new LinkedHashMap<>();
+        for (String code : DISPLAY_TYPE_CODES) {
+            propertyTypes.put(code, propertyTypeRepository.findByCodeIgnoreCase(code)
+                    .orElseThrow(() -> new IllegalStateException(code + " property type is not seeded")));
+        }
+        return propertyTypes;
+    }
+
+    private static PropertyType displayTypeFor(RayPropListing listing, Map<String, PropertyType> propertyTypes) {
+        String haystack = String.join(" ",
+                        orPlaceholder(listing.category(), ""),
+                        orPlaceholder(listing.title(), ""),
+                        orPlaceholder(listing.description(), ""))
+                .toLowerCase(Locale.ROOT);
+
+        String matchedCode = null;
+        if (haystack.contains("studio") || listing.bedrooms() == 0) {
+            matchedCode = "STUDIO";
+        } else if (haystack.contains("cabin") || haystack.contains("chalet")) {
+            matchedCode = "CABIN";
+        } else if (haystack.contains("condo") || haystack.contains("condominium")) {
+            matchedCode = "CONDO";
+        } else if (haystack.contains("guesthouse") || haystack.contains("guest house")) {
+            matchedCode = "GUESTHOUSE";
+        } else if (haystack.contains("duplex")
+                || haystack.contains("terrace")
+                || haystack.contains("house")
+                || haystack.contains("home")) {
+            matchedCode = "HOUSE";
+        } else if (haystack.contains("apartment") || haystack.contains("flat")) {
+            matchedCode = "APARTMENT";
+        } else if (haystack.contains("shortlet") || haystack.contains("short let")) {
+            matchedCode = "SHORTLET";
+        }
+
+        if (matchedCode == null) {
+            int index = Math.floorMod(listing.id().hashCode(), DISPLAY_TYPE_CODES.size());
+            matchedCode = DISPLAY_TYPE_CODES.get(index);
+        }
+        return propertyTypes.get(matchedCode);
     }
 
     private void syncMedia(UUID propertyId, List<String> imageUrls) {
@@ -187,8 +233,7 @@ public class RayPropSyncService {
     }
 
     private static BigDecimal priceInNaira(RayPropListing listing) {
-        return BigDecimal.valueOf(listing.pricePerNightMinorUnits())
-                .divide(MINOR_UNIT_DIVISOR, 2, RoundingMode.HALF_UP);
+        return BigDecimal.valueOf(listing.pricePerNightMinorUnits(), 2).setScale(2, RoundingMode.HALF_UP);
     }
 
     private static BigDecimal bathroomsOrDefault(RayPropListing listing) {

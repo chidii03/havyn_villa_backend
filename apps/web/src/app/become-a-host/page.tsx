@@ -28,13 +28,7 @@ const VALUE_PROPS: { icon: IconName; title: string; description: string }[] = [
   },
 ];
 
-/**
- * Marketing/value-prop page whose CTA is now context-aware — see
- * project-docs/prompts/17-host-dashboard.md: logged-out visitors go to /signup
- * (unchanged); a signed-in customer's CTA becomes a real "become a host" action
- * (POST /host/onboarding); an existing host's CTA goes straight to their dashboard.
- * The listing wizard itself lives at /host/listings/new.
- */
+
 export default function BecomeAHostPage() {
   const { status, user, accessToken, applySession } = useAuth();
   const router = useRouter();

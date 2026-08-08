@@ -8,14 +8,6 @@ import { Icon } from "@/components/ui/icon";
 import type { IconName } from "@/components/ui/icon-registry";
 import { cn } from "@/lib/utils";
 
-/**
- * frontend/03-ui-and-navigation-spec.md#1.3. The spec's example labels ("Beachfront,
- * Villas, Cabins, City, Lakefront…") aren't real fields anywhere in the data model —
- * there's no beachfront/lakefront tag on `Property`. Chips are wired to the real
- * `PropertyType` taxonomy (`GET /property-types`) instead of inventing categories the
- * backend can't actually filter by; see frontend/01-frontend-foundation.md's session 5
- * notes for the full reasoning.
- */
 const TYPE_ICONS: Record<string, IconName> = {
   APARTMENT: "building",
   VILLA: "house",
@@ -61,7 +53,7 @@ export function CategoryChips({ types, basePath }: { types: PropertyTypeSummary[
         ref={trackRef}
         role="tablist"
         aria-label="Property categories"
-        className="flex w-full gap-2 overflow-x-auto scroll-smooth px-1 py-1 sm:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full gap-2 overflow-x-auto scroll-smooth px-1 py-1 sm:px-10 scrollbar-none [&::-webkit-scrollbar]:hidden"
       >
         <Link
           href={hrefFor(null)}

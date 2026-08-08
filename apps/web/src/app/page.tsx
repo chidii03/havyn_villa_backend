@@ -7,18 +7,28 @@ import { search } from "@/lib/api/search";
 import type { SearchResultItem } from "@havyn/shared";
 
 const ROW_SIZE = 12;
+const HOME_SEARCH_SIZE = 140;
+const TARGET_EXTRA_ROWS = 8;
 const FEATURED_TITLE = "New on Havyn Villa";
+const CURATED_ROWS = [
+  { title: "Lagos weekend stays", predicate: (p: SearchResultItem) => includesAny(p, ["lagos"]) },
+  { title: "Island apartments", predicate: (p: SearchResultItem) => includesAny(p, ["island", "lekki", "ikoyi", "vi"]) },
+  { title: "Pool-ready homes", predicate: (p: SearchResultItem) => includesAny(p, ["pool", "swim"]) },
+  { title: "Family-sized villas", predicate: (p: SearchResultItem) => p.capacity >= 4 || p.bedrooms >= 3 },
+  { title: "Couple escapes", predicate: (p: SearchResultItem) => p.capacity <= 3 && p.bedrooms <= 2 },
+  { title: "High-rating picks", predicate: (p: SearchResultItem) => p.ratingAvg >= 4 },
+  { title: "Best value stays", predicate: (p: SearchResultItem) => p.basePrice > 0 },
+  { title: "Fresh shortlets", predicate: () => true },
+];
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
   const { type } = await searchParams;
   const [types, amenities, results] = await Promise.all([
     listPropertyTypes(),
     listAmenities(),
-    search({ type, sort: "newest", size: 96 }),
+    search({ type, sort: "newest", size: HOME_SEARCH_SIZE }),
   ]);
 
-  // Homepage carousels are image-led. A listing without a usable remote image is
-  // still searchable, but it must not create an empty/broken card on this page.
   const properties = results.data.filter(hasUsablePhoto);
 
   if (properties.length === 0) {
@@ -72,7 +82,7 @@ function buildHomeRows(properties: SearchResultItem[]) {
   const featured = properties.slice(0, ROW_SIZE);
   featured.forEach((p) => used.add(p.id));
 
-  const remaining = properties.filter((p) => !used.has(p.id));
+  let remaining = properties.filter((p) => !used.has(p.id));
 
   const byCity = new Map<string, SearchResultItem[]>();
   for (const property of remaining) {
@@ -82,24 +92,42 @@ function buildHomeRows(properties: SearchResultItem[]) {
     byCity.set(key, list);
   }
 
-  // Only build a row for a city if there's enough content to make scrolling
-  // worthwhile — avoids a "row" that's just 1-2 cards.
   const MIN_ROW_SIZE = 4;
 
   const rows = Array.from(byCity.entries())
     .filter(([, list]) => list.length >= MIN_ROW_SIZE)
-    .sort((a, b) => b[1].length - a[1].length) // biggest city sections first
+    .sort((a, b) => b[1].length - a[1].length) 
     .map(([city, list]) => {
-      const cityProperties = list.slice(0, ROW_SIZE);
+      const cityProperties = list.filter((p) => !used.has(p.id)).slice(0, ROW_SIZE);
       cityProperties.forEach((p) => used.add(p.id));
       const state = cityProperties[0]?.state;
       return {
         title: state && state !== city ? `Stays in ${city}, ${state}` : `Stays in ${city}`,
         properties: cityProperties,
       };
-    });
+    })
+    .filter((row) => row.properties.length >= MIN_ROW_SIZE)
+    .slice(0, TARGET_EXTRA_ROWS);
+
+  remaining = properties.filter((p) => !used.has(p.id));
+  for (const curated of CURATED_ROWS) {
+    if (rows.length >= TARGET_EXTRA_ROWS) break;
+    const rowProperties = remaining.filter(curated.predicate).slice(0, ROW_SIZE);
+    if (rowProperties.length < MIN_ROW_SIZE) continue;
+    rowProperties.forEach((p) => used.add(p.id));
+    rows.push({ title: curated.title, properties: rowProperties });
+    remaining = properties.filter((p) => !used.has(p.id));
+  }
 
   return { featured, rows };
+}
+
+function includesAny(property: SearchResultItem, needles: string[]) {
+  const haystack = [property.title, property.city, property.state, property.country, property.propertyType]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return needles.some((needle) => haystack.includes(needle));
 }
 
 function hasUsablePhoto(property: SearchResultItem) {

@@ -2,6 +2,7 @@ package com.havyn.auth.web;
 
 import com.havyn.auth.domain.AuthResult;
 import com.havyn.auth.domain.AuthService;
+import com.havyn.auth.domain.GoogleTokenVerifier;
 import com.havyn.common.error.BadRequestException;
 import com.havyn.common.reference.Role;
 import com.havyn.users.domain.Profile;
@@ -33,16 +34,25 @@ public class AuthController {
     public static final String REFRESH_COOKIE_NAME = "havyn_refresh";
 
     private final AuthService authService;
+    private final GoogleTokenVerifier googleTokenVerifier;
     private final ProfileRepository profileRepository;
     private final Duration refreshTtl;
+    private final boolean refreshCookieSecure;
+    private final String refreshCookieSameSite;
 
     public AuthController(
             AuthService authService,
+            GoogleTokenVerifier googleTokenVerifier,
             ProfileRepository profileRepository,
-            @Value("${havyn.jwt.refresh-ttl-days}") long refreshTtlDays) {
+            @Value("${havyn.jwt.refresh-ttl-days}") long refreshTtlDays,
+            @Value("${havyn.auth.cookie.secure:false}") boolean refreshCookieSecure,
+            @Value("${havyn.auth.cookie.same-site:Lax}") String refreshCookieSameSite) {
         this.authService = authService;
+        this.googleTokenVerifier = googleTokenVerifier;
         this.profileRepository = profileRepository;
         this.refreshTtl = Duration.ofDays(refreshTtlDays);
+        this.refreshCookieSecure = refreshCookieSecure;
+        this.refreshCookieSameSite = refreshCookieSameSite;
     }
 
     @PostMapping("/register")
@@ -55,6 +65,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         AuthResult result = authService.login(request.email(), request.password());
+        setRefreshCookie(response, result.refreshToken());
+        return ResponseEntity.ok(toResponse(result));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleLoginRequest request, HttpServletResponse response) {
+        AuthResult result = authService.loginWithGoogle(googleTokenVerifier.verify(request.idToken()));
         setRefreshCookie(response, result.refreshToken());
         return ResponseEntity.ok(toResponse(result));
     }
@@ -137,8 +154,8 @@ public class AuthController {
     private ResponseCookie refreshCookie(String value, Duration maxAge) {
         return ResponseCookie.from(REFRESH_COOKIE_NAME, value)
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
+                .secure(refreshCookieSecure)
+                .sameSite(refreshCookieSameSite)
                 .path("/api/v1/auth")
                 .maxAge(maxAge)
                 .build();

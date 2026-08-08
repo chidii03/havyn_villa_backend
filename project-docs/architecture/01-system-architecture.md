@@ -20,7 +20,7 @@ One deployable Spring Boot application organized into clear domain modules with 
         │            │            │             │           │
    PostgreSQL      Redis      Object Storage  Payment    Maps/Email
   (source of     (cache,     (Cloudinary/    Providers   /External
-   truth)        holds,       S3/R2)         (Stripe/…)
+   truth)        holds,       S3/R2)         (paytack/flutterwave/…)
                  locks,
                  rate-limit)
 ```

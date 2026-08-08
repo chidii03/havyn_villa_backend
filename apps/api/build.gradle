@@ -63,11 +63,21 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	exclude '**/*IT.class'
+	finalizedBy jacocoTestReport
+}
+
+tasks.register('integrationTest', Test) {
+	description = 'Runs Docker-backed integration tests.'
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	useJUnitPlatform()
+	include '**/*IT.class'
+	shouldRunAfter test
 	finalizedBy jacocoTestReport
 }
 
 jacoco {
-	toolVersion = "0.8.12"
+	toolVersion = "0.8.13"
 }
 
 jacocoTestReport {
@@ -78,25 +88,10 @@ jacocoTestReport {
 	}
 }
 
-// project-docs/testing/01-testing-strategy.md: "coverage threshold on domain
-// modules." 80% on the four packages that carry the money-critical logic: pricing,
-// booking domain/service, auth domain.
-//
-// Measured locally (unit/Mockito tests only — this dev sandbox has no Docker daemon,
-// so the Testcontainers-backed *FlowIT/*IT suites can't run here; see
-// backend/01-backend-foundation.md's session 4 note and every session since):
-// `pricing.service` and `booking.domain` already clear 80% from unit tests alone.
-// `auth.domain` (24%) and `booking.service` (72%) do NOT — both have real logic that
-// only executes against live Redis (refresh-token session families, booking holds/
-// locks), which this codebase deliberately tests via Testcontainers integration tests
-// (AuthFlowIT, RefreshTokenServiceIT, RoleRepositoryIT, BookingFlowIT,
-// BookingConcurrencyIT) rather than mocking Redis. Those suites are broad enough that
-// 80% is a reasonable target once they run — but that combined number has NOT been
-// empirically confirmed end-to-end in this sandbox, only in CI (Docker available).
-// State this plainly rather than silently lowering the bar to whatever unit tests
-// alone happen to hit.
+
 jacocoTestCoverageVerification {
-	dependsOn test
+	dependsOn test, integrationTest
+	executionData tasks.named('test'), tasks.named('integrationTest')
 	violationRules {
 		rule {
 			element = 'PACKAGE'
@@ -114,13 +109,12 @@ jacocoTestCoverageVerification {
 	}
 }
 
-// Local-dev convenience only — never affects a packaged jar or a real deployment,
-// which always get config from real env vars/K8s secrets (see infra/k8s/), not a
-// .env file. `bootRun` is a JavaExec task; Gradle itself never reads `.env` files,
-// and neither does this Spring Boot app (no spring-dotenv or similar on the
-// classpath) — without this, a developer's .env is silently ignored and the app
-// falls back to application.yml's `havyn`/change_me/havyn_villa defaults, which is
-// exactly the "password authentication failed" confusion this fixes.
+tasks.register('integrationCheck') {
+	description = 'Runs unit tests, Docker-backed integration tests, and coverage verification.'
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	dependsOn test, integrationTest, jacocoTestCoverageVerification
+}
+
 tasks.named('bootRun') {
 	def envFile = file('.env').exists() ? file('.env') : file('../../.env')
 	if (envFile.exists()) {
@@ -134,4 +128,3 @@ tasks.named('bootRun') {
 	}
 }
 
-check.dependsOn jacocoTestCoverageVerification

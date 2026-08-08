@@ -1,12 +1,5 @@
 import { Icon } from "@/components/ui/icon";
 
-/**
- * `PropertyDetail` only exposes `hostId` today, not a display name/avatar — there's no
- * public host-profile lookup endpoint, and adding one is outside this prompt's
- * `apps/api/**` consume-only file scope. This shows a real, honest placeholder rather
- * than fabricating a host name; see backend/02-domain-modules.md's session 4 notes for
- * the "become a host" gap this is downstream of.
- */
 export function HostCard({ hostId }: { hostId: string }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-line p-4" data-host-id={hostId}>

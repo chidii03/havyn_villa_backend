@@ -18,7 +18,7 @@ export interface PropertyCardData {
 
 /** frontend/03-ui-and-navigation-spec.md#5. */
 export function PropertyCard({ property }: { property: PropertyCardData }) {
-  const photos = property.photoUrls.map((url) => ({ url, alt: property.title }));
+  const photos = property.photoUrls.filter(Boolean).map((url) => ({ url, alt: property.title }));
 
   return (
     <Link href={`/rooms/${property.id}`} className="group block focus-visible:outline-none">

@@ -11,6 +11,7 @@ interface AuthContextValue {
   user: UserSummary | null;
   accessToken: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
   /** Re-fetch /me — e.g. after email verification changes emailVerified. */
@@ -100,6 +101,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [scheduleRefresh],
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      const session = await authApi.googleLogin(idToken);
+      setAccessToken(session.accessToken);
+      setUser(session.user);
+      setStatus("authenticated");
+      scheduleRefresh(session.expiresIn);
+    },
+    [scheduleRefresh],
+  );
+
   const register = useCallback(
     async (email: string, password: string, fullName: string) => {
       const session = await authApi.register({ email, password, fullName });
@@ -146,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ status, user, accessToken, login, register, logout, refreshUser, applySession }}>
+    <AuthContext.Provider value={{ status, user, accessToken, login, loginWithGoogle, register, logout, refreshUser, applySession }}>
       {children}
     </AuthContext.Provider>
   );

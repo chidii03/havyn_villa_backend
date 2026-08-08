@@ -4,11 +4,6 @@ import { Icon } from "@/components/ui/icon";
 import * as authApi from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/http";
 
-/**
- * Landing target for the link SmtpMailer.sendEmailVerification emails — see apps/api.
- * A plain server-fetched page (no client JS needed): the verify call needs no cookie
- * or access token, so it runs once during render.
- */
 export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const { token } = await searchParams;
 

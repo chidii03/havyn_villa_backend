@@ -66,9 +66,12 @@ class PaystackPaymentProviderTest {
         mockServer.expect(requestTo("https://api.paystack.co/transaction/initialize"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(header("Authorization", "Bearer " + SECRET_KEY))
+                .andExpect(header("Content-Type", org.hamcrest.Matchers.containsString("application/json")))
                 .andExpect(jsonPath("$.email").value("guest@example.com"))
-                .andExpect(jsonPath("$.amount").value(3500000)) // 35000.00 NGN -> kobo
+                .andExpect(jsonPath("$.amount").value("3500000")) // 35000.00 NGN -> kobo
+                .andExpect(jsonPath("$.currency").value("NGN"))
                 .andExpect(jsonPath("$.reference").value("ref-123"))
+                .andExpect(jsonPath("$.callback_url").value("http://localhost:3000/trips"))
                 .andRespond(withSuccess(
                         """
                         {"status":true,"message":"Authorization URL created","data":

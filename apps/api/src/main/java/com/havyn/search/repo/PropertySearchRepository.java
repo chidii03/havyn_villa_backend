@@ -73,7 +73,7 @@ public class PropertySearchRepository {
         predicates.add(cb.equal(root.get("status"), PropertyStatus.ACTIVE));
 
         if (c.destination() != null) {
-            String pattern = "%" + c.destination() + "%";
+            String pattern = "%" + c.destination().trim().toLowerCase() + "%";
             predicates.add(cb.or(
                     cb.like(cb.lower(root.get("city")), pattern),
                     cb.like(cb.lower(root.get("state")), pattern),

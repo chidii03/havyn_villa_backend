@@ -1,8 +1,3 @@
-# Root .dockerignore — only apps/web/Dockerfile uses the repo root as its build
-# context (it needs packages/shared, which Docker can't COPY from outside the
-# context — see that Dockerfile's own comment). apps/api/Dockerfile has its own
-# context (apps/api/) and its own .dockerignore.
-
 **/node_modules/
 **/.next/
 **/.git/

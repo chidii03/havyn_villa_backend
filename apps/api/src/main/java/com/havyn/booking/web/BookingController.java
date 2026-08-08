@@ -6,6 +6,7 @@ import com.havyn.booking.service.BookingHoldLock;
 import com.havyn.booking.service.BookingService;
 import com.havyn.booking.service.CancellationOutcome;
 import com.havyn.common.web.PageResponse;
+import com.havyn.media.repo.PropertyMediaRepository;
 import com.havyn.properties.repo.PropertyRepository;
 import jakarta.validation.Valid;
 import java.util.Optional;
@@ -35,11 +36,17 @@ public class BookingController {
     private final BookingService bookingService;
     private final BookingHoldLock bookingHoldLock;
     private final PropertyRepository propertyRepository;
+    private final PropertyMediaRepository propertyMediaRepository;
 
-    public BookingController(BookingService bookingService, BookingHoldLock bookingHoldLock, PropertyRepository propertyRepository) {
+    public BookingController(
+            BookingService bookingService,
+            BookingHoldLock bookingHoldLock,
+            PropertyRepository propertyRepository,
+            PropertyMediaRepository propertyMediaRepository) {
         this.bookingService = bookingService;
         this.bookingHoldLock = bookingHoldLock;
         this.propertyRepository = propertyRepository;
+        this.propertyMediaRepository = propertyMediaRepository;
     }
 
     @PostMapping
@@ -78,9 +85,16 @@ public class BookingController {
 
     private BookingDetail toDetail(Booking booking) {
         BookingPropertySummary property = propertyRepository.findById(booking.getPropertyId())
-                .map(BookingPropertySummary::from)
+                .map(found -> BookingPropertySummary.from(found, firstPhoto(found.getId())))
                 .orElseGet(() -> BookingPropertySummary.unavailable(booking.getPropertyId()));
         return BookingDetail.from(booking, property);
+    }
+
+    private String firstPhoto(UUID propertyId) {
+        return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId).stream()
+                .findFirst()
+                .map(media -> media.getSecureUrl())
+                .orElse(null);
     }
 
     private UUID principal(Authentication authentication) {

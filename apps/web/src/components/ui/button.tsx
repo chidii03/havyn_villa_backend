@@ -27,9 +27,6 @@ const buttonVariants = cva(
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        // `icon` is 44px (not 32px) deliberately — project-docs/design/04-accessibility.md's
-        // 44x44 minimum touch target, stricter than WCAG 2.2 AA's 24px floor. icon-xs/icon-sm
-        // stay small for dense/secondary UI; icon-lg bumped to keep the scale ordered.
         icon: "size-11",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
@@ -60,14 +57,6 @@ function Button({
   )
 }
 
-/**
- * A navigation CTA styled like a button — plain next/image Link, not Base UI's
- * Button primitive. Base UI's `useButton` force-injects `role="button"` whenever
- * `nativeButton={false}` (its own required setting for any non-<button> `render`
- * target — see its own dev-time warning), which silences that warning at the cost of
- * overriding the correct, native "link" accessible role for what's really navigation.
- * A real, unwrapped `<a>` keeps `role="link"` for free with no warning to silence.
- */
 function LinkButton({
   className,
   variant = "default",

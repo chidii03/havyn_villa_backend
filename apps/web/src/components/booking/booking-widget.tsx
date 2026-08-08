@@ -64,6 +64,7 @@ export function BookingWidget({
 
   async function handleReserve() {
     if (!hasValidRange || !quoteQuery.data) return;
+    if (status === "loading") return;
 
     if (status !== "authenticated" || !accessToken) {
       router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
@@ -78,6 +79,7 @@ export function BookingWidget({
         { propertyId, checkIn: checkInIso!, checkOut: checkOutIso!, guests, expectedTotal: quoteQuery.data.grandTotal },
         idempotencyKey,
       );
+      await openCheckout(accessToken, booking.id);
       setHeldBooking(booking);
       setReserveState("held");
     } catch (error) {
@@ -176,12 +178,18 @@ export function BookingWidget({
       <Button
         type="button"
         className="mt-4 w-full"
-        disabled={!hasValidRange || !quoteQuery.data || reserveState === "submitting"}
+        disabled={!hasValidRange || !quoteQuery.data || reserveState === "submitting" || status === "loading"}
         onClick={handleReserve}
       >
-        {reserveState === "submitting" ? "Reserving…" : status === "authenticated" ? "Reserve" : "Log in to reserve"}
+        {reserveState === "submitting"
+          ? "Reserving…"
+          : status === "loading"
+            ? "Checking session…"
+            : status === "authenticated"
+              ? "Reserve"
+              : "Log in to reserve"}
       </Button>
-      <p className="mt-2 text-center text-xs text-ink-muted">You won&apos;t be charged yet.</p>
+      <p className="mt-2 text-center text-xs text-ink-muted">Your dates are held first, then secure checkout opens.</p>
     </div>
   );
 }
@@ -233,10 +241,7 @@ function HoldConfirmation({ booking, accessToken }: { booking: BookingDetail; ac
     setPaymentError(null);
     try {
       const intent = await createPaymentIntent(accessToken, booking.id);
-      if (!intent.checkoutUrl) {
-        throw new Error("The payment provider did not return a checkout link.");
-      }
-      window.location.assign(intent.checkoutUrl);
+      openCheckoutUrl(intent.checkoutUrl);
     } catch (error) {
       setPaymentState("error");
       setPaymentError(paymentErrorMessage(error));
@@ -255,10 +260,6 @@ function HoldConfirmation({ booking, accessToken }: { booking: BookingDetail; ac
       {booking.holdExpiresAt && (
         <p className="mt-1 text-sm text-ink-muted">Hold expires around {format(new Date(booking.holdExpiresAt), "h:mm a")}.</p>
       )}
-      <div className="hidden">
-        Payment isn&apos;t available yet — checkout is coming in a future update. If the hold expires before then,
-        you&apos;ll need to reserve again.
-      </div>
       <p className="mt-4 text-sm text-ink">
         Total: <span className="font-semibold tabular-nums">{formatPrice(booking.grandTotal, booking.currency)}</span>
       </p>
@@ -271,6 +272,18 @@ function HoldConfirmation({ booking, accessToken }: { booking: BookingDetail; ac
       </Link>
     </div>
   );
+}
+
+async function openCheckout(accessToken: string, bookingId: string) {
+  const intent = await createPaymentIntent(accessToken, bookingId);
+  openCheckoutUrl(intent.checkoutUrl);
+}
+
+function openCheckoutUrl(checkoutUrl: string | null | undefined) {
+  if (!checkoutUrl) {
+    throw new Error("The payment provider did not return a checkout link.");
+  }
+  window.location.assign(checkoutUrl);
 }
 
 function reserveErrorMessage(error: unknown): string {
@@ -287,7 +300,7 @@ function reserveErrorMessage(error: unknown): string {
       case "UNAUTHENTICATED":
         return "Please log in to reserve.";
       default:
-        return error.message || "Something went wrong. Please try again.";
+        return error.message || "Please check your internet connection and try again.";
     }
   }
   return "Something went wrong. Please try again.";

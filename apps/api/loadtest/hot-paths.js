@@ -3,18 +3,7 @@ import { check, sleep } from "k6";
 import { Rate } from "k6/metrics";
 import { SharedArray } from "k6/data";
 
-/**
- * project-docs/prompts/25-performance.md: "API p95 within targets under load test."
- * Run against a real booted stack — see .github/workflows/ci.yml's `load-test` job,
- * which seeds properties.json via seed.mjs first. Not runnable in this dev sandbox
- * (no Docker — same gap as every Testcontainers IT and the Playwright E2E suite; see
- * devops/02-observability.md's prompt 25 notes for the honesty statement on that).
- *
- * Targets below are *initial, reasoned* numbers — not derived from an observed
- * baseline (there isn't one to observe here) — set with headroom for a
- * Postgres+Redis-backed API doing real query/lock/write work, not a guess at "make
- * this pass." Revise once run against real infra/traffic.
- */
+
 const BASE_URL = __ENV.API_BASE_URL || "http://localhost:8080";
 
 const properties = new SharedArray("properties", function () {

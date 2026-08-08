@@ -1,11 +1,5 @@
 import { Icon } from "@/components/ui/icon";
 
-/**
- * `ratingAvg`/`ratingCount` are real fields on `PropertyDetail` (they just start at 0
- * for every listing since nothing has been reviewed yet). There's no `GET /properties/
- * {id}/reviews` endpoint (prompt 15), so this never fetches or renders a fake review
- * list — only the honest empty state.
- */
 export function ReviewsSection({ ratingAvg, ratingCount }: { ratingAvg: number; ratingCount: number }) {
   if (ratingCount === 0) {
     return (

@@ -1,9 +1,11 @@
 package com.havyn.properties.rayprop;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -51,17 +53,30 @@ public class RayPropClient {
 
     private final RestClient restClient;
     private final RayPropProperties properties;
+    private final ObjectMapper objectMapper;
 
     /**
      * Takes the Spring Boot auto-configured {@link RestClient.Builder} — same reasoning
      * as {@code PaystackPaymentProvider}: lets a test bind a {@code MockRestServiceServer}
      * to this exact client without a live RayProp account.
      */
-    public RayPropClient(RestClient.Builder restClientBuilder, RayPropProperties properties) {
+    public RayPropClient(RestClient.Builder restClientBuilder, RayPropProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
+        this.objectMapper = objectMapper;
         this.restClient = restClientBuilder
                 .baseUrl(properties.getBaseUrl())
                 .defaultHeader("x-api-key", properties.getApiKey())
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey())
+                .requestInterceptors(interceptors -> {
+                    log.info("RayProp RestClient interceptors before diagnostic logger: {}", interceptorNames(interceptors));
+                    interceptors.add((request, body, execution) -> {
+                        log.info(
+                                "RayProp outgoing request: method={} uri={} headers={}",
+                                request.getMethod(), request.getURI(), redactedHeaders(request.getHeaders()));
+                        return execution.execute(request, body);
+                    });
+                    log.info("RayProp RestClient interceptors after diagnostic logger: {}", interceptorNames(interceptors));
+                })
                 .build();
     }
 
@@ -74,8 +89,8 @@ public class RayPropClient {
     public RayPropFetchResult fetchAllListings() {
         List<RayPropListing> listings = new ArrayList<>();
         RayPropDataAccess lastDataAccess = null;
-        String cursor = null;
         int pagesFetched = 0;
+        String cursor = null;
 
         while (pagesFetched < properties.getMaxPages()) {
             RayPropPageResult result;
@@ -103,7 +118,7 @@ public class RayPropClient {
                 log.info("RayProp sync: page {} fetched — {} listings so far", page, listings.size());
             }
 
-            if (result.nextCursor() == null || result.nextCursor().isBlank()) {
+            if (!result.hasMore()) {
                 return new RayPropFetchResult(listings, pagesFetched, false, lastDataAccess);
             }
             cursor = result.nextCursor();
@@ -118,7 +133,7 @@ public class RayPropClient {
     private RayPropPageResult fetchPage(String cursor, int pageNumber) {
         for (int attempt = 1; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
             try {
-                return doFetchPage(cursor);
+                return doFetchPage(cursor, pageNumber);
             } catch (RayPropApiException ex) {
                 if (!ex.isRateLimited() || attempt == MAX_RATE_LIMIT_RETRIES) {
                     throw ex;
@@ -133,12 +148,14 @@ public class RayPropClient {
         throw new IllegalStateException("Unreachable");
     }
 
-    private RayPropPageResult doFetchPage(String cursor) {
+    private RayPropPageResult doFetchPage(String cursor, int pageNumber) {
         return restClient.get()
                 .uri(uriBuilder -> {
-                    var builder = uriBuilder.path("/listings").queryParam("limit", properties.getPageSize());
+                    var builder = uriBuilder.path(properties.getListingsPath()).queryParam("limit", properties.getPageSize());
                     if (cursor != null && !cursor.isBlank()) {
                         builder.queryParam("cursor", cursor);
+                    } else if (pageNumber > 1) {
+                        builder.queryParam("page", pageNumber);
                     }
                     return builder.build();
                 })
@@ -150,7 +167,11 @@ public class RayPropClient {
                     if (response.getStatusCode().isError()) {
                         String code = body.path("error").path("code").asText(response.getStatusCode().toString());
                         String message = body.path("error").path("message").asText("RayProp API request failed");
-                        throw new RayPropApiException(response.getStatusCode().value(), code, message);
+                        String responseBody = rawBody(body);
+                        log.warn(
+                                "RayProp API request failed: status={} code={} body={}",
+                                response.getStatusCode().value(), code, responseBody);
+                        throw new RayPropApiException(response.getStatusCode().value(), code, message, responseBody);
                     }
                     logRateLimitHeadersIfLow(response.getHeaders());
                     return RayPropPageResult.from(body);
@@ -184,14 +205,65 @@ public class RayPropClient {
     }
 
     /** One page's worth of {@code GET /listings} — internal to this class, {@link RayPropFetchResult} is the public shape. */
-    private record RayPropPageResult(List<RayPropListing> listings, String nextCursor, RayPropDataAccess dataAccess) {
+    private record RayPropPageResult(List<RayPropListing> listings, String nextCursor, boolean hasMore, RayPropDataAccess dataAccess) {
         static RayPropPageResult from(JsonNode body) {
             List<RayPropListing> listings = new ArrayList<>();
             for (JsonNode listingNode : body.path("data")) {
                 listings.add(RayPropListing.from(listingNode));
             }
-            String nextCursor = body.path("next_cursor").asText("");
-            return new RayPropPageResult(listings, nextCursor, RayPropDataAccess.from(body));
+            String nextCursor = body.path("next_cursor").asText(null);
+            boolean hasMore = (nextCursor != null && !nextCursor.isBlank())
+                    || body.path("meta").path("hasMore").asBoolean(false);
+            return new RayPropPageResult(listings, nextCursor, hasMore, RayPropDataAccess.from(body));
         }
+    }
+
+    private String rawBody(JsonNode body) {
+        if (body == null || body.isMissingNode() || body.isNull()) {
+            return "<empty>";
+        }
+        try {
+            String value = objectMapper.writeValueAsString(body);
+            return value.length() <= 2_000 ? value : value.substring(0, 2_000) + "...";
+        } catch (Exception ignored) {
+            return body.toString();
+        }
+    }
+
+    private static List<String> interceptorNames(List<?> interceptors) {
+        return interceptors.stream()
+                .map(interceptor -> interceptor.getClass().getName())
+                .toList();
+    }
+
+    private static Map<String, List<String>> redactedHeaders(HttpHeaders headers) {
+        Map<String, List<String>> redacted = new java.util.LinkedHashMap<>();
+        headers.forEach((name, values) -> redacted.put(name, values.stream()
+                .map(value -> redactedHeaderValue(name, value))
+                .toList()));
+        return redacted;
+    }
+
+    private static String redactedHeaderValue(String name, String value) {
+        if (value == null) {
+            return "<null>";
+        }
+        if ("x-api-key".equalsIgnoreCase(name)) {
+            return redactedSecret(value);
+        }
+        if (HttpHeaders.AUTHORIZATION.equalsIgnoreCase(name)) {
+            String prefix = "Bearer ";
+            if (value.startsWith(prefix)) {
+                return prefix + redactedSecret(value.substring(prefix.length()));
+            }
+            return redactedSecret(value);
+        }
+        return value;
+    }
+
+    private static String redactedSecret(String value) {
+        int prefixLength = Math.min(5, value.length());
+        String prefix = value.substring(0, prefixLength);
+        return "<redacted length=" + value.length() + " prefix=" + prefix + ">";
     }
 }

@@ -18,11 +18,17 @@ public class RayPropApiException extends RuntimeException {
 
     private final int httpStatus;
     private final String errorCode;
+    private final String responseBody;
 
     public RayPropApiException(int httpStatus, String errorCode, String message) {
+        this(httpStatus, errorCode, message, "");
+    }
+
+    public RayPropApiException(int httpStatus, String errorCode, String message, String responseBody) {
         super(message);
         this.httpStatus = httpStatus;
         this.errorCode = errorCode;
+        this.responseBody = responseBody;
     }
 
     public int getHttpStatus() {
@@ -31,6 +37,10 @@ public class RayPropApiException extends RuntimeException {
 
     public String getErrorCode() {
         return errorCode;
+    }
+
+    public String getResponseBody() {
+        return responseBody;
     }
 
     public boolean isDailyLimitReached() {

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api/http";
@@ -30,13 +31,14 @@ export function SignupForm() {
     try {
       await registerUser(values.email, values.password, values.fullName);
       toast.success("Welcome to Havyn Villa! Check your email to verify your account.");
-      router.push("/account");
+      router.push("/");
     } catch (error) {
       setServerError(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
     }
   }
 
   return (
+    <div className="flex flex-col gap-5">
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
       {serverError && (
         <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -82,5 +84,7 @@ export function SignupForm() {
         {isSubmitting ? "Creating account…" : "Sign up"}
       </Button>
     </form>
+    <GoogleSignInButton />
+    </div>
   );
 }

@@ -17,6 +17,10 @@ export function login(input: LoginInput) {
   return apiFetch<AuthResponse>("/api/v1/auth/login", { method: "POST", body: input });
 }
 
+export function googleLogin(idToken: string) {
+  return apiFetch<AuthResponse>("/api/v1/auth/google", { method: "POST", body: { idToken } });
+}
+
 /** Web relies on the httpOnly cookie; refreshToken is only needed for a mobile client. */
 export function refresh(refreshToken?: string) {
   return apiFetch<AuthResponse>("/api/v1/auth/refresh", { method: "POST", body: { refreshToken } });

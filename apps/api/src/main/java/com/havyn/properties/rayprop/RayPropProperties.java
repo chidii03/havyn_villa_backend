@@ -7,7 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class RayPropProperties {
 
     private String apiKey = "";
-    private String baseUrl = "https://api.rayprop.io/v1";
+    private String baseUrl = "https://api.rayprop.io";
+    private String listingsPath = "/listings";
 
     /** RayProp caps {@code limit} at 50 server-side regardless of what's requested (docs: Pagination). */
     private int pageSize = 50;
@@ -29,6 +30,14 @@ public class RayPropProperties {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public String getListingsPath() {
+        return listingsPath;
+    }
+
+    public void setListingsPath(String listingsPath) {
+        this.listingsPath = listingsPath;
     }
 
     public int getPageSize() {

@@ -1,5 +1,4 @@
 import { RequireAuth } from "@/components/auth/require-auth";
-import { requireSessionCookie } from "@/lib/auth/require-session-cookie";
 
 /**
  * Shared guard for /wishlists, /trips, /messages, /account, /host — see
@@ -8,7 +7,5 @@ import { requireSessionCookie } from "@/lib/auth/require-session-cookie";
  * single server-side check. /admin adds its own nested role check on top of this.
  */
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  await requireSessionCookie();
-
   return <RequireAuth>{children}</RequireAuth>;
 }

@@ -2,7 +2,6 @@ import { EmptyState } from "@/components/patterns/empty-state";
 import { cn } from "@/lib/utils";
 import { PropertyCard, type PropertyCardData } from "./property-card";
 
-/** `hoveredId`/`onHoverChange` are optional — only /search's list↔map sync (search-results-view.tsx) uses them. */
 export function ResultsGrid({
   properties,
   hoveredId,
@@ -31,7 +30,7 @@ export function ResultsGrid({
           onMouseLeave={() => onHoverChange?.(null)}
           className={cn(
             "rounded-xl transition-shadow",
-            hoveredId === property.id && "ring-2 ring-brand ring-offset-2",
+            hoveredId === property.id && "shadow-sm",
           )}
         >
           <PropertyCard property={property} />

@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
-@EnableScheduling // BookingService.sweepExpiredHolds() — prompt 12's expired-hold cleanup
+@EnableScheduling
 public class ApiApplication {
 
 	public static void main(String[] args) {

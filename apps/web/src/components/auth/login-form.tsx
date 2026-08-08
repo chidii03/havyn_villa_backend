@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api/http";
@@ -31,16 +32,14 @@ export function LoginForm() {
     try {
       await login(values.email, values.password);
       toast.success("Welcome back!");
-      router.push("/account");
+      router.push("/");
     } catch (error) {
-      // Deliberately generic — the backend returns the same INVALID_CREDENTIALS
-      // message for "no such user" and "wrong password" to avoid account
-      // enumeration (security/01-security-plan.md); we just surface it as-is.
       setServerError(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
     }
   }
 
   return (
+    <div className="flex flex-col gap-5">
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
       {serverError && (
         <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -81,5 +80,7 @@ export function LoginForm() {
         {isSubmitting ? "Logging in…" : "Log in"}
       </Button>
     </form>
+    <GoogleSignInButton />
+    </div>
   );
 }

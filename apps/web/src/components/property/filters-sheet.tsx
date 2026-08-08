@@ -14,11 +14,6 @@ import { formatPrice } from "@/lib/format/currency";
 const MAX_PRICE = 500_000;
 const RATING_OPTIONS = ["3", "4", "4.5"] as const;
 
-/**
- * frontend/03-ui-and-navigation-spec.md#1.3's FiltersSheet: price range, type, rooms,
- * amenities, rating. "Instant book" (also listed there) is dropped — there's no such
- * field on `Property` in the data model to filter by.
- */
 export function FiltersSheet({
   types,
   amenities,

@@ -4,6 +4,9 @@ import com.havyn.common.error.ConflictException;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +27,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class BookingHoldLock {
 
+    private static final Logger log = LoggerFactory.getLogger(BookingHoldLock.class);
     private static final String KEY_PREFIX = "havyn:booking:lock:";
     private static final Duration LOCK_TTL = Duration.ofSeconds(30);
 
@@ -37,7 +41,13 @@ public class BookingHoldLock {
         String key = KEY_PREFIX + propertyId;
         String token = UUID.randomUUID().toString();
 
-        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(key, token, LOCK_TTL);
+        Boolean acquired;
+        try {
+            acquired = redisTemplate.opsForValue().setIfAbsent(key, token, LOCK_TTL);
+        } catch (DataAccessException ex) {
+            log.warn("Booking Redis lock unavailable, relying on Postgres booking constraint: {}", ex.getMessage());
+            return action.get();
+        }
         if (!Boolean.TRUE.equals(acquired)) {
             throw new ConflictException(
                     "PROPERTY_BOOKING_IN_PROGRESS", "This property is currently being booked by someone else — please try again in a moment");
@@ -45,8 +55,12 @@ public class BookingHoldLock {
         try {
             return action.get();
         } finally {
-            if (token.equals(redisTemplate.opsForValue().get(key))) {
-                redisTemplate.delete(key);
+            try {
+                if (token.equals(redisTemplate.opsForValue().get(key))) {
+                    redisTemplate.delete(key);
+                }
+            } catch (DataAccessException ex) {
+                log.warn("Booking Redis lock release failed after successful booking attempt: {}", ex.getMessage());
             }
         }
     }

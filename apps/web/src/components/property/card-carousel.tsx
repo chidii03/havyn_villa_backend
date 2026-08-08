@@ -45,13 +45,10 @@ export function CardCarousel({ photos, title }: { photos: CarouselPhoto[]; title
         className="flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden"
       >
         {photos.map((photo, index) => (
-          // eslint-disable-next-line @next/next/no-img-element -- Cloudinary CDN URLs, not next/image-optimizable local assets
-          <img
+          <CarouselImage
             key={photo.url}
-            src={photo.url}
+            photo={photo}
             alt={index === 0 ? photo.alt : ""}
-            className="h-full w-full shrink-0 snap-center object-cover"
-            loading="lazy"
           />
         ))}
       </div>
@@ -91,5 +88,29 @@ export function CardCarousel({ photos, title }: { photos: CarouselPhoto[]; title
         </>
       )}
     </div>
+  );
+}
+
+function CarouselImage({ photo, alt }: { photo: CarouselPhoto; alt: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="flex h-full w-full shrink-0 snap-center items-center justify-center bg-muted">
+        <Icon name="image" size={28} className="text-ink-muted" />
+        <span className="sr-only">Photo unavailable for {photo.alt}</span>
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- Cloudinary CDN URLs, not next/image-optimizable local assets
+    <img
+      src={photo.url}
+      alt={alt}
+      className="h-full w-full shrink-0 snap-center object-cover"
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
   );
 }

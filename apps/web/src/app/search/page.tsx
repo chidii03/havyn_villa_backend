@@ -9,21 +9,18 @@ import { search } from "@/lib/api/search";
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
 
-/**
- * Results grid + map — frontend/03-ui-and-navigation-spec.md#3. Server Component:
- * parses the URL, fetches `GET /search` server-side (SEO + no fetch waterfall on the
- * client), and hands the already-fetched results to the client islands
- * (SearchResultsView for list↔map, CategoryChips/FiltersSheet for re-navigating with
- * new params). This is the fully-built successor to the prompt 19 route skeleton.
- */
 export default async function SearchPage({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
   const params = await searchParams;
   const page = asNumber(params.page) ?? 0;
 
+  const checkIn = asString(params.checkIn);
+  const rawCheckOut = asString(params.checkOut);
+  const checkOut = normalizeCheckOut(checkIn, rawCheckOut);
+
   const query: SearchQuery = {
     destination: asString(params.destination),
-    checkIn: asString(params.checkIn),
-    checkOut: asString(params.checkOut),
+    checkIn,
+    checkOut,
     guests: asNumber(params.guests),
     minPrice: asNumber(params.minPrice),
     maxPrice: asNumber(params.maxPrice),
@@ -138,4 +135,16 @@ function asArray(value: string | string[] | undefined): string[] | undefined {
 function asSortOption(value: string | string[] | undefined): SortOption | undefined {
   const str = asString(value);
   return str && (SORT_OPTIONS as readonly string[]).includes(str) ? (str as SortOption) : undefined;
+}
+
+function normalizeCheckOut(checkIn: string | undefined, checkOut: string | undefined): string | undefined {
+  if (!checkIn || !checkOut) return checkOut;
+  const start = new Date(`${checkIn}T00:00:00Z`);
+  const end = new Date(`${checkOut}T00:00:00Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start < end) {
+    return checkOut;
+  }
+  const nextDay = new Date(start);
+  nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+  return nextDay.toISOString().slice(0, 10);
 }

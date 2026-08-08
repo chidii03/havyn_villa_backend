@@ -64,12 +64,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # prompt 27: "docker-compose (postgres, redis, backend, web, mail/minio for
-  # local)" — backend/web were missing; this file previously only stood up
-  # infrastructure. Service names (postgres/redis/mailhog) are used as hostnames
-  # here, not localhost — containers reach each other over the compose network,
-  # unlike apps/api's application.yml defaults (localhost), which target a dev
-  # JVM running directly on the host, outside this network.
   backend:
     build:
       context: ../apps/api

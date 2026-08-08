@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type KeyboardEvent, type TouchEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
@@ -12,17 +12,31 @@ export interface GalleryPhoto {
   kind?: "image" | "video";
 }
 
-/**
- * Gallery grid (1 large + 4 thumbnails) + "Show all photos" lightbox — frontend/
- * 03-ui-and-navigation-spec.md#2/#3. The empty-`photos` branch below covers a listing
- * that genuinely has no photos yet, not a backend gap.
- */
-export function Gallery({ photos, title }: { photos: GalleryPhoto[]; title: string }) {
+interface GalleryProps {
+  photos: GalleryPhoto[];
+  title: string;
+}
+
+interface GalleryTileProps {
+  photo: GalleryPhoto;
+  onClick: () => void;
+  className?: string;
+  overlay?: string;
+}
+
+interface LightboxProps {
+  photos: GalleryPhoto[];
+  initialIndex: number;
+  title: string;
+  onClose: () => void;
+}
+
+export function Gallery({ photos, title }: GalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (photos.length === 0) {
     return (
-      <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted sm:aspect-[21/9]">
+      <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted sm:aspect-21/9">
         <Icon name="image" size={32} className="text-ink-muted" />
         <p className="text-sm text-ink-muted">Photos for {title} haven&apos;t been added yet</p>
       </div>
@@ -35,7 +49,7 @@ export function Gallery({ photos, title }: { photos: GalleryPhoto[]; title: stri
 
   return (
     <div>
-      <div className="grid grid-cols-1 gap-2 overflow-hidden rounded-2xl sm:aspect-[21/9] sm:grid-cols-4 sm:grid-rows-2">
+      <div className="grid grid-cols-1 gap-2 overflow-hidden rounded-2xl sm:aspect-21/9 sm:grid-cols-4 sm:grid-rows-2">
         <GalleryTile photo={hero} onClick={() => setLightboxIndex(0)} className="sm:col-span-2 sm:row-span-2" />
         {visibleThumbs.map((photo, index) => (
           <GalleryTile
@@ -65,12 +79,7 @@ function GalleryTile({
   onClick,
   className,
   overlay,
-}: {
-  photo: GalleryPhoto;
-  onClick: () => void;
-  className?: string;
-  overlay?: string;
-}) {
+}: GalleryTileProps) {
   return (
     <button type="button" onClick={onClick} className={cn("relative aspect-square w-full sm:aspect-auto", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element -- Cloudinary CDN URLs */}
@@ -94,13 +103,8 @@ function Lightbox({
   initialIndex,
   title,
   onClose,
-}: {
-  photos: GalleryPhoto[];
-  initialIndex: number;
-  title: string;
-  onClose: () => void;
-}) {
-  const [index, setIndex] = useState(initialIndex);
+}: LightboxProps) {
+  const [index, setIndex] = useState<number>(initialIndex);
   const touchStartX = useRef<number | null>(null);
   const current = photos[index];
 
@@ -108,16 +112,17 @@ function Lightbox({
     setIndex((prev) => (prev + delta + photos.length) % photos.length);
   }
 
-  function onKeyDown(event: React.KeyboardEvent) {
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") onClose();
     if (event.key === "ArrowLeft") go(-1);
     if (event.key === "ArrowRight") go(1);
   }
 
-  function onTouchStart(event: React.TouchEvent) {
+  function onTouchStart(event: TouchEvent<HTMLDivElement>) {
     touchStartX.current = event.touches[0]?.clientX ?? null;
   }
 
-  function onTouchEnd(event: React.TouchEvent) {
+  function onTouchEnd(event: TouchEvent<HTMLDivElement>) {
     if (touchStartX.current === null) return;
     const deltaX = (event.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
     if (Math.abs(deltaX) > 50) go(deltaX > 0 ? -1 : 1);
@@ -125,7 +130,7 @@ function Lightbox({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(open: unknown) => !open && onClose()}>
       <DialogContent
         className="flex h-screen max-h-none w-screen max-w-none flex-col gap-0 rounded-none bg-black p-0 sm:max-w-none"
         onKeyDown={onKeyDown}
@@ -133,6 +138,14 @@ function Lightbox({
         <DialogTitle className="sr-only">
           {title} — photo {index + 1} of {photos.length}
         </DialogTitle>
+        <button
+          type="button"
+          aria-label="Close photo viewer"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-20 flex size-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition-colors hover:bg-white/25"
+        >
+          <Icon name="close" size={18} />
+        </button>
 
         <div
           className="relative flex flex-1 items-center justify-center overflow-hidden"

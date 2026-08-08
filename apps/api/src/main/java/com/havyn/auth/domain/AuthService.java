@@ -45,6 +45,7 @@ public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private static final String DEFAULT_ROLE_CODE = "CUSTOMER";
+    private static final String GOOGLE_PASSWORD_PLACEHOLDER = "GOOGLE_ACCOUNT_NO_PASSWORD_LOGIN";
 
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
@@ -109,6 +110,31 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
         log.info("Login succeeded userId={}", user.getId());
+        return issueTokens(user);
+    }
+
+    @Transactional
+    public AuthResult loginWithGoogle(GoogleTokenVerifier.GoogleUser googleUser) {
+        String normalizedEmail = googleUser.email().trim().toLowerCase();
+        User user = userRepository.findByEmail(normalizedEmail).orElse(null);
+
+        if (user == null) {
+            Role customerRole = roleRepository.findByCode(DEFAULT_ROLE_CODE)
+                    .orElseThrow(() -> new IllegalStateException(DEFAULT_ROLE_CODE + " role must be seeded by V1__init.sql"));
+            user = new User(normalizedEmail, GOOGLE_PASSWORD_PLACEHOLDER);
+            user.addRole(customerRole);
+            user.markEmailVerified(Instant.now());
+            user = userRepository.save(user);
+
+            Profile profile = new Profile(user, safeFullName(googleUser));
+            profile.setAvatarUrl(googleUser.pictureUrl());
+            profileRepository.save(profile);
+            log.info("Registered Google user userId={}", user.getId());
+        } else if (!user.isEmailVerified()) {
+            user.markEmailVerified(Instant.now());
+        }
+
+        log.info("Google login succeeded userId={}", user.getId());
         return issueTokens(user);
     }
 
@@ -190,6 +216,14 @@ public class AuthService {
         String accessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), roles);
         RefreshTokenService.Issued issued = refreshTokenService.issue(user.getId());
         return new AuthResult(accessToken, issued.token(), jwtService.accessTtl().toSeconds(), user);
+    }
+
+    private String safeFullName(GoogleTokenVerifier.GoogleUser googleUser) {
+        String fullName = googleUser.fullName();
+        if (fullName == null || fullName.isBlank()) {
+            return googleUser.email();
+        }
+        return fullName.trim();
     }
 
     private Set<String> roleCodes(User user) {

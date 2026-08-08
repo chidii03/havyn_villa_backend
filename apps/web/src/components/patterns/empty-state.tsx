@@ -2,10 +2,6 @@ import { Icon } from "@/components/ui/icon";
 import type { IconName } from "@/components/ui/icon-registry";
 import { Button } from "@/components/ui/button";
 
-/**
- * CLAUDE.md#3: no empty state is ever just gray text in a box — always an icon, a
- * headline, and (when there's something the user can do) a primary action.
- */
 export function EmptyState({
   icon,
   title,

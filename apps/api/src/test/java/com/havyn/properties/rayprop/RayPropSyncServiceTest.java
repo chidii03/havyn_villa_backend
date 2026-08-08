@@ -36,11 +36,20 @@ class RayPropSyncServiceTest {
             new RayPropSyncService(client, propertyRepository, propertyTypeRepository, propertyMediaRepository);
 
     private PropertyType shortlet;
+    private PropertyType apartment;
 
     @BeforeEach
     void setUp() {
         shortlet = mock(PropertyType.class);
         when(shortlet.getCode()).thenReturn("SHORTLET");
+        apartment = mock(PropertyType.class);
+        when(apartment.getCode()).thenReturn("APARTMENT");
+        for (String code : List.of("CABIN", "CONDO", "GUESTHOUSE", "HOUSE", "STUDIO")) {
+            PropertyType type = mock(PropertyType.class);
+            when(type.getCode()).thenReturn(code);
+            when(propertyTypeRepository.findByCodeIgnoreCase(code)).thenReturn(Optional.of(type));
+        }
+        when(propertyTypeRepository.findByCodeIgnoreCase("APARTMENT")).thenReturn(Optional.of(apartment));
         when(propertyTypeRepository.findByCodeIgnoreCase("SHORTLET")).thenReturn(Optional.of(shortlet));
         when(propertyRepository.save(any(Property.class))).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -49,7 +58,7 @@ class RayPropSyncServiceTest {
     void createsANewPropertyForAListingNeverSeenBefore() {
         RayPropListing listing = new RayPropListing(
                 "rp_lst_new", "New Shortlet", "Description", "NGN", 4, 2, BigDecimal.valueOf(2), "Lagos", "Lagos",
-                "Lekki", 6_000_000L, List.of("https://images.rayprop.io/1.jpg"));
+                "Lekki", "shortlet", 6_000_000L, List.of("https://images.rayprop.io/1.jpg"));
         when(propertyRepository.findByExternalSourceAndExternalId("RAYPROP", "rp_lst_new")).thenReturn(Optional.empty());
         when(client.fetchAllListings())
                 .thenReturn(new RayPropFetchResult(List.of(listing), 1, false, new RayPropDataAccess(1, 500, 499)));
@@ -69,7 +78,7 @@ class RayPropSyncServiceTest {
                 "Lekki, Lagos", "Lagos", "Lagos", "Nigeria", BigDecimal.valueOf(50000), 2, 1, 1, BigDecimal.ONE);
         RayPropListing listing = new RayPropListing(
                 "rp_lst_existing", "Updated Title", "Updated description", "NGN", 4, 2, BigDecimal.valueOf(2),
-                "Lagos", "Lagos", "Lekki", 7_500_000L, List.of());
+                "Lagos", "Lagos", "Lekki", "apartment", 7_500_000L, List.of());
         when(propertyRepository.findByExternalSourceAndExternalId("RAYPROP", "rp_lst_existing"))
                 .thenReturn(Optional.of(existing));
         when(client.fetchAllListings())
@@ -81,6 +90,7 @@ class RayPropSyncServiceTest {
         assertThat(result.updated()).isEqualTo(1);
         assertThat(existing.getTitle()).isEqualTo("Updated Title");
         assertThat(existing.getBasePrice()).isEqualByComparingTo("75000.00");
+        assertThat(existing.getType()).isSameAs(apartment);
     }
 
     /**
@@ -92,7 +102,7 @@ class RayPropSyncServiceTest {
     void aQuotaStoppedFetchStillSyncsWhatWasFetched_andReportsWhyItStopped() {
         RayPropListing listing = new RayPropListing(
                 "rp_lst_1", "Title", "Description", "NGN", 2, 1, BigDecimal.ONE, "Lagos", "Lagos", "Ikeja",
-                4_000_000L, List.of());
+                "shortlet", 4_000_000L, List.of());
         when(propertyRepository.findByExternalSourceAndExternalId("RAYPROP", "rp_lst_1")).thenReturn(Optional.empty());
         when(client.fetchAllListings())
                 .thenReturn(new RayPropFetchResult(List.of(listing), 10, true, new RayPropDataAccess(500, 500, 0)));
