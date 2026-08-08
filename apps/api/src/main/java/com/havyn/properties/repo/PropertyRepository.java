@@ -11,6 +11,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PropertyRepository extends JpaRepository<Property, UUID> {
 
+    @Override
+    @EntityGraph(attributePaths = "type")
+    Page<Property> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = "type")
     Page<Property> findAllByHostId(UUID hostId, Pageable pageable);
 
     @EntityGraph(attributePaths = "type")

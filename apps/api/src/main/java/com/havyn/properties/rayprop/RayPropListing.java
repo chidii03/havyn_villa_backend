@@ -26,6 +26,8 @@ public record RayPropListing(
         String city,
         String state,
         String neighborhood,
+        BigDecimal lat,
+        BigDecimal lng,
         String category,
         long pricePerNightMinorUnits,
         List<String> imageUrls) {
@@ -51,6 +53,8 @@ public record RayPropListing(
                 node.path("city").asText(""),
                 node.path("state").asText(""),
                 node.path("neighborhood").asText(""),
+                firstDecimal(node, null, "lat", "latitude"),
+                firstDecimal(node, null, "lng", "lon", "longitude"),
                 firstText(node, "property_category", "property_type", "type", "category"),
                 firstLong(node, 0, "price_per_night", "pricePerNight", "nightly_price"),
                 images);

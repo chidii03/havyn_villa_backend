@@ -269,6 +269,34 @@ class BookingServiceTest {
         verify(eventPublisher, never()).publishEvent(any());
     }
 
+    @Test
+    void confirmPayment_assignsAReadableReferenceIdAndPublishesConfirmationEvent() {
+        Booking booking = pendingBooking();
+        when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
+        when(bookingRepository.nextBookingReferenceSequence()).thenReturn(482L);
+
+        boolean confirmed = service.confirmPayment(booking.getId());
+
+        assertThat(confirmed).isTrue();
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CONFIRMED);
+        assertThat(booking.getReferenceId()).isEqualTo("HV-2026-000482");
+        verify(eventPublisher).publishEvent(any(com.havyn.booking.domain.event.BookingConfirmedEvent.class));
+    }
+
+    @Test
+    void confirmPayment_isIdempotentForAlreadyConfirmedBookingsAndDoesNotAssignANewReference() {
+        Booking booking = confirmedBooking();
+        booking.assignReferenceId("HV-2026-000123");
+        when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
+
+        boolean confirmed = service.confirmPayment(booking.getId());
+
+        assertThat(confirmed).isFalse();
+        assertThat(booking.getReferenceId()).isEqualTo("HV-2026-000123");
+        verify(bookingRepository, never()).nextBookingReferenceSequence();
+        verify(eventPublisher, never()).publishEvent(any(com.havyn.booking.domain.event.BookingConfirmedEvent.class));
+    }
+
     private Booking pendingBooking() {
         return new Booking(
                 propertyId, guestId, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 3), 2, 2,

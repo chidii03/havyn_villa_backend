@@ -65,6 +65,7 @@ public class AdminBootstrapRunner implements ApplicationRunner {
         if (!user.isEmailVerified()) {
             user.markEmailVerified(Instant.now());
         }
+        user.setPasswordHash(passwordEncoder.encode(properties.password()));
         user.addRole(customerRole);
         user.addRole(adminRole);
         log.info("Bootstrap admin role ensured userId={}", user.getId());

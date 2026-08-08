@@ -98,6 +98,8 @@ public class RayPropSyncService {
                         Math.max(listing.bedrooms(), 0), // RayProp doesn't expose a separate "beds" count — bedrooms is the closest real signal.
                         bathroomsOrDefault(listing));
                 property.setExternalReference(SOURCE, listing.id());
+                property.setLat(listing.lat());
+                property.setLng(listing.lng());
                 // A fresh import is "verified inventory" per RayProp's own docs — publish
                 // straight through DRAFT -> PENDING -> ACTIVE rather than leaving it in
                 // a state a host would normally still need to submit/publish.
@@ -132,6 +134,8 @@ public class RayPropSyncService {
         property.setCity(orPlaceholder(listing.city(), property.getCity()));
         property.setState(orPlaceholder(listing.state(), property.getState()));
         property.setCountry(COUNTRY);
+        property.setLat(listing.lat());
+        property.setLng(listing.lng());
         property.setCurrency(listing.currency());
         property.setBasePrice(priceInNaira(listing));
         property.setCapacity(Math.max(listing.maxGuests(), 1));
@@ -188,6 +192,7 @@ public class RayPropSyncService {
         // clear and re-insert rather than diffing — RayProp doesn't give us a stable
         // per-image id to diff against, only a URL list.
         propertyMediaRepository.deleteAllByPropertyId(propertyId);
+        propertyMediaRepository.flush();
         int position = 0;
         for (String url : normalizedUniqueImageUrls(imageUrls)) {
             propertyMediaRepository.save(new PropertyMedia(

@@ -74,6 +74,9 @@ public class Booking extends BaseEntity {
     @Column(name = "idempotency_key", length = 100)
     private String idempotencyKey;
 
+    @Column(name = "reference_id", length = 20, unique = true)
+    private String referenceId;
+
     protected Booking() {
         // JPA
     }
@@ -190,5 +193,15 @@ public class Booking extends BaseEntity {
 
     public void setIdempotencyKey(String idempotencyKey) {
         this.idempotencyKey = idempotencyKey;
+    }
+
+    public String getReferenceId() {
+        return referenceId;
+    }
+
+    public void assignReferenceId(String referenceId) {
+        if (this.referenceId == null) {
+            this.referenceId = referenceId;
+        }
     }
 }
