@@ -58,7 +58,8 @@ class RayPropSyncServiceTest {
     void createsANewPropertyForAListingNeverSeenBefore() {
         RayPropListing listing = new RayPropListing(
                 "rp_lst_new", "New Shortlet", "Description", "NGN", 4, 2, BigDecimal.valueOf(2), "Lagos", "Lagos",
-                "Lekki", "shortlet", 6_000_000L, List.of("https://images.rayprop.io/1.jpg"));
+                "Lekki", BigDecimal.valueOf(6.47), BigDecimal.valueOf(3.59), "shortlet", 6_000_000L,
+                List.of("https://images.rayprop.io/1.jpg"));
         when(propertyRepository.findByExternalSourceAndExternalId("RAYPROP", "rp_lst_new")).thenReturn(Optional.empty());
         when(client.fetchAllListings())
                 .thenReturn(new RayPropFetchResult(List.of(listing), 1, false, new RayPropDataAccess(1, 500, 499)));
@@ -78,7 +79,8 @@ class RayPropSyncServiceTest {
                 "Lekki, Lagos", "Lagos", "Lagos", "Nigeria", BigDecimal.valueOf(50000), 2, 1, 1, BigDecimal.ONE);
         RayPropListing listing = new RayPropListing(
                 "rp_lst_existing", "Updated Title", "Updated description", "NGN", 4, 2, BigDecimal.valueOf(2),
-                "Lagos", "Lagos", "Lekki", "apartment", 7_500_000L, List.of());
+                "Lagos", "Lagos", "Lekki", BigDecimal.valueOf(6.47), BigDecimal.valueOf(3.59), "apartment",
+                7_500_000L, List.of());
         when(propertyRepository.findByExternalSourceAndExternalId("RAYPROP", "rp_lst_existing"))
                 .thenReturn(Optional.of(existing));
         when(client.fetchAllListings())
@@ -91,6 +93,8 @@ class RayPropSyncServiceTest {
         assertThat(existing.getTitle()).isEqualTo("Updated Title");
         assertThat(existing.getBasePrice()).isEqualByComparingTo("75000.00");
         assertThat(existing.getType()).isSameAs(apartment);
+        assertThat(existing.getLat()).isEqualByComparingTo("6.47");
+        assertThat(existing.getLng()).isEqualByComparingTo("3.59");
     }
 
     /**
@@ -102,7 +106,7 @@ class RayPropSyncServiceTest {
     void aQuotaStoppedFetchStillSyncsWhatWasFetched_andReportsWhyItStopped() {
         RayPropListing listing = new RayPropListing(
                 "rp_lst_1", "Title", "Description", "NGN", 2, 1, BigDecimal.ONE, "Lagos", "Lagos", "Ikeja",
-                "shortlet", 4_000_000L, List.of());
+                null, null, "shortlet", 4_000_000L, List.of());
         when(propertyRepository.findByExternalSourceAndExternalId("RAYPROP", "rp_lst_1")).thenReturn(Optional.empty());
         when(client.fetchAllListings())
                 .thenReturn(new RayPropFetchResult(List.of(listing), 10, true, new RayPropDataAccess(500, 500, 0)));

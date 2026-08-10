@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,6 +55,15 @@ public class HostMediaController {
         return mediaService.reorder(hostId(authentication), propertyId, request.orderedMediaIds()).stream()
                 .map(PropertyMediaSummary::from)
                 .toList();
+    }
+
+    @PatchMapping("/{mediaId}")
+    public PropertyMediaSummary update(
+            Authentication authentication,
+            @PathVariable UUID propertyId,
+            @PathVariable UUID mediaId,
+            @Valid @RequestBody UpdateMediaRequest request) {
+        return PropertyMediaSummary.from(mediaService.update(hostId(authentication), propertyId, mediaId, request));
     }
 
     @DeleteMapping("/{mediaId}")

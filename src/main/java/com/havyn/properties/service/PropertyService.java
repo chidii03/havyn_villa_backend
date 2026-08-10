@@ -185,6 +185,16 @@ public class PropertyService {
     }
 
     @Transactional
+    public void deleteDraft(UUID hostId, UUID propertyId) {
+        Property property = findOwned(hostId, propertyId);
+        if (property.getStatus() != PropertyStatus.DRAFT) {
+            throw new BadRequestException("LISTING_NOT_DRAFT", "Only draft listings can be deleted");
+        }
+        propertyRepository.delete(property);
+        publishChanged(propertyId);
+    }
+
+    @Transactional
     public Property transition(UUID hostId, UUID propertyId, PropertyStatus target) {
         Property property = findOwned(hostId, propertyId);
         try {

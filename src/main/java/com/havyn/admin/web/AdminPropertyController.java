@@ -32,22 +32,27 @@ public class AdminPropertyController {
 
     @GetMapping
     public PageResponse<PropertySummary> list(@PageableDefault(size = 20) Pageable pageable) {
-        return PageResponse.of(adminPropertyService.list(pageable).map(PropertySummary::from));
+        return PageResponse.of(adminPropertyService.listSummaries(pageable));
     }
 
     @GetMapping("/{id}")
     public PropertyDetail get(@PathVariable UUID id) {
-        return PropertyDetail.from(adminPropertyService.get(id));
+        return adminPropertyService.getDetail(id);
     }
 
     @PostMapping("/{id}/suspend")
     public PropertyDetail suspend(Authentication authentication, @PathVariable UUID id, @Valid @RequestBody ModerationActionRequest request) {
-        return PropertyDetail.from(adminPropertyService.suspend(principal(authentication), id, request.reason()));
+        return adminPropertyService.suspendDetail(principal(authentication), id, request.reason());
     }
 
     @PostMapping("/{id}/reject")
     public PropertyDetail reject(Authentication authentication, @PathVariable UUID id, @Valid @RequestBody ModerationActionRequest request) {
-        return PropertyDetail.from(adminPropertyService.reject(principal(authentication), id, request.reason()));
+        return adminPropertyService.rejectDetail(principal(authentication), id, request.reason());
+    }
+
+    @PostMapping("/{id}/reactivate")
+    public PropertyDetail reactivate(Authentication authentication, @PathVariable UUID id) {
+        return adminPropertyService.reactivateDetail(principal(authentication), id);
     }
 
     private UUID principal(Authentication authentication) {

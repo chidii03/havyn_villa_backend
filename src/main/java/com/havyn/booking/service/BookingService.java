@@ -28,6 +28,7 @@ import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -280,12 +281,19 @@ public class BookingService {
         if (booking.getStatus() != BookingStatus.PENDING) {
             return false;
         }
+        booking.assignReferenceId(nextReferenceId());
         booking.transitionTo(BookingStatus.CONFIRMED);
         // notifications/ (prompt 16) listens for this to notify the guest — booking/
         // never needs to know notifications/ exists. See BookingConfirmedEvent's Javadoc.
         eventPublisher.publishEvent(
                 BookingConfirmedEvent.of(booking.getId(), booking.getGuestId(), booking.getPropertyId(), booking.getCheckIn(), booking.getCheckOut()));
         return true;
+    }
+
+    private String nextReferenceId() {
+        int year = LocalDate.now(clock.withZone(ZoneOffset.UTC)).getYear();
+        long sequence = bookingRepository.nextBookingReferenceSequence();
+        return "HV-" + year + "-" + String.format("%06d", sequence);
     }
 
     /** Global hygiene sweep so an expired hold frees up even if nobody else tries to book that specific property again. */

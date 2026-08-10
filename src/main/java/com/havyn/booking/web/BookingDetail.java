@@ -9,6 +9,7 @@ import java.util.UUID;
 /** Guest-facing booking detail — like {@link QuoteResponse}, no commission line. */
 public record BookingDetail(
         UUID id,
+        String referenceId,
         BookingPropertySummary property,
         LocalDate checkIn,
         LocalDate checkOut,
@@ -28,6 +29,7 @@ public record BookingDetail(
     public static BookingDetail from(Booking booking, BookingPropertySummary property) {
         return new BookingDetail(
                 booking.getId(),
+                booking.getReferenceId(),
                 property,
                 booking.getCheckIn(),
                 booking.getCheckOut(),

@@ -98,165 +98,170 @@ public class RayPropSyncService {
 <span class="fc" id="L98">                        Math.max(listing.bedrooms(), 0), // RayProp doesn't expose a separate &quot;beds&quot; count — bedrooms is the closest real signal.</span>
 <span class="fc" id="L99">                        bathroomsOrDefault(listing));</span>
 <span class="fc" id="L100">                property.setExternalReference(SOURCE, listing.id());</span>
+<span class="fc" id="L101">                property.setLat(listing.lat());</span>
+<span class="fc" id="L102">                property.setLng(listing.lng());</span>
                 // A fresh import is &quot;verified inventory&quot; per RayProp's own docs — publish
                 // straight through DRAFT -&gt; PENDING -&gt; ACTIVE rather than leaving it in
                 // a state a host would normally still need to submit/publish.
-<span class="fc" id="L104">                property.transitionTo(PropertyStatus.PENDING);</span>
-<span class="fc" id="L105">                property.transitionTo(PropertyStatus.ACTIVE);</span>
-<span class="fc" id="L106">                created++;</span>
+<span class="fc" id="L106">                property.transitionTo(PropertyStatus.PENDING);</span>
+<span class="fc" id="L107">                property.transitionTo(PropertyStatus.ACTIVE);</span>
+<span class="fc" id="L108">                created++;</span>
             }
 
-<span class="fc" id="L109">            Property saved = propertyRepository.save(property);</span>
-<span class="fc" id="L110">            syncMedia(saved.getId(), listing.imageUrls());</span>
-<span class="fc" id="L111">        }</span>
+<span class="fc" id="L111">            Property saved = propertyRepository.save(property);</span>
+<span class="fc" id="L112">            syncMedia(saved.getId(), listing.imageUrls());</span>
+<span class="fc" id="L113">        }</span>
 
-<span class="fc" id="L113">        RayPropDataAccess dataAccess = fetchResult.lastDataAccess();</span>
-<span class="fc" id="L114">        log.info(</span>
+<span class="fc" id="L115">        RayPropDataAccess dataAccess = fetchResult.lastDataAccess();</span>
+<span class="fc" id="L116">        log.info(</span>
                 &quot;RayProp sync complete: fetched={} created={} updated={} pagesFetched={} stoppedEarlyDueToQuota={}&quot;,
-<span class="fc" id="L116">                listings.size(), created, updated, fetchResult.pagesFetched(), fetchResult.stoppedEarlyDueToQuota());</span>
-<span class="fc" id="L117">        return new RayPropSyncResult(</span>
-<span class="fc" id="L118">                listings.size(),</span>
+<span class="fc" id="L118">                listings.size(), created, updated, fetchResult.pagesFetched(), fetchResult.stoppedEarlyDueToQuota());</span>
+<span class="fc" id="L119">        return new RayPropSyncResult(</span>
+<span class="fc" id="L120">                listings.size(),</span>
                 created,
                 updated,
-<span class="fc" id="L121">                fetchResult.pagesFetched(),</span>
-<span class="fc" id="L122">                fetchResult.stoppedEarlyDueToQuota(),</span>
-<span class="fc bfc" id="L123" title="All 2 branches covered.">                dataAccess != null ? dataAccess.accessedToday() : null,</span>
-<span class="fc bfc" id="L124" title="All 2 branches covered.">                dataAccess != null ? dataAccess.dailyLimit() : null);</span>
+<span class="fc" id="L123">                fetchResult.pagesFetched(),</span>
+<span class="fc" id="L124">                fetchResult.stoppedEarlyDueToQuota(),</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">                dataAccess != null ? dataAccess.accessedToday() : null,</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                dataAccess != null ? dataAccess.dailyLimit() : null);</span>
     }
 
     private void applyFields(Property property, RayPropListing listing, PropertyType displayType) {
-<span class="fc" id="L128">        property.setType(displayType);</span>
-<span class="fc" id="L129">        property.setTitle(truncate(orPlaceholder(listing.title(), property.getTitle()), 150));</span>
-<span class="fc" id="L130">        property.setDescription(orPlaceholder(listing.description(), property.getDescription()));</span>
-<span class="fc" id="L131">        property.setAddress(addressFrom(listing));</span>
-<span class="fc" id="L132">        property.setCity(orPlaceholder(listing.city(), property.getCity()));</span>
-<span class="fc" id="L133">        property.setState(orPlaceholder(listing.state(), property.getState()));</span>
-<span class="fc" id="L134">        property.setCountry(COUNTRY);</span>
-<span class="fc" id="L135">        property.setCurrency(listing.currency());</span>
-<span class="fc" id="L136">        property.setBasePrice(priceInNaira(listing));</span>
-<span class="fc" id="L137">        property.setCapacity(Math.max(listing.maxGuests(), 1));</span>
-<span class="fc" id="L138">        property.setBedrooms(Math.max(listing.bedrooms(), 0));</span>
-<span class="fc" id="L139">        property.setBeds(Math.max(listing.bedrooms(), 0));</span>
-<span class="fc" id="L140">        property.setBathrooms(bathroomsOrDefault(listing));</span>
-<span class="fc" id="L141">    }</span>
+<span class="fc" id="L130">        property.setType(displayType);</span>
+<span class="fc" id="L131">        property.setTitle(truncate(orPlaceholder(listing.title(), property.getTitle()), 150));</span>
+<span class="fc" id="L132">        property.setDescription(orPlaceholder(listing.description(), property.getDescription()));</span>
+<span class="fc" id="L133">        property.setAddress(addressFrom(listing));</span>
+<span class="fc" id="L134">        property.setCity(orPlaceholder(listing.city(), property.getCity()));</span>
+<span class="fc" id="L135">        property.setState(orPlaceholder(listing.state(), property.getState()));</span>
+<span class="fc" id="L136">        property.setCountry(COUNTRY);</span>
+<span class="fc" id="L137">        property.setLat(listing.lat());</span>
+<span class="fc" id="L138">        property.setLng(listing.lng());</span>
+<span class="fc" id="L139">        property.setCurrency(listing.currency());</span>
+<span class="fc" id="L140">        property.setBasePrice(priceInNaira(listing));</span>
+<span class="fc" id="L141">        property.setCapacity(Math.max(listing.maxGuests(), 1));</span>
+<span class="fc" id="L142">        property.setBedrooms(Math.max(listing.bedrooms(), 0));</span>
+<span class="fc" id="L143">        property.setBeds(Math.max(listing.bedrooms(), 0));</span>
+<span class="fc" id="L144">        property.setBathrooms(bathroomsOrDefault(listing));</span>
+<span class="fc" id="L145">    }</span>
 
     private Map&lt;String, PropertyType&gt; loadDisplayPropertyTypes() {
-<span class="fc" id="L144">        Map&lt;String, PropertyType&gt; propertyTypes = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc bfc" id="L145" title="All 2 branches covered.">        for (String code : DISPLAY_TYPE_CODES) {</span>
-<span class="fc" id="L146">            propertyTypes.put(code, propertyTypeRepository.findByCodeIgnoreCase(code)</span>
-<span class="pc" id="L147">                    .orElseThrow(() -&gt; new IllegalStateException(code + &quot; property type is not seeded&quot;)));</span>
-<span class="fc" id="L148">        }</span>
-<span class="fc" id="L149">        return propertyTypes;</span>
+<span class="fc" id="L148">        Map&lt;String, PropertyType&gt; propertyTypes = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        for (String code : DISPLAY_TYPE_CODES) {</span>
+<span class="fc" id="L150">            propertyTypes.put(code, propertyTypeRepository.findByCodeIgnoreCase(code)</span>
+<span class="pc" id="L151">                    .orElseThrow(() -&gt; new IllegalStateException(code + &quot; property type is not seeded&quot;)));</span>
+<span class="fc" id="L152">        }</span>
+<span class="fc" id="L153">        return propertyTypes;</span>
     }
 
     private static PropertyType displayTypeFor(RayPropListing listing, Map&lt;String, PropertyType&gt; propertyTypes) {
-<span class="fc" id="L153">        String haystack = String.join(&quot; &quot;,</span>
-<span class="fc" id="L154">                        orPlaceholder(listing.category(), &quot;&quot;),</span>
-<span class="fc" id="L155">                        orPlaceholder(listing.title(), &quot;&quot;),</span>
-<span class="fc" id="L156">                        orPlaceholder(listing.description(), &quot;&quot;))</span>
-<span class="fc" id="L157">                .toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L157">        String haystack = String.join(&quot; &quot;,</span>
+<span class="fc" id="L158">                        orPlaceholder(listing.category(), &quot;&quot;),</span>
+<span class="fc" id="L159">                        orPlaceholder(listing.title(), &quot;&quot;),</span>
+<span class="fc" id="L160">                        orPlaceholder(listing.description(), &quot;&quot;))</span>
+<span class="fc" id="L161">                .toLowerCase(Locale.ROOT);</span>
 
-<span class="fc" id="L159">        String matchedCode = null;</span>
-<span class="pc bpc" id="L160" title="2 of 4 branches missed.">        if (haystack.contains(&quot;studio&quot;) || listing.bedrooms() == 0) {</span>
-<span class="nc" id="L161">            matchedCode = &quot;STUDIO&quot;;</span>
-<span class="pc bpc" id="L162" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;cabin&quot;) || haystack.contains(&quot;chalet&quot;)) {</span>
-<span class="nc" id="L163">            matchedCode = &quot;CABIN&quot;;</span>
-<span class="pc bpc" id="L164" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;condo&quot;) || haystack.contains(&quot;condominium&quot;)) {</span>
-<span class="nc" id="L165">            matchedCode = &quot;CONDO&quot;;</span>
-<span class="pc bpc" id="L166" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;guesthouse&quot;) || haystack.contains(&quot;guest house&quot;)) {</span>
-<span class="nc" id="L167">            matchedCode = &quot;GUESTHOUSE&quot;;</span>
-<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        } else if (haystack.contains(&quot;duplex&quot;)</span>
-<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                || haystack.contains(&quot;terrace&quot;)</span>
-<span class="pc bpc" id="L170" title="1 of 2 branches missed.">                || haystack.contains(&quot;house&quot;)</span>
-<span class="pc bpc" id="L171" title="1 of 2 branches missed.">                || haystack.contains(&quot;home&quot;)) {</span>
-<span class="nc" id="L172">            matchedCode = &quot;HOUSE&quot;;</span>
-<span class="pc bpc" id="L173" title="1 of 4 branches missed.">        } else if (haystack.contains(&quot;apartment&quot;) || haystack.contains(&quot;flat&quot;)) {</span>
-<span class="fc" id="L174">            matchedCode = &quot;APARTMENT&quot;;</span>
-<span class="pc bpc" id="L175" title="3 of 4 branches missed.">        } else if (haystack.contains(&quot;shortlet&quot;) || haystack.contains(&quot;short let&quot;)) {</span>
-<span class="fc" id="L176">            matchedCode = &quot;SHORTLET&quot;;</span>
+<span class="fc" id="L163">        String matchedCode = null;</span>
+<span class="pc bpc" id="L164" title="2 of 4 branches missed.">        if (haystack.contains(&quot;studio&quot;) || listing.bedrooms() == 0) {</span>
+<span class="nc" id="L165">            matchedCode = &quot;STUDIO&quot;;</span>
+<span class="pc bpc" id="L166" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;cabin&quot;) || haystack.contains(&quot;chalet&quot;)) {</span>
+<span class="nc" id="L167">            matchedCode = &quot;CABIN&quot;;</span>
+<span class="pc bpc" id="L168" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;condo&quot;) || haystack.contains(&quot;condominium&quot;)) {</span>
+<span class="nc" id="L169">            matchedCode = &quot;CONDO&quot;;</span>
+<span class="pc bpc" id="L170" title="2 of 4 branches missed.">        } else if (haystack.contains(&quot;guesthouse&quot;) || haystack.contains(&quot;guest house&quot;)) {</span>
+<span class="nc" id="L171">            matchedCode = &quot;GUESTHOUSE&quot;;</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        } else if (haystack.contains(&quot;duplex&quot;)</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">                || haystack.contains(&quot;terrace&quot;)</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">                || haystack.contains(&quot;house&quot;)</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">                || haystack.contains(&quot;home&quot;)) {</span>
+<span class="nc" id="L176">            matchedCode = &quot;HOUSE&quot;;</span>
+<span class="pc bpc" id="L177" title="1 of 4 branches missed.">        } else if (haystack.contains(&quot;apartment&quot;) || haystack.contains(&quot;flat&quot;)) {</span>
+<span class="fc" id="L178">            matchedCode = &quot;APARTMENT&quot;;</span>
+<span class="pc bpc" id="L179" title="3 of 4 branches missed.">        } else if (haystack.contains(&quot;shortlet&quot;) || haystack.contains(&quot;short let&quot;)) {</span>
+<span class="fc" id="L180">            matchedCode = &quot;SHORTLET&quot;;</span>
         }
 
-<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (matchedCode == null) {</span>
-<span class="nc" id="L180">            int index = Math.floorMod(listing.id().hashCode(), DISPLAY_TYPE_CODES.size());</span>
-<span class="nc" id="L181">            matchedCode = DISPLAY_TYPE_CODES.get(index);</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        if (matchedCode == null) {</span>
+<span class="nc" id="L184">            int index = Math.floorMod(listing.id().hashCode(), DISPLAY_TYPE_CODES.size());</span>
+<span class="nc" id="L185">            matchedCode = DISPLAY_TYPE_CODES.get(index);</span>
         }
-<span class="fc" id="L183">        return propertyTypes.get(matchedCode);</span>
+<span class="fc" id="L187">        return propertyTypes.get(matchedCode);</span>
     }
 
     private void syncMedia(UUID propertyId, List&lt;String&gt; imageUrls) {
         // Simplest correct way to keep media in sync with the source on every re-run:
         // clear and re-insert rather than diffing — RayProp doesn't give us a stable
         // per-image id to diff against, only a URL list.
-<span class="fc" id="L190">        propertyMediaRepository.deleteAllByPropertyId(propertyId);</span>
-<span class="fc" id="L191">        int position = 0;</span>
-<span class="fc bfc" id="L192" title="All 2 branches covered.">        for (String url : normalizedUniqueImageUrls(imageUrls)) {</span>
-<span class="fc" id="L193">            propertyMediaRepository.save(new PropertyMedia(</span>
+<span class="fc" id="L194">        propertyMediaRepository.deleteAllByPropertyId(propertyId);</span>
+<span class="fc" id="L195">        propertyMediaRepository.flush();</span>
+<span class="fc" id="L196">        int position = 0;</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        for (String url : normalizedUniqueImageUrls(imageUrls)) {</span>
+<span class="fc" id="L198">            propertyMediaRepository.save(new PropertyMedia(</span>
                     propertyId,
                     url,
-<span class="fc" id="L196">                    SOURCE.toLowerCase() + &quot;:&quot; + propertyId + &quot;:&quot; + position,</span>
+<span class="fc" id="L201">                    SOURCE.toLowerCase() + &quot;:&quot; + propertyId + &quot;:&quot; + position,</span>
                     MediaResourceType.IMAGE,
-<span class="fc" id="L198">                    extensionOf(url),</span>
+<span class="fc" id="L203">                    extensionOf(url),</span>
                     null, // width unknown — RayProp doesn't expose image dimensions
                     null, // height unknown
                     null, // not video
                     0L, // bytes unknown — RayProp doesn't expose file size at listing time, and a HEAD-per-image round trip isn't worth it for a Phase-1 import
                     position,
                     null));
-<span class="fc" id="L205">            position++;</span>
-<span class="fc" id="L206">        }</span>
-<span class="fc" id="L207">    }</span>
+<span class="fc" id="L210">            position++;</span>
+<span class="fc" id="L211">        }</span>
+<span class="fc" id="L212">    }</span>
 
     private static List&lt;String&gt; normalizedUniqueImageUrls(List&lt;String&gt; imageUrls) {
-<span class="pc bpc" id="L210" title="1 of 4 branches missed.">        if (imageUrls == null || imageUrls.isEmpty()) {</span>
-<span class="fc" id="L211">            return List.of();</span>
+<span class="pc bpc" id="L215" title="1 of 4 branches missed.">        if (imageUrls == null || imageUrls.isEmpty()) {</span>
+<span class="fc" id="L216">            return List.of();</span>
         }
-<span class="fc" id="L213">        LinkedHashSet&lt;String&gt; normalized = new LinkedHashSet&lt;&gt;();</span>
-<span class="fc bfc" id="L214" title="All 2 branches covered.">        for (String imageUrl : imageUrls) {</span>
-<span class="pc bpc" id="L215" title="1 of 2 branches missed.">            if (imageUrl == null) {</span>
-<span class="nc" id="L216">                continue;</span>
+<span class="fc" id="L218">        LinkedHashSet&lt;String&gt; normalized = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        for (String imageUrl : imageUrls) {</span>
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">            if (imageUrl == null) {</span>
+<span class="nc" id="L221">                continue;</span>
             }
-<span class="fc" id="L218">            String value = imageUrl.trim();</span>
-<span class="pc bpc" id="L219" title="3 of 4 branches missed.">            if (value.startsWith(&quot;https://&quot;) || value.startsWith(&quot;http://&quot;)) {</span>
-<span class="fc" id="L220">                normalized.add(value);</span>
+<span class="fc" id="L223">            String value = imageUrl.trim();</span>
+<span class="pc bpc" id="L224" title="3 of 4 branches missed.">            if (value.startsWith(&quot;https://&quot;) || value.startsWith(&quot;http://&quot;)) {</span>
+<span class="fc" id="L225">                normalized.add(value);</span>
             }
-<span class="fc" id="L222">        }</span>
-<span class="fc" id="L223">        return List.copyOf(normalized);</span>
+<span class="fc" id="L227">        }</span>
+<span class="fc" id="L228">        return List.copyOf(normalized);</span>
     }
 
     private static String addressFrom(RayPropListing listing) {
         // RayProp never gives a street address (guest/host PII is only released after
         // a real booking, per its webhooks docs) — this is the most specific location
         // string available pre-booking.
-<span class="fc" id="L230">        String neighborhood = listing.neighborhood();</span>
-<span class="fc" id="L231">        String city = orPlaceholder(listing.city(), &quot;Lagos&quot;);</span>
-<span class="pc bpc" id="L232" title="2 of 4 branches missed.">        return (neighborhood == null || neighborhood.isBlank()) ? city : neighborhood + &quot;, &quot; + city;</span>
+<span class="fc" id="L235">        String neighborhood = listing.neighborhood();</span>
+<span class="fc" id="L236">        String city = orPlaceholder(listing.city(), &quot;Lagos&quot;);</span>
+<span class="pc bpc" id="L237" title="2 of 4 branches missed.">        return (neighborhood == null || neighborhood.isBlank()) ? city : neighborhood + &quot;, &quot; + city;</span>
     }
 
     private static BigDecimal priceInNaira(RayPropListing listing) {
-<span class="fc" id="L236">        return BigDecimal.valueOf(listing.pricePerNightMinorUnits(), 2).setScale(2, RoundingMode.HALF_UP);</span>
+<span class="fc" id="L241">        return BigDecimal.valueOf(listing.pricePerNightMinorUnits(), 2).setScale(2, RoundingMode.HALF_UP);</span>
     }
 
     private static BigDecimal bathroomsOrDefault(RayPropListing listing) {
-<span class="fc" id="L240">        BigDecimal bathrooms = listing.bathrooms();</span>
-<span class="pc bpc" id="L241" title="2 of 4 branches missed.">        return (bathrooms == null || bathrooms.signum() &lt;= 0) ? BigDecimal.ONE : bathrooms;</span>
+<span class="fc" id="L245">        BigDecimal bathrooms = listing.bathrooms();</span>
+<span class="pc bpc" id="L246" title="2 of 4 branches missed.">        return (bathrooms == null || bathrooms.signum() &lt;= 0) ? BigDecimal.ONE : bathrooms;</span>
     }
 
     private static String extensionOf(String url) {
-<span class="fc" id="L245">        int dot = url.lastIndexOf('.');</span>
-<span class="fc" id="L246">        int query = url.indexOf('?', dot);</span>
-<span class="pc bpc" id="L247" title="1 of 2 branches missed.">        if (dot &lt; 0) {</span>
-<span class="nc" id="L248">            return &quot;jpg&quot;;</span>
+<span class="fc" id="L250">        int dot = url.lastIndexOf('.');</span>
+<span class="fc" id="L251">        int query = url.indexOf('?', dot);</span>
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">        if (dot &lt; 0) {</span>
+<span class="nc" id="L253">            return &quot;jpg&quot;;</span>
         }
-<span class="pc bpc" id="L250" title="1 of 2 branches missed.">        String ext = query &gt; dot ? url.substring(dot + 1, query) : url.substring(dot + 1);</span>
-<span class="pc bpc" id="L251" title="2 of 4 branches missed.">        return ext.isBlank() || ext.length() &gt; 10 ? &quot;jpg&quot; : ext.toLowerCase();</span>
+<span class="pc bpc" id="L255" title="1 of 2 branches missed.">        String ext = query &gt; dot ? url.substring(dot + 1, query) : url.substring(dot + 1);</span>
+<span class="pc bpc" id="L256" title="2 of 4 branches missed.">        return ext.isBlank() || ext.length() &gt; 10 ? &quot;jpg&quot; : ext.toLowerCase();</span>
     }
 
     private static String orPlaceholder(String value, String placeholder) {
-<span class="pc bpc" id="L255" title="2 of 4 branches missed.">        return (value == null || value.isBlank()) ? placeholder : value;</span>
+<span class="pc bpc" id="L260" title="2 of 4 branches missed.">        return (value == null || value.isBlank()) ? placeholder : value;</span>
     }
 
     private static String truncate(String value, int maxLength) {
-<span class="pc bpc" id="L259" title="1 of 2 branches missed.">        return value.length() &lt;= maxLength ? value : value.substring(0, maxLength);</span>
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">        return value.length() &lt;= maxLength ? value : value.substring(0, maxLength);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

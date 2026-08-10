@@ -6,7 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
+import com.havyn.admin.domain.VerificationStatus;
+import com.havyn.admin.repo.VerificationRequestRepository;
 import com.havyn.auth.domain.AuthResult;
 import com.havyn.auth.domain.AuthService;
 import com.havyn.common.error.BadRequestException;
@@ -24,9 +25,10 @@ class HostOnboardingServiceTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
     private final RoleRepository roleRepository = mock(RoleRepository.class);
+    private final VerificationRequestRepository verificationRequestRepository = mock(VerificationRequestRepository.class);
     private final AuthService authService = mock(AuthService.class);
 
-    private final HostOnboardingService service = new HostOnboardingService(userRepository, roleRepository, authService);
+    private final HostOnboardingService service = new HostOnboardingService(userRepository, roleRepository, verificationRequestRepository, authService);
 
     private final UUID userId = UUID.randomUUID();
 
@@ -57,6 +59,7 @@ class HostOnboardingServiceTest {
     void becomeHost_grantsTheHostRoleAndReissuesTokens() {
         User user = verifiedUser();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.APPROVED)).thenReturn(true);
         Role hostRole = new Role("HOST", "Host");
         when(roleRepository.findByCode("HOST")).thenReturn(Optional.of(hostRole));
         AuthResult expected = new AuthResult("access-token", "refresh-token", 900, user);
@@ -74,6 +77,7 @@ class HostOnboardingServiceTest {
         User user = verifiedUser();
         user.addRole(new Role("HOST", "Host"));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.APPROVED)).thenReturn(true);
         when(authService.reissueTokens(any())).thenReturn(new AuthResult("access-token", "refresh-token", 900, user));
 
         service.becomeHost(userId);

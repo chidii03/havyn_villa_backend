@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.booking.service.BookingServiceTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:08.965Z" hostname="CHIDI" time="0.8">
+<testsuite name="com.havyn.booking.service.BookingServiceTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-08-10T13:33:40.300Z" hostname="CHIDI" time="2.482">
   <properties/>
-  <testcase name="cancel_rejectsAnAlreadyCancelledBooking()" classname="com.havyn.booking.service.BookingServiceTest" time="0.019"/>
-  <testcase name="create_savesAPendingBookingWithAHoldExpiryAndPublishesAChangeEvent()" classname="com.havyn.booking.service.BookingServiceTest" time="0.087"/>
-  <testcase name="create_rejectsWithServiceUnavailableWhenTheBookingsEnabledKillSwitchIsOff()" classname="com.havyn.booking.service.BookingServiceTest" time="0.025"/>
-  <testcase name="create_rejectsAnInvertedDateRange()" classname="com.havyn.booking.service.BookingServiceTest" time="0.012"/>
-  <testcase name="cancel_aConfirmedFlexibleBookingWellBeforeCheckInRefundsInFull()" classname="com.havyn.booking.service.BookingServiceTest" time="0.02"/>
-  <testcase name="create_rejectsWhenGuestsExceedCapacity()" classname="com.havyn.booking.service.BookingServiceTest" time="0.01"/>
-  <testcase name="cancel_aConfirmedStrictBookingWellBeforeCheckInRefundsHalf()" classname="com.havyn.booking.service.BookingServiceTest" time="0.011"/>
-  <testcase name="cancel_aConfirmedStrictBookingTooCloseToCheckInGetsNoRefundAndStaysCancelled()" classname="com.havyn.booking.service.BookingServiceTest" time="0.009"/>
-  <testcase name="create_rejectsACheckInInThePast()" classname="com.havyn.booking.service.BookingServiceTest" time="0.005"/>
-  <testcase name="create_rejectsWhenTheClientsExpectedTotalDoesNotMatchTheServerRecomputation()" classname="com.havyn.booking.service.BookingServiceTest" time="0.008"/>
-  <testcase name="cancel_throwsForbiddenWhenCallerIsNotTheGuest()" classname="com.havyn.booking.service.BookingServiceTest" time="0.011"/>
-  <testcase name="cancel_aPendingBookingCancelsWithNoRefundOwed()" classname="com.havyn.booking.service.BookingServiceTest" time="0.01"/>
-  <testcase name="create_proceedsWhenTheBookingsEnabledSettingIsMissing_failsOpenNotClosed()" classname="com.havyn.booking.service.BookingServiceTest" time="0.014"/>
-  <testcase name="create_rejectsWhenDatesAreAlreadyBooked()" classname="com.havyn.booking.service.BookingServiceTest" time="0.007"/>
+  <testcase name="cancel_rejectsAnAlreadyCancelledBooking()" classname="com.havyn.booking.service.BookingServiceTest" time="0.056"/>
+  <testcase name="create_savesAPendingBookingWithAHoldExpiryAndPublishesAChangeEvent()" classname="com.havyn.booking.service.BookingServiceTest" time="1.454"/>
+  <testcase name="create_rejectsWithServiceUnavailableWhenTheBookingsEnabledKillSwitchIsOff()" classname="com.havyn.booking.service.BookingServiceTest" time="0.021"/>
+  <testcase name="create_rejectsAnInvertedDateRange()" classname="com.havyn.booking.service.BookingServiceTest" time="0.016"/>
+  <testcase name="cancel_aConfirmedFlexibleBookingWellBeforeCheckInRefundsInFull()" classname="com.havyn.booking.service.BookingServiceTest" time="0.144"/>
+  <testcase name="confirmPayment_assignsAReadableReferenceIdAndPublishesConfirmationEvent()" classname="com.havyn.booking.service.BookingServiceTest" time="0.03"/>
+  <testcase name="confirmPayment_isIdempotentForAlreadyConfirmedBookingsAndDoesNotAssignANewReference()" classname="com.havyn.booking.service.BookingServiceTest" time="0.006"/>
+  <testcase name="create_rejectsWhenGuestsExceedCapacity()" classname="com.havyn.booking.service.BookingServiceTest" time="0.008"/>
+  <testcase name="cancel_aConfirmedStrictBookingWellBeforeCheckInRefundsHalf()" classname="com.havyn.booking.service.BookingServiceTest" time="0.006"/>
+  <testcase name="cancel_aConfirmedStrictBookingTooCloseToCheckInGetsNoRefundAndStaysCancelled()" classname="com.havyn.booking.service.BookingServiceTest" time="0.017"/>
+  <testcase name="create_rejectsACheckInInThePast()" classname="com.havyn.booking.service.BookingServiceTest" time="0.02"/>
+  <testcase name="create_rejectsWhenTheClientsExpectedTotalDoesNotMatchTheServerRecomputation()" classname="com.havyn.booking.service.BookingServiceTest" time="0.009"/>
+  <testcase name="cancel_throwsForbiddenWhenCallerIsNotTheGuest()" classname="com.havyn.booking.service.BookingServiceTest" time="0.005"/>
+  <testcase name="cancel_aPendingBookingCancelsWithNoRefundOwed()" classname="com.havyn.booking.service.BookingServiceTest" time="0.03"/>
+  <testcase name="create_proceedsWhenTheBookingsEnabledSettingIsMissing_failsOpenNotClosed()" classname="com.havyn.booking.service.BookingServiceTest" time="0.008"/>
+  <testcase name="create_rejectsWhenDatesAreAlreadyBooked()" classname="com.havyn.booking.service.BookingServiceTest" time="0.006"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

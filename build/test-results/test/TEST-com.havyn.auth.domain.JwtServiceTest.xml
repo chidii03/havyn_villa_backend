@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.auth.domain.JwtServiceTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:06.665Z" hostname="CHIDI" time="0.893">
+<testsuite name="com.havyn.auth.domain.JwtServiceTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-08-10T13:33:37.747Z" hostname="CHIDI" time="1.028">
   <properties/>
-  <testcase name="issuesAndParsesARefreshTokenRoundTrip()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.823"/>
-  <testcase name="rejectsATamperedToken()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.018"/>
-  <testcase name="rejectsAnExpiredToken()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.02"/>
-  <testcase name="rejectsARefreshTokenPresentedToTheAccessParser()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.009"/>
+  <testcase name="issuesAndParsesARefreshTokenRoundTrip()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.931"/>
+  <testcase name="rejectsATamperedToken()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.049"/>
+  <testcase name="rejectsAnExpiredToken()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.012"/>
+  <testcase name="rejectsARefreshTokenPresentedToTheAccessParser()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.006"/>
   <testcase name="issuesAndParsesAnAccessTokenRoundTrip()" classname="com.havyn.auth.domain.JwtServiceTest" time="0.008"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

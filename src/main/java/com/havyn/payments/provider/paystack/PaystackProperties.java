@@ -10,8 +10,8 @@ public class PaystackProperties {
     private String secretKey = "";
     private String baseUrl = "https://api.paystack.co";
     private String callbackUrl = "";
-    private Duration connectTimeout = Duration.ofSeconds(5);
-    private Duration readTimeout = Duration.ofSeconds(15);
+    private Duration connectTimeout;
+    private Duration readTimeout;
 
     public String getSecretKey() {
         return secretKey;

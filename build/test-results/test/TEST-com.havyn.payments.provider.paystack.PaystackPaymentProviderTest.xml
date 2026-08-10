@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:46.252Z" hostname="CHIDI" time="0.171">
+<testsuite name="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-08-10T13:34:17.944Z" hostname="CHIDI" time="0.14">
   <properties/>
-  <testcase name="parseWebhook_acceptsAValidSignatureAndParsesChargeSuccess()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.018"/>
-  <testcase name="parseWebhook_rejectsASignatureComputedWithTheWrongSecret()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.018"/>
-  <testcase name="createIntent_sendsAmountInKoboAndParsesTheCheckoutUrl()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.024"/>
-  <testcase name="parseWebhook_classifiesAnUnrecognizedEventAsUnknownRatherThanFailing()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.014"/>
-  <testcase name="refund_sendsTheOriginalReferenceAndParsesSuccess()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.037"/>
-  <testcase name="name_isPaystack()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.008"/>
-  <testcase name="parseWebhook_rejectsAMissingSignatureHeader()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.015"/>
-  <testcase name="parseWebhook_rejectsATamperedBody()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.019"/>
+  <testcase name="parseWebhook_acceptsAValidSignatureAndParsesChargeSuccess()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.033"/>
+  <testcase name="parseWebhook_rejectsASignatureComputedWithTheWrongSecret()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.011"/>
+  <testcase name="createIntent_sendsAmountInKoboAndParsesTheCheckoutUrl()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.016"/>
+  <testcase name="parseWebhook_classifiesAnUnrecognizedEventAsUnknownRatherThanFailing()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.013"/>
+  <testcase name="refund_sendsTheOriginalReferenceAndParsesSuccess()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.025"/>
+  <testcase name="name_isPaystack()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.009"/>
+  <testcase name="parseWebhook_rejectsAMissingSignatureHeader()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.01"/>
+  <testcase name="parseWebhook_rejectsATamperedBody()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.009"/>
   <testcase name="parseWebhook_mapsChargeFailed()" classname="com.havyn.payments.provider.paystack.PaystackPaymentProviderTest" time="0.009"/>
-  <system-out><![CDATA[{"@timestamp":"2026-08-05T08:19:46.2881495Z","@version":"1","message":"Rejected paystack webhook: invalid or missing signature","logger_name":"com.havyn.payments.provider.paystack.PaystackPaymentProvider","thread_name":"Test worker","level":"WARN","level_value":30000,"service":"havyn-villa-api"}
-{"@timestamp":"2026-08-05T08:19:46.3921669Z","@version":"1","message":"Rejected paystack webhook: invalid or missing signature","logger_name":"com.havyn.payments.provider.paystack.PaystackPaymentProvider","thread_name":"Test worker","level":"WARN","level_value":30000,"service":"havyn-villa-api"}
-{"@timestamp":"2026-08-05T08:19:46.4111499Z","@version":"1","message":"Rejected paystack webhook: invalid or missing signature","logger_name":"com.havyn.payments.provider.paystack.PaystackPaymentProvider","thread_name":"Test worker","level":"WARN","level_value":30000,"service":"havyn-villa-api"}
+  <system-out><![CDATA[{"@timestamp":"2026-08-10T13:34:17.9907264Z","@version":"1","message":"Rejected paystack webhook: invalid or missing signature","logger_name":"com.havyn.payments.provider.paystack.PaystackPaymentProvider","thread_name":"Test worker","level":"WARN","level_value":30000,"service":"havyn-villa-api"}
+{"@timestamp":"2026-08-10T13:34:18.0642846Z","@version":"1","message":"Rejected paystack webhook: invalid or missing signature","logger_name":"com.havyn.payments.provider.paystack.PaystackPaymentProvider","thread_name":"Test worker","level":"WARN","level_value":30000,"service":"havyn-villa-api"}
+{"@timestamp":"2026-08-10T13:34:18.0742916Z","@version":"1","message":"Rejected paystack webhook: invalid or missing signature","logger_name":"com.havyn.payments.provider.paystack.PaystackPaymentProvider","thread_name":"Test worker","level":"WARN","level_value":30000,"service":"havyn-villa-api"}
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

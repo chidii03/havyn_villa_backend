@@ -74,9 +74,12 @@ public class Booking extends BaseEntity {
     @Column(name = &quot;idempotency_key&quot;, length = 100)
     private String idempotencyKey;
 
-<span class="nc" id="L77">    protected Booking() {</span>
+    @Column(name = &quot;reference_id&quot;, length = 20, unique = true)
+    private String referenceId;
+
+<span class="nc" id="L80">    protected Booking() {</span>
         // JPA
-<span class="nc" id="L79">    }</span>
+<span class="nc" id="L82">    }</span>
 
     public Booking(
             UUID propertyId,
@@ -92,104 +95,114 @@ public class Booking extends BaseEntity {
             BigDecimal taxTotal,
             BigDecimal commissionAmount,
             BigDecimal grandTotal,
-<span class="fc" id="L95">            String currency) {</span>
-<span class="fc" id="L96">        this.propertyId = propertyId;</span>
-<span class="fc" id="L97">        this.guestId = guestId;</span>
-<span class="fc" id="L98">        this.checkIn = checkIn;</span>
-<span class="fc" id="L99">        this.checkOut = checkOut;</span>
-<span class="fc" id="L100">        this.nights = nights;</span>
-<span class="fc" id="L101">        this.guestsCount = guestsCount;</span>
-<span class="fc" id="L102">        this.baseTotal = baseTotal;</span>
-<span class="fc" id="L103">        this.cleaningFee = cleaningFee;</span>
-<span class="fc" id="L104">        this.serviceFee = serviceFee;</span>
-<span class="fc" id="L105">        this.discountTotal = discountTotal;</span>
-<span class="fc" id="L106">        this.taxTotal = taxTotal;</span>
-<span class="fc" id="L107">        this.commissionAmount = commissionAmount;</span>
-<span class="fc" id="L108">        this.grandTotal = grandTotal;</span>
-<span class="fc" id="L109">        this.currency = currency;</span>
-<span class="fc" id="L110">    }</span>
+<span class="fc" id="L98">            String currency) {</span>
+<span class="fc" id="L99">        this.propertyId = propertyId;</span>
+<span class="fc" id="L100">        this.guestId = guestId;</span>
+<span class="fc" id="L101">        this.checkIn = checkIn;</span>
+<span class="fc" id="L102">        this.checkOut = checkOut;</span>
+<span class="fc" id="L103">        this.nights = nights;</span>
+<span class="fc" id="L104">        this.guestsCount = guestsCount;</span>
+<span class="fc" id="L105">        this.baseTotal = baseTotal;</span>
+<span class="fc" id="L106">        this.cleaningFee = cleaningFee;</span>
+<span class="fc" id="L107">        this.serviceFee = serviceFee;</span>
+<span class="fc" id="L108">        this.discountTotal = discountTotal;</span>
+<span class="fc" id="L109">        this.taxTotal = taxTotal;</span>
+<span class="fc" id="L110">        this.commissionAmount = commissionAmount;</span>
+<span class="fc" id="L111">        this.grandTotal = grandTotal;</span>
+<span class="fc" id="L112">        this.currency = currency;</span>
+<span class="fc" id="L113">    }</span>
 
     public UUID getPropertyId() {
-<span class="fc" id="L113">        return propertyId;</span>
+<span class="fc" id="L116">        return propertyId;</span>
     }
 
     public UUID getGuestId() {
-<span class="fc" id="L117">        return guestId;</span>
+<span class="fc" id="L120">        return guestId;</span>
     }
 
     public LocalDate getCheckIn() {
-<span class="fc" id="L121">        return checkIn;</span>
+<span class="fc" id="L124">        return checkIn;</span>
     }
 
     public LocalDate getCheckOut() {
-<span class="fc" id="L125">        return checkOut;</span>
+<span class="fc" id="L128">        return checkOut;</span>
     }
 
     public int getNights() {
-<span class="nc" id="L129">        return nights;</span>
+<span class="nc" id="L132">        return nights;</span>
     }
 
     public int getGuestsCount() {
-<span class="nc" id="L133">        return guestsCount;</span>
+<span class="nc" id="L136">        return guestsCount;</span>
     }
 
     public BigDecimal getBaseTotal() {
-<span class="nc" id="L137">        return baseTotal;</span>
+<span class="nc" id="L140">        return baseTotal;</span>
     }
 
     public BigDecimal getCleaningFee() {
-<span class="nc" id="L141">        return cleaningFee;</span>
+<span class="nc" id="L144">        return cleaningFee;</span>
     }
 
     public BigDecimal getServiceFee() {
-<span class="nc" id="L145">        return serviceFee;</span>
+<span class="nc" id="L148">        return serviceFee;</span>
     }
 
     public BigDecimal getDiscountTotal() {
-<span class="nc" id="L149">        return discountTotal;</span>
+<span class="nc" id="L152">        return discountTotal;</span>
     }
 
     public BigDecimal getTaxTotal() {
-<span class="nc" id="L153">        return taxTotal;</span>
+<span class="nc" id="L156">        return taxTotal;</span>
     }
 
     public BigDecimal getCommissionAmount() {
-<span class="fc" id="L157">        return commissionAmount;</span>
+<span class="fc" id="L160">        return commissionAmount;</span>
     }
 
     public BigDecimal getGrandTotal() {
-<span class="fc" id="L161">        return grandTotal;</span>
+<span class="fc" id="L164">        return grandTotal;</span>
     }
 
     public String getCurrency() {
-<span class="fc" id="L165">        return currency;</span>
+<span class="fc" id="L168">        return currency;</span>
     }
 
     public BookingStatus getStatus() {
-<span class="fc" id="L169">        return status;</span>
+<span class="fc" id="L172">        return status;</span>
     }
 
     public void transitionTo(BookingStatus target) {
-<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        if (!status.canTransitionTo(target)) {</span>
-<span class="nc" id="L174">            throw new IllegalStateException(&quot;Cannot transition booking from &quot; + status + &quot; to &quot; + target);</span>
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (!status.canTransitionTo(target)) {</span>
+<span class="nc" id="L177">            throw new IllegalStateException(&quot;Cannot transition booking from &quot; + status + &quot; to &quot; + target);</span>
         }
-<span class="fc" id="L176">        this.status = target;</span>
-<span class="fc" id="L177">    }</span>
+<span class="fc" id="L179">        this.status = target;</span>
+<span class="fc" id="L180">    }</span>
 
     public Instant getHoldExpiresAt() {
-<span class="fc" id="L180">        return holdExpiresAt;</span>
+<span class="fc" id="L183">        return holdExpiresAt;</span>
     }
 
     public void setHoldExpiresAt(Instant holdExpiresAt) {
-<span class="fc" id="L184">        this.holdExpiresAt = holdExpiresAt;</span>
-<span class="fc" id="L185">    }</span>
+<span class="fc" id="L187">        this.holdExpiresAt = holdExpiresAt;</span>
+<span class="fc" id="L188">    }</span>
 
     public String getIdempotencyKey() {
-<span class="fc" id="L188">        return idempotencyKey;</span>
+<span class="fc" id="L191">        return idempotencyKey;</span>
     }
 
     public void setIdempotencyKey(String idempotencyKey) {
-<span class="fc" id="L192">        this.idempotencyKey = idempotencyKey;</span>
-<span class="fc" id="L193">    }</span>
+<span class="fc" id="L195">        this.idempotencyKey = idempotencyKey;</span>
+<span class="fc" id="L196">    }</span>
+
+    public String getReferenceId() {
+<span class="fc" id="L199">        return referenceId;</span>
+    }
+
+    public void assignReferenceId(String referenceId) {
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        if (this.referenceId == null) {</span>
+<span class="fc" id="L204">            this.referenceId = referenceId;</span>
+        }
+<span class="fc" id="L206">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

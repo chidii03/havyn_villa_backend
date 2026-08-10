@@ -74,11 +74,17 @@ public class PaystackPaymentProvider implements PaymentProvider {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.meterRegistry = meterRegistry;
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(properties.getConnectTimeout());
-        requestFactory.setReadTimeout(properties.getReadTimeout());
+        if (properties.getConnectTimeout() != null || properties.getReadTimeout() != null) {
+            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+            if (properties.getConnectTimeout() != null) {
+                requestFactory.setConnectTimeout(properties.getConnectTimeout());
+            }
+            if (properties.getReadTimeout() != null) {
+                requestFactory.setReadTimeout(properties.getReadTimeout());
+            }
+            restClientBuilder.requestFactory(requestFactory);
+        }
         this.restClient = restClientBuilder
-                .requestFactory(requestFactory)
                 .baseUrl(properties.getBaseUrl())
                 .defaultHeader("Authorization", "Bearer " + properties.getSecretKey())
                 .build();

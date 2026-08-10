@@ -1,38 +1,98 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SupportChatService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.support.service</a> &gt; <span class="el_source">SupportChatService.java</span></div><h1>SupportChatService.java</h1><pre class="source lang-java linenums">package com.havyn.support.service;
 
+import com.havyn.common.error.ServiceUnavailableException;
 import com.havyn.support.domain.SupportChatMessage;
 import com.havyn.support.domain.SupportChatRole;
+import com.havyn.support.domain.SupportTicket;
 import com.havyn.support.repo.SupportChatMessageRepository;
+import com.havyn.support.repo.SupportTicketRepository;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SupportChatService {
 
+<span class="fc" id="L22">    private static final Logger log = LoggerFactory.getLogger(SupportChatService.class);</span>
     public static final String GREETING = &quot;Hi, I'm Havyn Villa's AI Assistant. How can I help you today?&quot;;
+<span class="fc" id="L24">    private static final Pattern BOOKING_REFERENCE = Pattern.compile(&quot;\\bHV-\\d{4}-\\d{6}\\b&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="fc" id="L25">    private static final List&lt;String&gt; COMPLAINT_TERMS = List.of(</span>
+            &quot;complaint&quot;, &quot;problem&quot;, &quot;issue&quot;, &quot;refund&quot;, &quot;charged&quot;, &quot;payment failed&quot;, &quot;cancel&quot;, &quot;dirty&quot;, &quot;unsafe&quot;, &quot;host&quot;, &quot;scam&quot;,
+            &quot;not working&quot;, &quot;wrong&quot;, &quot;dispute&quot;, &quot;support ticket&quot;, &quot;bad experience&quot;);
 
     private final SupportChatMessageRepository messageRepository;
+    private final SupportTicketRepository ticketRepository;
     private final OpenAiSupportClient openAiSupportClient;
 
-<span class="nc" id="L19">    public SupportChatService(SupportChatMessageRepository messageRepository, OpenAiSupportClient openAiSupportClient) {</span>
-<span class="nc" id="L20">        this.messageRepository = messageRepository;</span>
-<span class="nc" id="L21">        this.openAiSupportClient = openAiSupportClient;</span>
-<span class="nc" id="L22">    }</span>
+    public SupportChatService(
+            SupportChatMessageRepository messageRepository,
+            SupportTicketRepository ticketRepository,
+<span class="fc" id="L36">            OpenAiSupportClient openAiSupportClient) {</span>
+<span class="fc" id="L37">        this.messageRepository = messageRepository;</span>
+<span class="fc" id="L38">        this.ticketRepository = ticketRepository;</span>
+<span class="fc" id="L39">        this.openAiSupportClient = openAiSupportClient;</span>
+<span class="fc" id="L40">    }</span>
 
     @Transactional(readOnly = true)
     public List&lt;SupportChatMessage&gt; history(UUID userId) {
-<span class="nc" id="L26">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
+<span class="fc" id="L44">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
     }
 
     @Transactional
     public List&lt;SupportChatMessage&gt; send(UUID userId, String body) {
-<span class="nc" id="L31">        SupportChatMessage userMessage = messageRepository.save(new SupportChatMessage(userId, SupportChatRole.USER, body.trim()));</span>
-<span class="nc" id="L32">        List&lt;SupportChatMessage&gt; history = messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
-<span class="nc" id="L33">        String answer = openAiSupportClient.respond(history);</span>
-<span class="nc" id="L34">        messageRepository.save(new SupportChatMessage(userId, SupportChatRole.ASSISTANT, answer));</span>
-<span class="nc" id="L35">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userMessage.getUserId());</span>
+<span class="fc" id="L49">        String trimmed = body.trim();</span>
+<span class="fc" id="L50">        SupportChatMessage userMessage = messageRepository.save(new SupportChatMessage(userId, SupportChatRole.USER, trimmed));</span>
+<span class="fc" id="L51">        boolean complaint = isComplaint(trimmed);</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (complaint) {</span>
+<span class="fc" id="L53">            ticketRepository.save(new SupportTicket(userId, bookingReference(trimmed), summarize(trimmed), trimmed));</span>
+        }
+<span class="fc" id="L55">        List&lt;SupportChatMessage&gt; history = messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
+        String answer;
+        try {
+<span class="fc" id="L58">            answer = openAiSupportClient.respond(history);</span>
+<span class="nc" id="L59">        } catch (ServiceUnavailableException e) {</span>
+<span class="nc" id="L60">            log.warn(&quot;Support chat OpenAI response unavailable userId={} code={}&quot;, userId, e.getCode());</span>
+<span class="nc" id="L61">            answer = fallbackAnswer(trimmed, complaint);</span>
+<span class="fc" id="L62">        }</span>
+<span class="fc" id="L63">        messageRepository.save(new SupportChatMessage(userId, SupportChatRole.ASSISTANT, answer));</span>
+<span class="fc" id="L64">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userMessage.getUserId());</span>
+    }
+
+    private boolean isComplaint(String body) {
+<span class="fc" id="L68">        String normalized = body.toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L69">        return COMPLAINT_TERMS.stream().anyMatch(normalized::contains);</span>
+    }
+
+    private String bookingReference(String body) {
+<span class="fc" id="L73">        Matcher matcher = BOOKING_REFERENCE.matcher(body);</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        return matcher.find() ? matcher.group().toUpperCase(Locale.ROOT) : null;</span>
+    }
+
+    private String summarize(String body) {
+<span class="fc" id="L78">        String normalized = body.replaceAll(&quot;\\s+&quot;, &quot; &quot;).trim();</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (normalized.length() &lt;= 240) {</span>
+<span class="fc" id="L80">            return normalized;</span>
+        }
+<span class="nc" id="L82">        return normalized.substring(0, 237) + &quot;...&quot;;</span>
+    }
+
+    private String fallbackAnswer(String body, boolean complaint) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (complaint) {</span>
+<span class="nc" id="L87">            String reference = bookingReference(body);</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            String referenceLine = reference == null ? &quot;&quot; : &quot; with booking reference &quot; + reference;</span>
+<span class="nc" id="L89">            return &quot;Thanks for explaining. I've flagged this for Admin&quot; + referenceLine</span>
+                    + &quot;. Please add any dates, property name, payment reference, or host details that could help us review it faster.&quot;;
+        }
+<span class="nc" id="L92">        return &quot;&quot;&quot;</span>
+                I can help with search, filters, bookings, wishlists, trips, becoming a host, listing management, cancellations, refunds, and support.
+                Tell me what you want to do, and I'll guide you step by step.
+<span class="nc" id="L95">                &quot;&quot;&quot;.trim();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

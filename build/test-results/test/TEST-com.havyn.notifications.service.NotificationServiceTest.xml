@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.notifications.service.NotificationServiceTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:45.850Z" hostname="CHIDI" time="0.292">
+<testsuite name="com.havyn.notifications.service.NotificationServiceTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-08-10T13:34:17.567Z" hostname="CHIDI" time="0.252">
   <properties/>
-  <testcase name="markRead_rejectsAMissingNotification()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.008"/>
+  <testcase name="markRead_rejectsAMissingNotification()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.006"/>
   <testcase name="aFailedEmailSendDoesNotPreventTheInAppNotificationFromBeingRecorded()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.012"/>
-  <testcase name="onMessageSent_notifiesTheRecipientNotTheSender()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.009"/>
-  <testcase name="markRead_rejectsANotificationBelongingToSomeoneElse()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.005"/>
-  <testcase name="markRead_setsReadAtForTheOwningUser()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.007"/>
-  <testcase name="unreadCount_delegatesToTheRepository()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.005"/>
-  <testcase name="onBookingConfirmed_persistsAnInAppNotificationAndSendsEmail()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.01"/>
-  <testcase name="onBookingCancelled_notesTheRefundWhenOneWasIssued()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.005"/>
-  <system-out><![CDATA[{"@timestamp":"2026-08-05T08:19:46.0852002Z","@version":"1","message":"Failed to send notification email for user f548ea19-1704-4031-b746-840adef21caf: SMTP down","logger_name":"com.havyn.notifications.service.NotificationService","thread_name":"Test worker","level":"WARN","level_value":30000,"service":"havyn-villa-api"}
+  <testcase name="onMessageSent_notifiesTheRecipientNotTheSender()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.011"/>
+  <testcase name="markRead_rejectsANotificationBelongingToSomeoneElse()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.006"/>
+  <testcase name="markRead_setsReadAtForTheOwningUser()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.003"/>
+  <testcase name="unreadCount_delegatesToTheRepository()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.003"/>
+  <testcase name="onBookingConfirmed_persistsAnInAppNotificationAndSendsEmail()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.005"/>
+  <testcase name="onBookingCancelled_notesTheRefundWhenOneWasIssued()" classname="com.havyn.notifications.service.NotificationServiceTest" time="0.004"/>
+  <system-out><![CDATA[{"@timestamp":"2026-08-10T13:34:17.7772863Z","@version":"1","message":"Failed to send notification email for user 2019b3b4-cab0-4283-873f-bd1c2f4a3095: SMTP down","logger_name":"com.havyn.notifications.service.NotificationService","thread_name":"Test worker","level":"WARN","level_value":30000,"service":"havyn-villa-api"}
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

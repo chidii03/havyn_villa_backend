@@ -32,26 +32,31 @@ public class AdminPropertyController {
 
     @GetMapping
     public PageResponse&lt;PropertySummary&gt; list(@PageableDefault(size = 20) Pageable pageable) {
-<span class="nc" id="L35">        return PageResponse.of(adminPropertyService.list(pageable).map(PropertySummary::from));</span>
+<span class="nc" id="L35">        return PageResponse.of(adminPropertyService.listSummaries(pageable));</span>
     }
 
     @GetMapping(&quot;/{id}&quot;)
     public PropertyDetail get(@PathVariable UUID id) {
-<span class="nc" id="L40">        return PropertyDetail.from(adminPropertyService.get(id));</span>
+<span class="nc" id="L40">        return adminPropertyService.getDetail(id);</span>
     }
 
     @PostMapping(&quot;/{id}/suspend&quot;)
     public PropertyDetail suspend(Authentication authentication, @PathVariable UUID id, @Valid @RequestBody ModerationActionRequest request) {
-<span class="nc" id="L45">        return PropertyDetail.from(adminPropertyService.suspend(principal(authentication), id, request.reason()));</span>
+<span class="nc" id="L45">        return adminPropertyService.suspendDetail(principal(authentication), id, request.reason());</span>
     }
 
     @PostMapping(&quot;/{id}/reject&quot;)
     public PropertyDetail reject(Authentication authentication, @PathVariable UUID id, @Valid @RequestBody ModerationActionRequest request) {
-<span class="nc" id="L50">        return PropertyDetail.from(adminPropertyService.reject(principal(authentication), id, request.reason()));</span>
+<span class="nc" id="L50">        return adminPropertyService.rejectDetail(principal(authentication), id, request.reason());</span>
+    }
+
+    @PostMapping(&quot;/{id}/reactivate&quot;)
+    public PropertyDetail reactivate(Authentication authentication, @PathVariable UUID id) {
+<span class="nc" id="L55">        return adminPropertyService.reactivateDetail(principal(authentication), id);</span>
     }
 
     private UUID principal(Authentication authentication) {
-<span class="nc" id="L54">        return ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
+<span class="nc" id="L59">        return ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

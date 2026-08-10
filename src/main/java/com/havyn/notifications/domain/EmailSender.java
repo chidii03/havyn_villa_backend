@@ -10,4 +10,8 @@ package com.havyn.notifications.domain;
 public interface EmailSender {
 
     void send(String toEmail, String subject, String body);
+
+    default void sendHtml(String toEmail, String subject, String htmlBody) {
+        send(toEmail, subject, htmlBody);
+    }
 }

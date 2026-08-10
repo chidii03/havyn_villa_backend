@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HostOnboardingService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.hosts.service</a> &gt; <span class="el_source">HostOnboardingService.java</span></div><h1>HostOnboardingService.java</h1><pre class="source lang-java linenums">package com.havyn.hosts.service;
 
+import com.havyn.admin.domain.VerificationStatus;
+import com.havyn.admin.repo.VerificationRequestRepository;
 import com.havyn.auth.domain.AuthResult;
 import com.havyn.auth.domain.AuthService;
 import com.havyn.common.error.BadRequestException;
@@ -33,29 +35,38 @@ public class HostOnboardingService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final VerificationRequestRepository verificationRequestRepository;
     private final AuthService authService;
 
-<span class="fc" id="L38">    public HostOnboardingService(UserRepository userRepository, RoleRepository roleRepository, AuthService authService) {</span>
-<span class="fc" id="L39">        this.userRepository = userRepository;</span>
-<span class="fc" id="L40">        this.roleRepository = roleRepository;</span>
-<span class="fc" id="L41">        this.authService = authService;</span>
-<span class="fc" id="L42">    }</span>
+    public HostOnboardingService(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            VerificationRequestRepository verificationRequestRepository,
+<span class="fc" id="L45">            AuthService authService) {</span>
+<span class="fc" id="L46">        this.userRepository = userRepository;</span>
+<span class="fc" id="L47">        this.roleRepository = roleRepository;</span>
+<span class="fc" id="L48">        this.verificationRequestRepository = verificationRequestRepository;</span>
+<span class="fc" id="L49">        this.authService = authService;</span>
+<span class="fc" id="L50">    }</span>
 
     @Transactional
     public AuthResult becomeHost(UUID userId) {
-<span class="fc" id="L46">        User user = userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
-<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (!user.isEmailVerified()) {</span>
-<span class="fc" id="L48">            throw new BadRequestException(&quot;EMAIL_NOT_VERIFIED&quot;, &quot;Verify your email before you can host&quot;);</span>
+<span class="fc" id="L54">        User user = userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (!user.isEmailVerified()) {</span>
+<span class="fc" id="L56">            throw new BadRequestException(&quot;EMAIL_NOT_VERIFIED&quot;, &quot;Verify your email before you can host&quot;);</span>
+        }
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (!verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.APPROVED)) {</span>
+<span class="nc" id="L59">            throw new BadRequestException(&quot;KYC_NOT_APPROVED&quot;, &quot;Complete host verification before you can host&quot;);</span>
         }
 
-<span class="fc" id="L51">        boolean alreadyHost = user.getRoles().stream().anyMatch(role -&gt; role.getCode().equals(HOST_ROLE_CODE));</span>
-<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (!alreadyHost) {</span>
-<span class="fc" id="L53">            Role hostRole = roleRepository.findByCode(HOST_ROLE_CODE)</span>
-<span class="pc" id="L54">                    .orElseThrow(() -&gt; new IllegalStateException(HOST_ROLE_CODE + &quot; role must be seeded by V1__init.sql&quot;));</span>
-<span class="fc" id="L55">            user.addRole(hostRole);</span>
+<span class="fc" id="L62">        boolean alreadyHost = user.getRoles().stream().anyMatch(role -&gt; role.getCode().equals(HOST_ROLE_CODE));</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (!alreadyHost) {</span>
+<span class="fc" id="L64">            Role hostRole = roleRepository.findByCode(HOST_ROLE_CODE)</span>
+<span class="pc" id="L65">                    .orElseThrow(() -&gt; new IllegalStateException(HOST_ROLE_CODE + &quot; role must be seeded by V1__init.sql&quot;));</span>
+<span class="fc" id="L66">            user.addRole(hostRole);</span>
         }
 
-<span class="fc" id="L58">        return authService.reissueTokens(user);</span>
+<span class="fc" id="L69">        return authService.reissueTokens(user);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,43 +28,52 @@ public class HostMediaController {
 
     private final MediaService mediaService;
 
-<span class="nc" id="L30">    public HostMediaController(MediaService mediaService) {</span>
-<span class="nc" id="L31">        this.mediaService = mediaService;</span>
-<span class="nc" id="L32">    }</span>
+<span class="nc" id="L31">    public HostMediaController(MediaService mediaService) {</span>
+<span class="nc" id="L32">        this.mediaService = mediaService;</span>
+<span class="nc" id="L33">    }</span>
 
     @PostMapping(&quot;/signature&quot;)
     public MediaSignatureResponse signature(Authentication authentication, @PathVariable UUID propertyId) {
-<span class="nc" id="L36">        return MediaSignatureResponse.from(mediaService.generateUploadSignature(hostId(authentication), propertyId));</span>
+<span class="nc" id="L37">        return MediaSignatureResponse.from(mediaService.generateUploadSignature(hostId(authentication), propertyId));</span>
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PropertyMediaSummary add(Authentication authentication, @PathVariable UUID propertyId, @Valid @RequestBody AddMediaRequest request) {
-<span class="nc" id="L42">        PropertyMedia media = mediaService.addMedia(hostId(authentication), propertyId, request);</span>
-<span class="nc" id="L43">        return PropertyMediaSummary.from(media);</span>
+<span class="nc" id="L43">        PropertyMedia media = mediaService.addMedia(hostId(authentication), propertyId, request);</span>
+<span class="nc" id="L44">        return PropertyMediaSummary.from(media);</span>
     }
 
     @GetMapping
     public List&lt;PropertyMediaSummary&gt; list(Authentication authentication, @PathVariable UUID propertyId) {
-<span class="nc" id="L48">        return mediaService.list(hostId(authentication), propertyId).stream().map(PropertyMediaSummary::from).toList();</span>
+<span class="nc" id="L49">        return mediaService.list(hostId(authentication), propertyId).stream().map(PropertyMediaSummary::from).toList();</span>
     }
 
     @PutMapping(&quot;/order&quot;)
     public List&lt;PropertyMediaSummary&gt; reorder(
             Authentication authentication, @PathVariable UUID propertyId, @Valid @RequestBody ReorderMediaRequest request) {
-<span class="nc" id="L54">        return mediaService.reorder(hostId(authentication), propertyId, request.orderedMediaIds()).stream()</span>
-<span class="nc" id="L55">                .map(PropertyMediaSummary::from)</span>
-<span class="nc" id="L56">                .toList();</span>
+<span class="nc" id="L55">        return mediaService.reorder(hostId(authentication), propertyId, request.orderedMediaIds()).stream()</span>
+<span class="nc" id="L56">                .map(PropertyMediaSummary::from)</span>
+<span class="nc" id="L57">                .toList();</span>
+    }
+
+    @PatchMapping(&quot;/{mediaId}&quot;)
+    public PropertyMediaSummary update(
+            Authentication authentication,
+            @PathVariable UUID propertyId,
+            @PathVariable UUID mediaId,
+            @Valid @RequestBody UpdateMediaRequest request) {
+<span class="nc" id="L66">        return PropertyMediaSummary.from(mediaService.update(hostId(authentication), propertyId, mediaId, request));</span>
     }
 
     @DeleteMapping(&quot;/{mediaId}&quot;)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(Authentication authentication, @PathVariable UUID propertyId, @PathVariable UUID mediaId) {
-<span class="nc" id="L62">        mediaService.delete(hostId(authentication), propertyId, mediaId);</span>
-<span class="nc" id="L63">    }</span>
+<span class="nc" id="L72">        mediaService.delete(hostId(authentication), propertyId, mediaId);</span>
+<span class="nc" id="L73">    }</span>
 
     private UUID hostId(Authentication authentication) {
-<span class="nc" id="L66">        return ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
+<span class="nc" id="L76">        return ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -53,13 +53,51 @@ import java.util.UUID;
      * unconditionally, before the result page is cached.
      */
     public SearchResultItem withApproximateLocation() {
-<span class="fc" id="L56">        return new SearchResultItem(</span>
-<span class="fc" id="L57">                id, title, city, state, country, approximate(lat), approximate(lng), propertyType, currency,</span>
+<span class="fc" id="L56">        BigDecimal approximateLat = approximate(lat);</span>
+<span class="fc" id="L57">        BigDecimal approximateLng = approximate(lng);</span>
+<span class="pc bpc" id="L58" title="2 of 4 branches missed.">        if (approximateLat == null || approximateLng == null) {</span>
+<span class="nc" id="L59">            ApproximateLocation fallback = ApproximateLocation.forPlace(city, state);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            if (fallback != null) {</span>
+<span class="nc" id="L61">                approximateLat = fallback.lat();</span>
+<span class="nc" id="L62">                approximateLng = fallback.lng();</span>
+            }
+        }
+<span class="fc" id="L65">        return new SearchResultItem(</span>
+                id, title, city, state, country, approximateLat, approximateLng, propertyType, currency,
                 basePrice, capacity, bedrooms, bathrooms, ratingAvg, ratingCount, photoUrls);
     }
 
     private static BigDecimal approximate(BigDecimal coordinate) {
-<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        return coordinate == null ? null : coordinate.setScale(2, RoundingMode.HALF_UP);</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        return coordinate == null ? null : coordinate.setScale(2, RoundingMode.HALF_UP);</span>
+    }
+
+<span class="nc" id="L74">    private record ApproximateLocation(BigDecimal lat, BigDecimal lng) {</span>
+        private static ApproximateLocation forPlace(String city, String state) {
+<span class="nc" id="L76">            String place = normalize(city) + &quot;|&quot; + normalize(state);</span>
+<span class="nc bnc" id="L77" title="All 7 branches missed.">            return switch (place) {</span>
+<span class="nc" id="L78">                case &quot;uyo|akwa ibom&quot; -&gt; of(&quot;5.04&quot;, &quot;7.91&quot;);</span>
+<span class="nc" id="L79">                case &quot;lagos|lagos&quot; -&gt; of(&quot;6.52&quot;, &quot;3.38&quot;);</span>
+<span class="nc" id="L80">                case &quot;ikeja|lagos&quot; -&gt; of(&quot;6.60&quot;, &quot;3.35&quot;);</span>
+<span class="nc" id="L81">                case &quot;lekki|lagos&quot; -&gt; of(&quot;6.47&quot;, &quot;3.59&quot;);</span>
+<span class="nc" id="L82">                case &quot;abuja|fct&quot;, &quot;abuja|federal capital territory&quot; -&gt; of(&quot;9.08&quot;, &quot;7.49&quot;);</span>
+<span class="nc" id="L83">                case &quot;port harcourt|rivers&quot; -&gt; of(&quot;4.82&quot;, &quot;7.05&quot;);</span>
+<span class="nc bnc" id="L84" title="All 5 branches missed.">                default -&gt; switch (normalize(state)) {</span>
+<span class="nc" id="L85">                    case &quot;akwa ibom&quot; -&gt; of(&quot;5.04&quot;, &quot;7.91&quot;);</span>
+<span class="nc" id="L86">                    case &quot;lagos&quot; -&gt; of(&quot;6.52&quot;, &quot;3.38&quot;);</span>
+<span class="nc" id="L87">                    case &quot;fct&quot;, &quot;federal capital territory&quot; -&gt; of(&quot;9.08&quot;, &quot;7.49&quot;);</span>
+<span class="nc" id="L88">                    case &quot;rivers&quot; -&gt; of(&quot;4.82&quot;, &quot;7.05&quot;);</span>
+<span class="nc" id="L89">                    default -&gt; null;</span>
+                };
+            };
+        }
+
+        private static ApproximateLocation of(String lat, String lng) {
+<span class="nc" id="L95">            return new ApproximateLocation(new BigDecimal(lat), new BigDecimal(lng));</span>
+        }
+
+        private static String normalize(String value) {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            return value == null ? &quot;&quot; : value.trim().toLowerCase();</span>
+        }
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

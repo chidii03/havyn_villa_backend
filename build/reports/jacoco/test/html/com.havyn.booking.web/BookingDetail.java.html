@@ -9,6 +9,7 @@ import java.util.UUID;
 /** Guest-facing booking detail — like {@link QuoteResponse}, no commission line. */
 <span class="nc" id="L10">public record BookingDetail(</span>
         UUID id,
+        String referenceId,
         BookingPropertySummary property,
         LocalDate checkIn,
         LocalDate checkOut,
@@ -26,23 +27,24 @@ import java.util.UUID;
         Instant createdAt) {
 
     public static BookingDetail from(Booking booking, BookingPropertySummary property) {
-<span class="nc" id="L29">        return new BookingDetail(</span>
-<span class="nc" id="L30">                booking.getId(),</span>
+<span class="nc" id="L30">        return new BookingDetail(</span>
+<span class="nc" id="L31">                booking.getId(),</span>
+<span class="nc" id="L32">                booking.getReferenceId(),</span>
                 property,
-<span class="nc" id="L32">                booking.getCheckIn(),</span>
-<span class="nc" id="L33">                booking.getCheckOut(),</span>
-<span class="nc" id="L34">                booking.getNights(),</span>
-<span class="nc" id="L35">                booking.getGuestsCount(),</span>
-<span class="nc" id="L36">                booking.getBaseTotal(),</span>
-<span class="nc" id="L37">                booking.getCleaningFee(),</span>
-<span class="nc" id="L38">                booking.getServiceFee(),</span>
-<span class="nc" id="L39">                booking.getDiscountTotal(),</span>
-<span class="nc" id="L40">                booking.getTaxTotal(),</span>
-<span class="nc" id="L41">                booking.getGrandTotal(),</span>
-<span class="nc" id="L42">                booking.getCurrency(),</span>
-<span class="nc" id="L43">                booking.getStatus().name(),</span>
-<span class="nc" id="L44">                booking.getHoldExpiresAt(),</span>
-<span class="nc" id="L45">                booking.getCreatedAt());</span>
+<span class="nc" id="L34">                booking.getCheckIn(),</span>
+<span class="nc" id="L35">                booking.getCheckOut(),</span>
+<span class="nc" id="L36">                booking.getNights(),</span>
+<span class="nc" id="L37">                booking.getGuestsCount(),</span>
+<span class="nc" id="L38">                booking.getBaseTotal(),</span>
+<span class="nc" id="L39">                booking.getCleaningFee(),</span>
+<span class="nc" id="L40">                booking.getServiceFee(),</span>
+<span class="nc" id="L41">                booking.getDiscountTotal(),</span>
+<span class="nc" id="L42">                booking.getTaxTotal(),</span>
+<span class="nc" id="L43">                booking.getGrandTotal(),</span>
+<span class="nc" id="L44">                booking.getCurrency(),</span>
+<span class="nc" id="L45">                booking.getStatus().name(),</span>
+<span class="nc" id="L46">                booking.getHoldExpiresAt(),</span>
+<span class="nc" id="L47">                booking.getCreatedAt());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

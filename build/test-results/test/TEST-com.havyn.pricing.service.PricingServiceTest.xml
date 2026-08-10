@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.havyn.pricing.service.PricingServiceTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-08-05T08:19:47.257Z" hostname="CHIDI" time="0.113">
+<testsuite name="com.havyn.pricing.service.PricingServiceTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-08-10T13:34:18.778Z" hostname="CHIDI" time="0.12">
   <properties/>
-  <testcase name="commissionIsNotAddedToTheGuestFacingGrandTotal()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.071"/>
-  <testcase name="appliesAPerDateAvailabilityOverride()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.013"/>
-  <testcase name="fallsBackToTheDefaultCommissionPctWhenNoSettingIsSeeded()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.004"/>
-  <testcase name="usesTheConfiguredCommissionPctFromPlatformSettings()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.004"/>
-  <testcase name="computesBaseTotalAcrossNightsWithNoOverrides()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.009"/>
+  <testcase name="commissionIsNotAddedToTheGuestFacingGrandTotal()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.105"/>
+  <testcase name="appliesAPerDateAvailabilityOverride()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.003"/>
+  <testcase name="fallsBackToTheDefaultCommissionPctWhenNoSettingIsSeeded()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.002"/>
+  <testcase name="usesTheConfiguredCommissionPctFromPlatformSettings()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.003"/>
+  <testcase name="computesBaseTotalAcrossNightsWithNoOverrides()" classname="com.havyn.pricing.service.PricingServiceTest" time="0.002"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

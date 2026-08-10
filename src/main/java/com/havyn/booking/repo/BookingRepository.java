@@ -43,6 +43,9 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     @Query("SELECT COALESCE(SUM(b.commissionAmount), 0) FROM Booking b WHERE b.status IN :statuses")
     BigDecimal sumCommissionAmountByStatusIn(@Param("statuses") Collection<BookingStatus> statuses);
 
+    @Query(value = "SELECT nextval('booking_reference_sequence')", nativeQuery = true)
+    long nextBookingReferenceSequence();
+
     @Query("""
             SELECT COUNT(b) > 0 FROM Booking b
             WHERE b.propertyId = :propertyId
