@@ -63,6 +63,11 @@ public class AdminPropertyService {
         return PropertyDetail.from(reject(adminId, propertyId, reason));
     }
 
+    @Transactional
+    public PropertyDetail reactivateDetail(UUID adminId, UUID propertyId) {
+        return PropertyDetail.from(reactivate(adminId, propertyId));
+    }
+
     /** ACTIVE (or any status the transition graph allows) -&gt; SUSPENDED — taking down a listing. */
     @Transactional
     public Property suspend(UUID adminId, UUID propertyId, String reason) {
@@ -82,6 +87,17 @@ public class AdminPropertyService {
         auditLogService.record(
                 adminId, "PROPERTY_REJECTED", "Property", propertyId,
                 Map.of("status", before.name()), Map.of("status", property.getStatus().name(), "reason", reason));
+        return property;
+    }
+
+    /** SUSPENDED -&gt; ACTIVE — restoring a moderated listing to live/bookable status. */
+    @Transactional
+    public Property reactivate(UUID adminId, UUID propertyId) {
+        PropertyStatus before = propertyService.getAny(propertyId).getStatus();
+        Property property = propertyService.transitionAsAdmin(propertyId, PropertyStatus.ACTIVE);
+        auditLogService.record(
+                adminId, "PROPERTY_REACTIVATED", "Property", propertyId,
+                Map.of("status", before.name()), Map.of("status", property.getStatus().name()));
         return property;
     }
 }

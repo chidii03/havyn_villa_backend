@@ -1,6 +1,7 @@
 package com.havyn.notifications.domain;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -31,5 +32,20 @@ public class SmtpEmailSender implements EmailSender {
         message.setSubject(subject);
         message.setText(body);
         mailSender.send(message);
+    }
+
+    @Override
+    public void sendHtml(String toEmail, String subject, String htmlBody) {
+        try {
+            var message = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(message, "UTF-8");
+            helper.setFrom(mailFrom);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+            mailSender.send(message);
+        } catch (jakarta.mail.MessagingException e) {
+            throw new IllegalStateException("Unable to build email message", e);
+        }
     }
 }

@@ -5,10 +5,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
 /**
@@ -27,18 +30,20 @@ class SmtpMailerTest {
 
     @Test
     void sendEmailVerification_doesNotThrow_whenTheMailServerIsUnreachable() {
+        when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
         doThrow(new MailSendException("Couldn't connect to host, port: localhost, 1025"))
-                .when(mailSender).send(any(SimpleMailMessage.class));
+                .when(mailSender).send(any(MimeMessage.class));
 
         assertThatCode(() -> mailer.sendEmailVerification("guest@example.com", "raw-token"))
                 .doesNotThrowAnyException();
-        verify(mailSender).send(any(SimpleMailMessage.class));
+        verify(mailSender).send(any(MimeMessage.class));
     }
 
     @Test
     void sendPasswordReset_doesNotThrow_whenTheMailServerIsUnreachable() {
+        when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
         doThrow(new MailSendException("Couldn't connect to host, port: localhost, 1025"))
-                .when(mailSender).send(any(SimpleMailMessage.class));
+                .when(mailSender).send(any(MimeMessage.class));
 
         assertThatCode(() -> mailer.sendPasswordReset("guest@example.com", "raw-token"))
                 .doesNotThrowAnyException();
@@ -46,8 +51,9 @@ class SmtpMailerTest {
 
     @Test
     void sendEmailVerification_stillSendsNormally_whenTheMailServerWorks() {
+        when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
         mailer.sendEmailVerification("guest@example.com", "raw-token");
 
-        verify(mailSender).send(any(SimpleMailMessage.class));
+        verify(mailSender).send(any(MimeMessage.class));
     }
 }

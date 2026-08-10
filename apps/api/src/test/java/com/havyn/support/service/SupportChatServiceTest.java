@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.havyn.support.domain.SupportChatMessage;
 import com.havyn.support.domain.SupportChatRole;
 import com.havyn.support.repo.SupportChatMessageRepository;
+import com.havyn.support.repo.SupportTicketRepository;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -17,8 +18,9 @@ import org.junit.jupiter.api.Test;
 class SupportChatServiceTest {
 
     private final SupportChatMessageRepository messageRepository = mock(SupportChatMessageRepository.class);
+    private final SupportTicketRepository ticketRepository = mock(SupportTicketRepository.class);
     private final OpenAiSupportClient openAiSupportClient = mock(OpenAiSupportClient.class);
-    private final SupportChatService service = new SupportChatService(messageRepository, openAiSupportClient);
+    private final SupportChatService service = new SupportChatService(messageRepository, ticketRepository, openAiSupportClient);
 
     @Test
     void historyReturnsUserConversationInPersistedOrder() {

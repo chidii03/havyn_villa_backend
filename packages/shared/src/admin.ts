@@ -1,3 +1,5 @@
+import type { PageResponse } from "./pagination";
+
 /**
  * Mirrors apps/api/.../admin/web/*.java — kept in lockstep by hand, see property.ts's own note.
  */
@@ -27,6 +29,34 @@ export interface VerificationRequestSummary {
   reviewNotes: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
+  createdAt: string;
+}
+
+export interface BookingEmailLogSummary {
+  id: string;
+  bookingId: string;
+  bookingReferenceId: string | null;
+  recipientEmail: string;
+  status: "ATTEMPTED" | "SUCCESSFUL" | "FAILED";
+  failureReason: string | null;
+  retryAttempts: number;
+  createdAt: string;
+}
+
+export interface BookingEmailLogPage {
+  totalAttempted: number;
+  totalSuccessful: number;
+  totalFailed: number;
+  logs: PageResponse<BookingEmailLogSummary>;
+}
+
+export interface SupportTicketSummary {
+  id: string;
+  userId: string;
+  bookingReferenceId: string | null;
+  summary: string;
+  sourceMessage: string;
+  status: "OPEN" | "REVIEWING" | "RESOLVED";
   createdAt: string;
 }
 

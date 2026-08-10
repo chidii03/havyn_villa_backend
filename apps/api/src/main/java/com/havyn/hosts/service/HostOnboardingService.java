@@ -1,5 +1,7 @@
 package com.havyn.hosts.service;
 
+import com.havyn.admin.domain.VerificationStatus;
+import com.havyn.admin.repo.VerificationRequestRepository;
 import com.havyn.auth.domain.AuthResult;
 import com.havyn.auth.domain.AuthService;
 import com.havyn.common.error.BadRequestException;
@@ -33,11 +35,17 @@ public class HostOnboardingService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final VerificationRequestRepository verificationRequestRepository;
     private final AuthService authService;
 
-    public HostOnboardingService(UserRepository userRepository, RoleRepository roleRepository, AuthService authService) {
+    public HostOnboardingService(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            VerificationRequestRepository verificationRequestRepository,
+            AuthService authService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.verificationRequestRepository = verificationRequestRepository;
         this.authService = authService;
     }
 
@@ -46,6 +54,9 @@ public class HostOnboardingService {
         User user = userRepository.findById(userId).orElseThrow(() -> NotFoundException.of("User", userId));
         if (!user.isEmailVerified()) {
             throw new BadRequestException("EMAIL_NOT_VERIFIED", "Verify your email before you can host");
+        }
+        if (!verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.APPROVED)) {
+            throw new BadRequestException("KYC_NOT_APPROVED", "Complete host verification before you can host");
         }
 
         boolean alreadyHost = user.getRoles().stream().anyMatch(role -> role.getCode().equals(HOST_ROLE_CODE));

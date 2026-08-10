@@ -50,6 +50,11 @@ public class AdminPropertyController {
         return adminPropertyService.rejectDetail(principal(authentication), id, request.reason());
     }
 
+    @PostMapping("/{id}/reactivate")
+    public PropertyDetail reactivate(Authentication authentication, @PathVariable UUID id) {
+        return adminPropertyService.reactivateDetail(principal(authentication), id);
+    }
+
     private UUID principal(Authentication authentication) {
         return ((AuthenticatedUser) authentication.getPrincipal()).userId();
     }

@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -65,6 +66,12 @@ public class HostListingController {
     public PropertyDetail update(
             Authentication authentication, @PathVariable UUID id, @Valid @RequestBody UpdatePropertyRequest request) {
         return PropertyDetail.from(propertyService.update(hostId(authentication), id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(Authentication authentication, @PathVariable UUID id) {
+        propertyService.deleteDraft(hostId(authentication), id);
     }
 
     @PostMapping("/{id}/submit")

@@ -129,4 +129,8 @@ public class PropertyMedia extends BaseEntity {
     public String getAlt() {
         return alt;
     }
+
+    public void setAlt(String alt) {
+        this.alt = alt;
+    }
 }

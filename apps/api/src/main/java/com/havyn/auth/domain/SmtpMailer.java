@@ -1,12 +1,12 @@
 package com.havyn.auth.domain;
 
-import java.nio.charset.StandardCharsets;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
@@ -40,16 +40,24 @@ public class SmtpMailer implements Mailer {
     public void sendEmailVerification(String toEmail, String rawToken) {
         String link = webBaseUrl + "/verify-email?token=" + encode(rawToken);
         send(toEmail, "Verify your Havyn Villa email",
-                "Welcome to Havyn Villa. Confirm your email address:\n\n" + link
-                        + "\n\nThis link expires in 24 hours.");
+                brandedHtml(
+                        "Verify your email",
+                        "Welcome to Havyn Villa. Confirm your email address before booking or hosting.",
+                        "Verify email",
+                        link,
+                        "This link expires in 24 hours. If you didn't create an account, ignore this email."));
     }
 
     @Override
     public void sendPasswordReset(String toEmail, String rawToken) {
         String link = webBaseUrl + "/reset-password?token=" + encode(rawToken);
         send(toEmail, "Reset your Havyn Villa password",
-                "We received a request to reset your password:\n\n" + link
-                        + "\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.");
+                brandedHtml(
+                        "Reset your password",
+                        "We received a request to reset your Havyn Villa password.",
+                        "Reset password",
+                        link,
+                        "This link expires in 1 hour. If you didn't request this, ignore this email."));
     }
 
     /**
@@ -59,16 +67,47 @@ public class SmtpMailer implements Mailer {
      * reset silently 500s only when the address is real."
      */
     private void send(String to, String subject, String body) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailFrom);
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
         try {
+            var message = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(message, "UTF-8");
+            helper.setFrom(mailFrom);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true);
             mailSender.send(message);
-        } catch (MailException ex) {
+        } catch (MailException | jakarta.mail.MessagingException ex) {
             log.warn("Failed to send email (subject=\"{}\"), continuing without it: {}", subject, ex.getMessage());
         }
+    }
+
+    private String brandedHtml(String title, String intro, String action, String link, String footnote) {
+        return """
+                <!doctype html>
+                <html>
+                  <body style="margin:0;background:#f4f8ff;font-family:Arial,sans-serif;color:#172033">
+                    <div style="max-width:560px;margin:0 auto;padding:24px">
+                      <div style="background:#003da6;color:#fff;padding:22px;border-radius:8px 8px 0 0">
+                        <h1 style="margin:0;font-size:26px">Havyn Villa</h1>
+                        <p style="margin:6px 0 0">Stay beautiful, live better.</p>
+                      </div>
+                      <div style="background:#fff;border:1px solid #dfe8f5;border-top:0;padding:24px;border-radius:0 0 8px 8px">
+                        <h2 style="margin:0 0 12px">%s</h2>
+                        <p>%s</p>
+                        <p style="margin:24px 0">
+                          <a href="%s" style="background:#003da6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;display:inline-block">%s</a>
+                        </p>
+                        <p style="word-break:break-all;color:#5d6b82">%s</p>
+                        <p style="border-top:1px solid #dfe8f5;margin-top:24px;padding-top:16px;color:#5d6b82">%s</p>
+                      </div>
+                    </div>
+                  </body>
+                </html>
+                """
+                .formatted(escape(title), escape(intro), escape(link), escape(action), escape(link), escape(footnote));
+    }
+
+    private String escape(String input) {
+        return input.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     private String encode(String value) {

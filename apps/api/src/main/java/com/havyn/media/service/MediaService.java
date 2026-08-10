@@ -9,13 +9,16 @@ import com.havyn.media.repo.PropertyMediaRepository;
 import com.havyn.media.storage.MediaStorage;
 import com.havyn.media.storage.SignedUpload;
 import com.havyn.media.web.AddMediaRequest;
+import com.havyn.media.web.UpdateMediaRequest;
 import com.havyn.properties.domain.Property;
 import com.havyn.properties.domain.PropertyStatus;
+import com.havyn.properties.domain.event.PropertyChangedEvent;
 import com.havyn.properties.repo.PropertyRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,16 +35,19 @@ public class MediaService {
     private final PropertyRepository propertyRepository;
     private final MediaStorage mediaStorage;
     private final MediaProperties properties;
+    private final ApplicationEventPublisher eventPublisher;
 
     public MediaService(
             PropertyMediaRepository propertyMediaRepository,
             PropertyRepository propertyRepository,
             MediaStorage mediaStorage,
-            MediaProperties properties) {
+            MediaProperties properties,
+            ApplicationEventPublisher eventPublisher) {
         this.propertyMediaRepository = propertyMediaRepository;
         this.propertyRepository = propertyRepository;
         this.mediaStorage = mediaStorage;
         this.properties = properties;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -50,7 +56,7 @@ public class MediaService {
         if (propertyMediaRepository.countByPropertyId(propertyId) >= properties.getMaxPerListing()) {
             throw mediaLimitReached();
         }
-        return mediaStorage.createSignedUpload("properties/" + propertyId);
+        return mediaStorage.createSignedUpload("hosts/" + hostId + "/properties/" + propertyId);
     }
 
     @Transactional
@@ -87,7 +93,22 @@ public class MediaService {
                 request.bytes(),
                 (int) currentCount,
                 request.alt());
-        return propertyMediaRepository.save(media);
+        PropertyMedia saved = propertyMediaRepository.save(media);
+        publishChanged(propertyId);
+        return saved;
+    }
+
+    @Transactional
+    public PropertyMedia update(UUID hostId, UUID propertyId, UUID mediaId, UpdateMediaRequest request) {
+        findOwned(hostId, propertyId);
+        PropertyMedia media = propertyMediaRepository.findByIdAndPropertyId(mediaId, propertyId)
+                .orElseThrow(() -> NotFoundException.of("Media", mediaId));
+        if (request.alt() != null) {
+            String normalized = request.alt().trim();
+            media.setAlt(normalized.isBlank() ? null : normalized);
+        }
+        publishChanged(propertyId);
+        return media;
     }
 
     @Transactional
@@ -106,6 +127,7 @@ public class MediaService {
         for (PropertyMedia media : existing) {
             media.setPosition(orderedMediaIds.indexOf(media.getId()));
         }
+        publishChanged(propertyId);
         return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);
     }
 
@@ -116,6 +138,7 @@ public class MediaService {
                 .orElseThrow(() -> NotFoundException.of("Media", mediaId));
         mediaStorage.deleteAsset(media.getPublicId(), media.getResourceType());
         propertyMediaRepository.delete(media);
+        publishChanged(propertyId);
     }
 
     @Transactional(readOnly = true)
@@ -156,5 +179,9 @@ public class MediaService {
     private BadRequestException mediaLimitReached() {
         return new BadRequestException(
                 "MEDIA_LIMIT_REACHED", "This listing already has the maximum of " + properties.getMaxPerListing() + " photos/videos");
+    }
+
+    private void publishChanged(UUID propertyId) {
+        eventPublisher.publishEvent(PropertyChangedEvent.of(propertyId));
     }
 }

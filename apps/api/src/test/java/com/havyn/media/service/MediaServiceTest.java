@@ -8,7 +8,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import com.havyn.common.error.BadRequestException;
 import com.havyn.common.error.ForbiddenException;
 import com.havyn.common.error.NotFoundException;
@@ -28,6 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 class MediaServiceTest {
 
@@ -35,8 +35,9 @@ class MediaServiceTest {
     private final PropertyRepository propertyRepository = mock(PropertyRepository.class);
     private final MediaStorage mediaStorage = mock(MediaStorage.class);
     private final MediaProperties properties = new MediaProperties();
+    private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
 
-    private final MediaService service = new MediaService(propertyMediaRepository, propertyRepository, mediaStorage, properties);
+    private final MediaService service = new MediaService(propertyMediaRepository, propertyRepository, mediaStorage, properties, eventPublisher);
 
     private final UUID hostId = UUID.randomUUID();
     private final UUID propertyId = UUID.randomUUID();
@@ -71,8 +72,9 @@ class MediaServiceTest {
     @Test
     void generateUploadSignature_returnsWhateverTheStorageAdapterProduces() {
         when(propertyMediaRepository.countByPropertyId(propertyId)).thenReturn(0L);
-        SignedUpload upload = new SignedUpload("havyn", "key", 123L, "sig", "properties/" + propertyId);
-        when(mediaStorage.createSignedUpload("properties/" + propertyId)).thenReturn(upload);
+        String folder = "hosts/" + hostId + "/properties/" + propertyId;
+        SignedUpload upload = new SignedUpload("havyn", "key", 123L, "sig", folder);
+        when(mediaStorage.createSignedUpload(folder)).thenReturn(upload);
 
         assertThat(service.generateUploadSignature(hostId, propertyId)).isSameAs(upload);
     }
