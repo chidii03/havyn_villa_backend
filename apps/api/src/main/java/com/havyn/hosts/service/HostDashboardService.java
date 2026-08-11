@@ -19,16 +19,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Dashboard overview — see project-docs/prompts/17-host-dashboard.md's "performance"
- * deliverable. Deliberately scoped to figures derivable from data this project already
- * persists (listings, bookings, payouts) rather than a new page-view/analytics
- * pipeline — no such tracking infrastructure exists anywhere in this codebase, and
- * building one is out of proportion to this prompt's actual acceptance criteria ("view
- * accurate earnings/payouts"), which never names occupancy/traffic metrics. Every
- * figure here is computed in this backend service, never in the frontend — see this
- * prompt's own "No business math on the frontend" constraint.
- */
 @Service
 public class HostDashboardService {
 

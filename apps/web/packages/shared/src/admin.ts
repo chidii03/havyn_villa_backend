@@ -1,8 +1,5 @@
-/**
- * Mirrors apps/api/.../admin/web/*.java — kept in lockstep by hand, see property.ts's own note.
- */
+import type { PageResponse } from "./pagination";
 
-/** Mirrors admin/web/AdminUserSummary.java. */
 export interface AdminUserSummary {
   id: string;
   email: string;
@@ -13,11 +10,6 @@ export interface AdminUserSummary {
   createdAt: string;
 }
 
-// Admin property moderation reuses the existing PropertySummary/PropertyDetail types
-// from property.ts (admin/web/AdminPropertyController.java returns those same DTOs) —
-// no separate admin-specific property type needed.
-
-/** Mirrors admin/web/VerificationRequestSummary.java. */
 export interface VerificationRequestSummary {
   id: string;
   userId: string;
@@ -27,6 +19,34 @@ export interface VerificationRequestSummary {
   reviewNotes: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
+  createdAt: string;
+}
+
+export interface BookingEmailLogSummary {
+  id: string;
+  bookingId: string;
+  bookingReferenceId: string | null;
+  recipientEmail: string;
+  status: "ATTEMPTED" | "SUCCESSFUL" | "FAILED";
+  failureReason: string | null;
+  retryAttempts: number;
+  createdAt: string;
+}
+
+export interface BookingEmailLogPage {
+  totalAttempted: number;
+  totalSuccessful: number;
+  totalFailed: number;
+  logs: PageResponse<BookingEmailLogSummary>;
+}
+
+export interface SupportTicketSummary {
+  id: string;
+  userId: string;
+  bookingReferenceId: string | null;
+  summary: string;
+  sourceMessage: string;
+  status: "OPEN" | "REVIEWING" | "RESOLVED";
   createdAt: string;
 }
 

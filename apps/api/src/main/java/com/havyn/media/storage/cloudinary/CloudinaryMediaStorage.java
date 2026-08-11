@@ -16,16 +16,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
-/**
- * Real Cloudinary signed-upload integration (https://cloudinary.com/documentation/upload_images#generating_authentication_signatures).
- * {@code createSignedUpload} is pure local computation — no network call, since the
- * actual file upload happens directly from the client's browser to Cloudinary using
- * this signature, never through our backend. {@code deleteAsset} does call Cloudinary
- * (the "destroy" API) and shares the same live-credential gap as {@code
- * PaystackPaymentProvider} — no live Cloudinary account exists in this environment.
- * Signature generation is real and unit-tested against independently-computed SHA-1
- * values.
- */
 @Component
 public class CloudinaryMediaStorage implements MediaStorage {
 
