@@ -31,9 +31,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Service
 public class PropertyCacheService {
 
-<span class="fc" id="L34">    private static final Logger log = LoggerFactory.getLogger(PropertyCacheService.class);</span>
+<span class="nc" id="L34">    private static final Logger log = LoggerFactory.getLogger(PropertyCacheService.class);</span>
     private static final String KEY_PREFIX = &quot;havyn:property:&quot;;
-<span class="fc" id="L36">    private static final Duration TTL = Duration.ofSeconds(60);</span>
+<span class="nc" id="L36">    private static final Duration TTL = Duration.ofSeconds(60);</span>
 
     private final RedisTemplate&lt;String, Object&gt; objectRedisTemplate;
 

@@ -30,18 +30,18 @@ public class VerificationService {
     private final AuditLogService auditLogService;
     private final Clock clock;
 
-<span class="fc" id="L33">    public VerificationService(VerificationRequestRepository verificationRequestRepository, AuditLogService auditLogService, Clock clock) {</span>
-<span class="fc" id="L34">        this.verificationRequestRepository = verificationRequestRepository;</span>
-<span class="fc" id="L35">        this.auditLogService = auditLogService;</span>
-<span class="fc" id="L36">        this.clock = clock;</span>
-<span class="fc" id="L37">    }</span>
+<span class="nc" id="L33">    public VerificationService(VerificationRequestRepository verificationRequestRepository, AuditLogService auditLogService, Clock clock) {</span>
+<span class="nc" id="L34">        this.verificationRequestRepository = verificationRequestRepository;</span>
+<span class="nc" id="L35">        this.auditLogService = auditLogService;</span>
+<span class="nc" id="L36">        this.clock = clock;</span>
+<span class="nc" id="L37">    }</span>
 
     @Transactional
     public VerificationRequest submit(UUID userId, String documentUrl, String notes) {
-<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.PENDING)) {</span>
-<span class="fc" id="L42">            throw new ConflictException(&quot;VERIFICATION_ALREADY_PENDING&quot;, &quot;You already have a verification request awaiting review&quot;);</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.PENDING)) {</span>
+<span class="nc" id="L42">            throw new ConflictException(&quot;VERIFICATION_ALREADY_PENDING&quot;, &quot;You already have a verification request awaiting review&quot;);</span>
         }
-<span class="fc" id="L44">        return verificationRequestRepository.save(new VerificationRequest(userId, documentUrl, notes));</span>
+<span class="nc" id="L44">        return verificationRequestRepository.save(new VerificationRequest(userId, documentUrl, notes));</span>
     }
 
     @Transactional(readOnly = true)
@@ -61,42 +61,42 @@ public class VerificationService {
 
     @Transactional
     public VerificationRequest approve(UUID adminId, UUID requestId) {
-<span class="fc" id="L64">        VerificationRequest request = findPending(requestId);</span>
-<span class="fc" id="L65">        request.approve(adminId, Instant.now(clock));</span>
-<span class="fc" id="L66">        auditLogService.record(</span>
+<span class="nc" id="L64">        VerificationRequest request = findPending(requestId);</span>
+<span class="nc" id="L65">        request.approve(adminId, Instant.now(clock));</span>
+<span class="nc" id="L66">        auditLogService.record(</span>
                 adminId, &quot;VERIFICATION_APPROVED&quot;, &quot;VerificationRequest&quot;, requestId,
-<span class="fc" id="L68">                Map.of(&quot;status&quot;, &quot;PENDING&quot;), Map.of(&quot;status&quot;, &quot;APPROVED&quot;));</span>
-<span class="fc" id="L69">        return request;</span>
+<span class="nc" id="L68">                Map.of(&quot;status&quot;, &quot;PENDING&quot;), Map.of(&quot;status&quot;, &quot;APPROVED&quot;));</span>
+<span class="nc" id="L69">        return request;</span>
     }
 
     @Transactional
     public VerificationRequest reject(UUID adminId, UUID requestId, String reviewNotes) {
-<span class="fc" id="L74">        VerificationRequest request = findPending(requestId);</span>
-<span class="fc" id="L75">        request.reject(adminId, reviewNotes, Instant.now(clock));</span>
-<span class="fc" id="L76">        auditLogService.record(</span>
+<span class="nc" id="L74">        VerificationRequest request = findPending(requestId);</span>
+<span class="nc" id="L75">        request.reject(adminId, reviewNotes, Instant.now(clock));</span>
+<span class="nc" id="L76">        auditLogService.record(</span>
                 adminId, &quot;VERIFICATION_REJECTED&quot;, &quot;VerificationRequest&quot;, requestId,
-<span class="fc" id="L78">                Map.of(&quot;status&quot;, &quot;PENDING&quot;), Map.of(&quot;status&quot;, &quot;REJECTED&quot;, &quot;reviewNotes&quot;, reviewNotes));</span>
-<span class="fc" id="L79">        return request;</span>
+<span class="nc" id="L78">                Map.of(&quot;status&quot;, &quot;PENDING&quot;), Map.of(&quot;status&quot;, &quot;REJECTED&quot;, &quot;reviewNotes&quot;, reviewNotes));</span>
+<span class="nc" id="L79">        return request;</span>
     }
 
     /** A caller may see a specific request only if they own it — admin-only listing/review endpoints don't call this. */
     @Transactional(readOnly = true)
     public VerificationRequest getOwnedOrAdmin(UUID callerId, UUID requestId) {
-<span class="fc" id="L85">        VerificationRequest request = verificationRequestRepository.findById(requestId)</span>
-<span class="fc" id="L86">                .orElseThrow(() -&gt; NotFoundException.of(&quot;VerificationRequest&quot;, requestId));</span>
-<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (!request.getUserId().equals(callerId)) {</span>
-<span class="fc" id="L88">            throw new ForbiddenException(&quot;You do not have access to this verification request&quot;);</span>
+<span class="nc" id="L85">        VerificationRequest request = verificationRequestRepository.findById(requestId)</span>
+<span class="nc" id="L86">                .orElseThrow(() -&gt; NotFoundException.of(&quot;VerificationRequest&quot;, requestId));</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (!request.getUserId().equals(callerId)) {</span>
+<span class="nc" id="L88">            throw new ForbiddenException(&quot;You do not have access to this verification request&quot;);</span>
         }
 <span class="nc" id="L90">        return request;</span>
     }
 
     private VerificationRequest findPending(UUID requestId) {
-<span class="fc" id="L94">        VerificationRequest request = verificationRequestRepository.findById(requestId)</span>
-<span class="pc" id="L95">                .orElseThrow(() -&gt; NotFoundException.of(&quot;VerificationRequest&quot;, requestId));</span>
-<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (request.getStatus() != VerificationStatus.PENDING) {</span>
-<span class="fc" id="L97">            throw new ConflictException(&quot;VERIFICATION_NOT_PENDING&quot;, &quot;This request has already been reviewed&quot;);</span>
+<span class="nc" id="L94">        VerificationRequest request = verificationRequestRepository.findById(requestId)</span>
+<span class="nc" id="L95">                .orElseThrow(() -&gt; NotFoundException.of(&quot;VerificationRequest&quot;, requestId));</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (request.getStatus() != VerificationStatus.PENDING) {</span>
+<span class="nc" id="L97">            throw new ConflictException(&quot;VERIFICATION_NOT_PENDING&quot;, &quot;This request has already been reviewed&quot;);</span>
         }
-<span class="fc" id="L99">        return request;</span>
+<span class="nc" id="L99">        return request;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

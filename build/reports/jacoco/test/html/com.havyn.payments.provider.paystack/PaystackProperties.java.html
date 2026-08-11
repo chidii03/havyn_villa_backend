@@ -5,40 +5,40 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** {@code havyn.payments.paystack.*}. Paystack signs webhooks with this same secret key — there is no separate webhook secret (see .env.example's note). */
 @ConfigurationProperties(prefix = &quot;havyn.payments.paystack&quot;)
-<span class="fc" id="L8">public class PaystackProperties {</span>
+<span class="nc" id="L8">public class PaystackProperties {</span>
 
-<span class="fc" id="L10">    private String secretKey = &quot;&quot;;</span>
-<span class="fc" id="L11">    private String baseUrl = &quot;https://api.paystack.co&quot;;</span>
-<span class="fc" id="L12">    private String callbackUrl = &quot;&quot;;</span>
+<span class="nc" id="L10">    private String secretKey = &quot;&quot;;</span>
+<span class="nc" id="L11">    private String baseUrl = &quot;https://api.paystack.co&quot;;</span>
+<span class="nc" id="L12">    private String callbackUrl = &quot;&quot;;</span>
     private Duration connectTimeout;
     private Duration readTimeout;
 
     public String getSecretKey() {
-<span class="fc" id="L17">        return secretKey;</span>
+<span class="nc" id="L17">        return secretKey;</span>
     }
 
     public void setSecretKey(String secretKey) {
-<span class="fc" id="L21">        this.secretKey = secretKey;</span>
-<span class="fc" id="L22">    }</span>
+<span class="nc" id="L21">        this.secretKey = secretKey;</span>
+<span class="nc" id="L22">    }</span>
 
     public String getBaseUrl() {
-<span class="fc" id="L25">        return baseUrl;</span>
+<span class="nc" id="L25">        return baseUrl;</span>
     }
 
     public void setBaseUrl(String baseUrl) {
-<span class="fc" id="L29">        this.baseUrl = baseUrl;</span>
-<span class="fc" id="L30">    }</span>
+<span class="nc" id="L29">        this.baseUrl = baseUrl;</span>
+<span class="nc" id="L30">    }</span>
 
     public String getCallbackUrl() {
-<span class="fc" id="L33">        return callbackUrl;</span>
+<span class="nc" id="L33">        return callbackUrl;</span>
     }
 
     public void setCallbackUrl(String callbackUrl) {
-<span class="fc" id="L37">        this.callbackUrl = callbackUrl;</span>
-<span class="fc" id="L38">    }</span>
+<span class="nc" id="L37">        this.callbackUrl = callbackUrl;</span>
+<span class="nc" id="L38">    }</span>
 
     public Duration getConnectTimeout() {
-<span class="fc" id="L41">        return connectTimeout;</span>
+<span class="nc" id="L41">        return connectTimeout;</span>
     }
 
     public void setConnectTimeout(Duration connectTimeout) {
@@ -46,7 +46,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 <span class="nc" id="L46">    }</span>
 
     public Duration getReadTimeout() {
-<span class="fc" id="L49">        return readTimeout;</span>
+<span class="nc" id="L49">        return readTimeout;</span>
     }
 
     public void setReadTimeout(Duration readTimeout) {

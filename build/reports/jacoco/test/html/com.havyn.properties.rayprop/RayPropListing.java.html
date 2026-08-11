@@ -15,7 +15,7 @@ import java.util.List;
  * between letters (an anti-scraping measure on RayProp's side) — {@link #from} strips
  * them so imported listings don't render with invisible garbage in the UI.
  */
-<span class="fc" id="L18">public record RayPropListing(</span>
+<span class="nc" id="L18">public record RayPropListing(</span>
         String id,
         String title,
         String description,
@@ -37,83 +37,83 @@ import java.util.List;
     private static final String ZERO_WIDTH_CHARS = &quot;[\\u200B-\\u200F\\uFEFF\\u2060-\\u206F]&quot;;
 
     static RayPropListing from(JsonNode node) {
-<span class="fc" id="L40">        List&lt;String&gt; images = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L41">        addImageUrls(images, node.path(&quot;listing_images&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
-<span class="fc" id="L42">        addImageUrls(images, node.path(&quot;images&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
-<span class="fc" id="L43">        addImageUrls(images, node.path(&quot;photos&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
-<span class="fc" id="L44">        addImageUrls(images, node.path(&quot;media&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
-<span class="fc" id="L45">        return new RayPropListing(</span>
-<span class="fc" id="L46">                node.path(&quot;id&quot;).asText(),</span>
-<span class="fc" id="L47">                stripZeroWidth(node.path(&quot;title&quot;).asText(&quot;&quot;)),</span>
-<span class="fc" id="L48">                stripZeroWidth(firstText(node, &quot;description&quot;, &quot;summary&quot;, &quot;details&quot;)),</span>
-<span class="fc" id="L49">                node.path(&quot;currency&quot;).asText(&quot;NGN&quot;),</span>
-<span class="fc" id="L50">                firstInt(node, 1, &quot;max_guests&quot;, &quot;maxGuests&quot;, &quot;guests&quot;),</span>
-<span class="fc" id="L51">                firstInt(node, 0, &quot;bedrooms&quot;, &quot;bedroom_count&quot;),</span>
-<span class="fc" id="L52">                firstDecimal(node, BigDecimal.ONE, &quot;bathrooms&quot;, &quot;bathroom_count&quot;),</span>
-<span class="fc" id="L53">                node.path(&quot;city&quot;).asText(&quot;&quot;),</span>
-<span class="fc" id="L54">                node.path(&quot;state&quot;).asText(&quot;&quot;),</span>
-<span class="fc" id="L55">                node.path(&quot;neighborhood&quot;).asText(&quot;&quot;),</span>
-<span class="fc" id="L56">                firstDecimal(node, null, &quot;lat&quot;, &quot;latitude&quot;),</span>
-<span class="fc" id="L57">                firstDecimal(node, null, &quot;lng&quot;, &quot;lon&quot;, &quot;longitude&quot;),</span>
-<span class="fc" id="L58">                firstText(node, &quot;property_category&quot;, &quot;property_type&quot;, &quot;type&quot;, &quot;category&quot;),</span>
-<span class="fc" id="L59">                firstLong(node, 0, &quot;price_per_night&quot;, &quot;pricePerNight&quot;, &quot;nightly_price&quot;),</span>
+<span class="nc" id="L40">        List&lt;String&gt; images = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L41">        addImageUrls(images, node.path(&quot;listing_images&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
+<span class="nc" id="L42">        addImageUrls(images, node.path(&quot;images&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
+<span class="nc" id="L43">        addImageUrls(images, node.path(&quot;photos&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
+<span class="nc" id="L44">        addImageUrls(images, node.path(&quot;media&quot;), &quot;image_url&quot;, &quot;url&quot;, &quot;secure_url&quot;);</span>
+<span class="nc" id="L45">        return new RayPropListing(</span>
+<span class="nc" id="L46">                node.path(&quot;id&quot;).asText(),</span>
+<span class="nc" id="L47">                stripZeroWidth(node.path(&quot;title&quot;).asText(&quot;&quot;)),</span>
+<span class="nc" id="L48">                stripZeroWidth(firstText(node, &quot;description&quot;, &quot;summary&quot;, &quot;details&quot;)),</span>
+<span class="nc" id="L49">                node.path(&quot;currency&quot;).asText(&quot;NGN&quot;),</span>
+<span class="nc" id="L50">                firstInt(node, 1, &quot;max_guests&quot;, &quot;maxGuests&quot;, &quot;guests&quot;),</span>
+<span class="nc" id="L51">                firstInt(node, 0, &quot;bedrooms&quot;, &quot;bedroom_count&quot;),</span>
+<span class="nc" id="L52">                firstDecimal(node, BigDecimal.ONE, &quot;bathrooms&quot;, &quot;bathroom_count&quot;),</span>
+<span class="nc" id="L53">                node.path(&quot;city&quot;).asText(&quot;&quot;),</span>
+<span class="nc" id="L54">                node.path(&quot;state&quot;).asText(&quot;&quot;),</span>
+<span class="nc" id="L55">                node.path(&quot;neighborhood&quot;).asText(&quot;&quot;),</span>
+<span class="nc" id="L56">                firstDecimal(node, null, &quot;lat&quot;, &quot;latitude&quot;),</span>
+<span class="nc" id="L57">                firstDecimal(node, null, &quot;lng&quot;, &quot;lon&quot;, &quot;longitude&quot;),</span>
+<span class="nc" id="L58">                firstText(node, &quot;property_category&quot;, &quot;property_type&quot;, &quot;type&quot;, &quot;category&quot;),</span>
+<span class="nc" id="L59">                firstLong(node, 0, &quot;price_per_night&quot;, &quot;pricePerNight&quot;, &quot;nightly_price&quot;),</span>
                 images);
     }
 
     private static void addImageUrls(List&lt;String&gt; images, JsonNode nodes, String... fields) {
-<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (!nodes.isArray()) {</span>
-<span class="fc" id="L65">            return;</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (!nodes.isArray()) {</span>
+<span class="nc" id="L65">            return;</span>
         }
-<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        for (JsonNode image : nodes) {</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        for (JsonNode image : nodes) {</span>
 <span class="nc bnc" id="L68" title="All 2 branches missed.">            String url = image.isTextual() ? image.asText(null) : firstText(image, fields);</span>
 <span class="nc bnc" id="L69" title="All 4 branches missed.">            if (url != null &amp;&amp; !url.isBlank()) {</span>
 <span class="nc" id="L70">                images.add(url);</span>
             }
 <span class="nc" id="L72">        }</span>
-<span class="fc" id="L73">    }</span>
+<span class="nc" id="L73">    }</span>
 
     private static String firstText(JsonNode node, String... fields) {
-<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (String field : fields) {</span>
-<span class="fc" id="L77">            String value = node.path(field).asText(&quot;&quot;);</span>
-<span class="pc bpc" id="L78" title="1 of 2 branches missed.">            if (!value.isBlank()) {</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L77">            String value = node.path(field).asText(&quot;&quot;);</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (!value.isBlank()) {</span>
 <span class="nc" id="L79">                return stripZeroWidth(value);</span>
             }
         }
-<span class="fc" id="L82">        return &quot;&quot;;</span>
+<span class="nc" id="L82">        return &quot;&quot;;</span>
     }
 
     private static int firstInt(JsonNode node, int fallback, String... fields) {
-<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        for (String field : fields) {</span>
-<span class="fc" id="L87">            JsonNode value = node.path(field);</span>
-<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (value.isNumber()) {</span>
-<span class="fc" id="L89">                return value.asInt();</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L87">            JsonNode value = node.path(field);</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (value.isNumber()) {</span>
+<span class="nc" id="L89">                return value.asInt();</span>
             }
         }
 <span class="nc" id="L92">        return fallback;</span>
     }
 
     private static long firstLong(JsonNode node, long fallback, String... fields) {
-<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        for (String field : fields) {</span>
-<span class="fc" id="L97">            JsonNode value = node.path(field);</span>
-<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            if (value.isNumber()) {</span>
-<span class="fc" id="L99">                return value.asLong();</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L97">            JsonNode value = node.path(field);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (value.isNumber()) {</span>
+<span class="nc" id="L99">                return value.asLong();</span>
             }
         }
 <span class="nc" id="L102">        return fallback;</span>
     }
 
     private static BigDecimal firstDecimal(JsonNode node, BigDecimal fallback, String... fields) {
-<span class="fc bfc" id="L106" title="All 2 branches covered.">        for (String field : fields) {</span>
-<span class="fc" id="L107">            JsonNode value = node.path(field);</span>
-<span class="fc bfc" id="L108" title="All 2 branches covered.">            if (value.isNumber()) {</span>
-<span class="fc" id="L109">                return value.decimalValue();</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L107">            JsonNode value = node.path(field);</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            if (value.isNumber()) {</span>
+<span class="nc" id="L109">                return value.decimalValue();</span>
             }
         }
-<span class="fc" id="L112">        return fallback;</span>
+<span class="nc" id="L112">        return fallback;</span>
     }
 
     private static String stripZeroWidth(String value) {
-<span class="fc" id="L116">        return value.replaceAll(ZERO_WIDTH_CHARS, &quot;&quot;).trim();</span>
+<span class="nc" id="L116">        return value.replaceAll(ZERO_WIDTH_CHARS, &quot;&quot;).trim();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

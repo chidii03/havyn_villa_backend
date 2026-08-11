@@ -3,7 +3,6 @@ package com.havyn.properties.web;
 import com.havyn.auth.domain.AuthenticatedUser;
 import com.havyn.common.web.PageResponse;
 import com.havyn.properties.domain.Availability;
-import com.havyn.properties.domain.Property;
 import com.havyn.properties.domain.PropertyStatus;
 import com.havyn.properties.service.PropertyService;
 import jakarta.validation.Valid;
@@ -48,7 +47,7 @@ public class HostListingController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PropertyDetail create(Authentication authentication, @Valid @RequestBody CreatePropertyRequest request) {
-        return PropertyDetail.from(propertyService.create(hostId(authentication), request));
+        return propertyService.createDetail(hostId(authentication), request);
     }
 
     @GetMapping
@@ -59,13 +58,13 @@ public class HostListingController {
 
     @GetMapping("/{id}")
     public PropertyDetail get(Authentication authentication, @PathVariable UUID id) {
-        return PropertyDetail.from(propertyService.getOwned(hostId(authentication), id));
+        return propertyService.getOwnedDetail(hostId(authentication), id);
     }
 
     @PatchMapping("/{id}")
     public PropertyDetail update(
             Authentication authentication, @PathVariable UUID id, @Valid @RequestBody UpdatePropertyRequest request) {
-        return PropertyDetail.from(propertyService.update(hostId(authentication), id, request));
+        return propertyService.updateDetail(hostId(authentication), id, request);
     }
 
     @DeleteMapping("/{id}")
@@ -113,8 +112,7 @@ public class HostListingController {
     }
 
     private PropertyDetail transition(Authentication authentication, UUID id, PropertyStatus target) {
-        Property property = propertyService.transition(hostId(authentication), id, target);
-        return PropertyDetail.from(property);
+        return propertyService.transitionDetail(hostId(authentication), id, target);
     }
 
     private UUID hostId(Authentication authentication) {

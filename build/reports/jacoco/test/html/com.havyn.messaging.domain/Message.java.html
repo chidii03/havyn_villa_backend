@@ -34,15 +34,15 @@ public class Message extends BaseEntity {
         // JPA
 <span class="nc" id="L35">    }</span>
 
-<span class="fc" id="L37">    public Message(UUID conversationId, UUID senderId, String body) {</span>
-<span class="fc" id="L38">        this.conversationId = conversationId;</span>
-<span class="fc" id="L39">        this.senderId = senderId;</span>
-<span class="fc" id="L40">        this.body = body;</span>
-<span class="fc" id="L41">    }</span>
+<span class="nc" id="L37">    public Message(UUID conversationId, UUID senderId, String body) {</span>
+<span class="nc" id="L38">        this.conversationId = conversationId;</span>
+<span class="nc" id="L39">        this.senderId = senderId;</span>
+<span class="nc" id="L40">        this.body = body;</span>
+<span class="nc" id="L41">    }</span>
 
     public void markRead(Instant when) {
-<span class="fc" id="L44">        this.readAt = when;</span>
-<span class="fc" id="L45">    }</span>
+<span class="nc" id="L44">        this.readAt = when;</span>
+<span class="nc" id="L45">    }</span>
 
     public UUID getConversationId() {
 <span class="nc" id="L48">        return conversationId;</span>
@@ -57,7 +57,7 @@ public class Message extends BaseEntity {
     }
 
     public Instant getReadAt() {
-<span class="fc" id="L60">        return readAt;</span>
+<span class="nc" id="L60">        return readAt;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

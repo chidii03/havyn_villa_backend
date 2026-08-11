@@ -4,36 +4,36 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** {@code havyn.rayprop.*} — see https://rayprop.io/docs (Testing Guide: base URL is the same for sandbox/live, only the key prefix differs). */
 @ConfigurationProperties(prefix = &quot;havyn.rayprop&quot;)
-<span class="fc" id="L7">public class RayPropProperties {</span>
+<span class="nc" id="L7">public class RayPropProperties {</span>
 
-<span class="fc" id="L9">    private String apiKey = &quot;&quot;;</span>
-<span class="fc" id="L10">    private String baseUrl = &quot;https://api.rayprop.io&quot;;</span>
-<span class="fc" id="L11">    private String listingsPath = &quot;/listings&quot;;</span>
+<span class="nc" id="L9">    private String apiKey = &quot;&quot;;</span>
+<span class="nc" id="L10">    private String baseUrl = &quot;https://api.rayprop.io&quot;;</span>
+<span class="nc" id="L11">    private String listingsPath = &quot;/listings&quot;;</span>
 
     /** RayProp caps {@code limit} at 50 server-side regardless of what's requested (docs: Pagination). */
-<span class="fc" id="L14">    private int pageSize = 50;</span>
+<span class="nc" id="L14">    private int pageSize = 50;</span>
 
     /** Safety cap on pages walked per sync — matches the lowest documented plan tier (Free: 500 daily unique listings / 50 per page = 10 pages) with headroom. */
-<span class="fc" id="L17">    private int maxPages = 20;</span>
+<span class="nc" id="L17">    private int maxPages = 20;</span>
 
     public String getApiKey() {
-<span class="fc" id="L20">        return apiKey;</span>
+<span class="nc" id="L20">        return apiKey;</span>
     }
 
     public void setApiKey(String apiKey) {
-<span class="fc" id="L24">        this.apiKey = apiKey;</span>
-<span class="fc" id="L25">    }</span>
+<span class="nc" id="L24">        this.apiKey = apiKey;</span>
+<span class="nc" id="L25">    }</span>
 
     public String getBaseUrl() {
-<span class="fc" id="L28">        return baseUrl;</span>
+<span class="nc" id="L28">        return baseUrl;</span>
     }
 
     public void setBaseUrl(String baseUrl) {
-<span class="fc" id="L32">        this.baseUrl = baseUrl;</span>
-<span class="fc" id="L33">    }</span>
+<span class="nc" id="L32">        this.baseUrl = baseUrl;</span>
+<span class="nc" id="L33">    }</span>
 
     public String getListingsPath() {
-<span class="fc" id="L36">        return listingsPath;</span>
+<span class="nc" id="L36">        return listingsPath;</span>
     }
 
     public void setListingsPath(String listingsPath) {
@@ -41,19 +41,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 <span class="nc" id="L41">    }</span>
 
     public int getPageSize() {
-<span class="fc" id="L44">        return pageSize;</span>
+<span class="nc" id="L44">        return pageSize;</span>
     }
 
     public void setPageSize(int pageSize) {
-<span class="fc" id="L48">        this.pageSize = pageSize;</span>
-<span class="fc" id="L49">    }</span>
+<span class="nc" id="L48">        this.pageSize = pageSize;</span>
+<span class="nc" id="L49">    }</span>
 
     public int getMaxPages() {
-<span class="fc" id="L52">        return maxPages;</span>
+<span class="nc" id="L52">        return maxPages;</span>
     }
 
     public void setMaxPages(int maxPages) {
-<span class="fc" id="L56">        this.maxPages = maxPages;</span>
-<span class="fc" id="L57">    }</span>
+<span class="nc" id="L56">        this.maxPages = maxPages;</span>
+<span class="nc" id="L57">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

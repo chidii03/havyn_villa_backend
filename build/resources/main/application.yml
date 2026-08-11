@@ -140,11 +140,6 @@ management:
   endpoints:
     web:
       exposure:
-        # prometheus added (prompt 26) for metrics scraping — NOT in SecurityConfig's
-        # public paths, so a scraper needs a bearer token by default (this API has no
-        # separate internal-only management port to put it behind instead; see
-        # devops/02-observability.md's prompt 26 notes for the reasoning and the
-        # real-deployment follow-up this implies).
         include: health,info,prometheus
   endpoint:
     health:
@@ -154,6 +149,8 @@ management:
   health:
     redis:
       enabled: ${REDIS_HEALTH_ENABLED:false}
+    mail:
+      enabled: ${MAIL_HEALTH_ENABLED:false}   # ← add this line
     readinessstate:
       enabled: true
     livenessstate:

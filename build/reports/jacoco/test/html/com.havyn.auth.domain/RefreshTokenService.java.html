@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class RefreshTokenService {
 
-<span class="fc" id="L26">    private static final Logger log = LoggerFactory.getLogger(RefreshTokenService.class);</span>
+<span class="nc" id="L26">    private static final Logger log = LoggerFactory.getLogger(RefreshTokenService.class);</span>
     private static final String FAMILY_KEY_PREFIX = &quot;havyn:auth:refresh-family:&quot;;
     private static final String USER_SESSIONS_PREFIX = &quot;havyn:auth:user-sessions:&quot;;
 
@@ -96,7 +96,7 @@ public class RefreshTokenService {
 <span class="nc" id="L96">        return USER_SESSIONS_PREFIX + userId;</span>
     }
 
-<span class="fc" id="L99">    public record Issued(String token, UUID userId, UUID familyId) {</span>
+<span class="nc" id="L99">    public record Issued(String token, UUID userId, UUID familyId) {</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

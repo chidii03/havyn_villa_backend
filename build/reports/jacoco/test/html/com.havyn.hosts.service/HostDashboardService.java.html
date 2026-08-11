@@ -19,16 +19,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Dashboard overview — see project-docs/prompts/17-host-dashboard.md's &quot;performance&quot;
- * deliverable. Deliberately scoped to figures derivable from data this project already
- * persists (listings, bookings, payouts) rather than a new page-view/analytics
- * pipeline — no such tracking infrastructure exists anywhere in this codebase, and
- * building one is out of proportion to this prompt's actual acceptance criteria (&quot;view
- * accurate earnings/payouts&quot;), which never names occupancy/traffic metrics. Every
- * figure here is computed in this backend service, never in the frontend — see this
- * prompt's own &quot;No business math on the frontend&quot; constraint.
- */
 @Service
 public class HostDashboardService {
 
@@ -36,41 +26,41 @@ public class HostDashboardService {
     private final BookingService bookingService;
     private final PaymentService paymentService;
 
-<span class="fc" id="L39">    public HostDashboardService(PropertyRepository propertyRepository, BookingService bookingService, PaymentService paymentService) {</span>
-<span class="fc" id="L40">        this.propertyRepository = propertyRepository;</span>
-<span class="fc" id="L41">        this.bookingService = bookingService;</span>
-<span class="fc" id="L42">        this.paymentService = paymentService;</span>
-<span class="fc" id="L43">    }</span>
+<span class="nc" id="L29">    public HostDashboardService(PropertyRepository propertyRepository, BookingService bookingService, PaymentService paymentService) {</span>
+<span class="nc" id="L30">        this.propertyRepository = propertyRepository;</span>
+<span class="nc" id="L31">        this.bookingService = bookingService;</span>
+<span class="nc" id="L32">        this.paymentService = paymentService;</span>
+<span class="nc" id="L33">    }</span>
 
     @Transactional(readOnly = true)
     public HostDashboardSummary summary(UUID hostId) {
-<span class="fc" id="L47">        List&lt;Property&gt; properties = propertyRepository.findAllByHostId(hostId, Pageable.unpaged()).getContent();</span>
-<span class="fc" id="L48">        int total = properties.size();</span>
-<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        int active = (int) properties.stream().filter(property -&gt; property.getStatus() == PropertyStatus.ACTIVE).count();</span>
+<span class="nc" id="L37">        List&lt;Property&gt; properties = propertyRepository.findAllByHostId(hostId, Pageable.unpaged()).getContent();</span>
+<span class="nc" id="L38">        int total = properties.size();</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        int active = (int) properties.stream().filter(property -&gt; property.getStatus() == PropertyStatus.ACTIVE).count();</span>
 
-<span class="fc" id="L51">        long upcomingReservations = bookingService.countUpcomingForHost(hostId);</span>
+<span class="nc" id="L41">        long upcomingReservations = bookingService.countUpcomingForHost(hostId);</span>
 
-<span class="fc" id="L53">        List&lt;Payout&gt; payouts = paymentService.listAllPayoutsForHost(hostId);</span>
-<span class="fc" id="L54">        List&lt;CurrencyAmount&gt; totalEarnings = payouts.stream()</span>
-<span class="fc" id="L55">                .collect(Collectors.groupingBy(Payout::getCurrency, TreeMap::new, Collectors.reducing(BigDecimal.ZERO, Payout::getAmount, BigDecimal::add)))</span>
-<span class="fc" id="L56">                .entrySet()</span>
-<span class="fc" id="L57">                .stream()</span>
-<span class="fc" id="L58">                .map(entry -&gt; new CurrencyAmount(entry.getKey(), entry.getValue()))</span>
-<span class="fc" id="L59">                .toList();</span>
-<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        long pendingPayouts = payouts.stream().filter(payout -&gt; payout.getStatus() == PayoutStatus.PENDING).count();</span>
+<span class="nc" id="L43">        List&lt;Payout&gt; payouts = paymentService.listAllPayoutsForHost(hostId);</span>
+<span class="nc" id="L44">        List&lt;CurrencyAmount&gt; totalEarnings = payouts.stream()</span>
+<span class="nc" id="L45">                .collect(Collectors.groupingBy(Payout::getCurrency, TreeMap::new, Collectors.reducing(BigDecimal.ZERO, Payout::getAmount, BigDecimal::add)))</span>
+<span class="nc" id="L46">                .entrySet()</span>
+<span class="nc" id="L47">                .stream()</span>
+<span class="nc" id="L48">                .map(entry -&gt; new CurrencyAmount(entry.getKey(), entry.getValue()))</span>
+<span class="nc" id="L49">                .toList();</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        long pendingPayouts = payouts.stream().filter(payout -&gt; payout.getStatus() == PayoutStatus.PENDING).count();</span>
 
-<span class="fc" id="L62">        BigDecimal averageRating = averageRating(properties);</span>
+<span class="nc" id="L52">        BigDecimal averageRating = averageRating(properties);</span>
 
-<span class="fc" id="L64">        return new HostDashboardSummary(active, total, upcomingReservations, totalEarnings, pendingPayouts, averageRating);</span>
+<span class="nc" id="L54">        return new HostDashboardSummary(active, total, upcomingReservations, totalEarnings, pendingPayouts, averageRating);</span>
     }
 
     private BigDecimal averageRating(List&lt;Property&gt; properties) {
-<span class="fc bfc" id="L68" title="All 2 branches covered.">        List&lt;Property&gt; rated = properties.stream().filter(property -&gt; property.getRatingCount() &gt; 0).toList();</span>
-<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (rated.isEmpty()) {</span>
-<span class="fc" id="L70">            return BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        List&lt;Property&gt; rated = properties.stream().filter(property -&gt; property.getRatingCount() &gt; 0).toList();</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (rated.isEmpty()) {</span>
+<span class="nc" id="L60">            return BigDecimal.ZERO;</span>
         }
-<span class="fc" id="L72">        BigDecimal sum = rated.stream().map(Property::getRatingAvg).reduce(BigDecimal.ZERO, BigDecimal::add);</span>
-<span class="fc" id="L73">        return sum.divide(BigDecimal.valueOf(rated.size()), 2, RoundingMode.HALF_UP);</span>
+<span class="nc" id="L62">        BigDecimal sum = rated.stream().map(Property::getRatingAvg).reduce(BigDecimal.ZERO, BigDecimal::add);</span>
+<span class="nc" id="L63">        return sum.divide(BigDecimal.valueOf(rated.size()), 2, RoundingMode.HALF_UP);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -26,22 +26,22 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  * See project-docs/architecture/03-api-design.md#errors.
  */
 @RestControllerAdvice
-<span class="fc" id="L29">public class GlobalExceptionHandler {</span>
+<span class="nc" id="L29">public class GlobalExceptionHandler {</span>
 
-<span class="fc" id="L31">    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);</span>
+<span class="nc" id="L31">    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);</span>
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity&lt;ErrorResponse&gt; handleApiException(ApiException ex) {
-<span class="fc" id="L35">        log.warn(&quot;Handled API exception: code={} message={}&quot;, ex.getCode(), ex.getMessage());</span>
-<span class="fc" id="L36">        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), null);</span>
+<span class="nc" id="L35">        log.warn(&quot;Handled API exception: code={} message={}&quot;, ex.getCode(), ex.getMessage());</span>
+<span class="nc" id="L36">        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), null);</span>
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity&lt;ErrorResponse&gt; handleValidation(MethodArgumentNotValidException ex) {
-<span class="fc" id="L41">        List&lt;ErrorDetail&gt; details = ex.getBindingResult().getFieldErrors().stream()</span>
-<span class="fc" id="L42">                .map(this::toDetail)</span>
-<span class="fc" id="L43">                .toList();</span>
-<span class="fc" id="L44">        return build(HttpStatus.UNPROCESSABLE_ENTITY, &quot;VALIDATION_FAILED&quot;, &quot;Request validation failed&quot;, details);</span>
+<span class="nc" id="L41">        List&lt;ErrorDetail&gt; details = ex.getBindingResult().getFieldErrors().stream()</span>
+<span class="nc" id="L42">                .map(this::toDetail)</span>
+<span class="nc" id="L43">                .toList();</span>
+<span class="nc" id="L44">        return build(HttpStatus.UNPROCESSABLE_ENTITY, &quot;VALIDATION_FAILED&quot;, &quot;Request validation failed&quot;, details);</span>
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -70,7 +70,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity&lt;ErrorResponse&gt; handleAccessDenied(AccessDeniedException ex) {
-<span class="fc" id="L73">        return build(HttpStatus.FORBIDDEN, &quot;FORBIDDEN&quot;, &quot;You do not have access to this resource&quot;, null);</span>
+<span class="nc" id="L73">        return build(HttpStatus.FORBIDDEN, &quot;FORBIDDEN&quot;, &quot;You do not have access to this resource&quot;, null);</span>
     }
 
     @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
@@ -85,17 +85,17 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity&lt;ErrorResponse&gt; handleUnexpected(Exception ex) {
-<span class="fc" id="L88">        log.error(&quot;Unhandled exception&quot;, ex);</span>
-<span class="fc" id="L89">        return build(HttpStatus.INTERNAL_SERVER_ERROR, &quot;INTERNAL_ERROR&quot;, &quot;An unexpected error occurred&quot;, null);</span>
+<span class="nc" id="L88">        log.error(&quot;Unhandled exception&quot;, ex);</span>
+<span class="nc" id="L89">        return build(HttpStatus.INTERNAL_SERVER_ERROR, &quot;INTERNAL_ERROR&quot;, &quot;An unexpected error occurred&quot;, null);</span>
     }
 
     private ErrorDetail toDetail(FieldError fieldError) {
-<span class="fc" id="L93">        return new ErrorDetail(fieldError.getField(), fieldError.getDefaultMessage());</span>
+<span class="nc" id="L93">        return new ErrorDetail(fieldError.getField(), fieldError.getDefaultMessage());</span>
     }
 
     private ResponseEntity&lt;ErrorResponse&gt; build(HttpStatus status, String code, String message, List&lt;ErrorDetail&gt; details) {
-<span class="fc" id="L97">        String traceId = MDC.get(CorrelationIdFilter.MDC_KEY);</span>
-<span class="fc" id="L98">        return ResponseEntity.status(status).body(ErrorResponse.of(code, message, details, traceId));</span>
+<span class="nc" id="L97">        String traceId = MDC.get(CorrelationIdFilter.MDC_KEY);</span>
+<span class="nc" id="L98">        return ResponseEntity.status(status).body(ErrorResponse.of(code, message, details, traceId));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -16,16 +16,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
-/**
- * Real Cloudinary signed-upload integration (https://cloudinary.com/documentation/upload_images#generating_authentication_signatures).
- * {@code createSignedUpload} is pure local computation — no network call, since the
- * actual file upload happens directly from the client's browser to Cloudinary using
- * this signature, never through our backend. {@code deleteAsset} does call Cloudinary
- * (the &quot;destroy&quot; API) and shares the same live-credential gap as {@code
- * PaystackPaymentProvider} — no live Cloudinary account exists in this environment.
- * Signature generation is real and unit-tested against independently-computed SHA-1
- * values.
- */
 @Component
 public class CloudinaryMediaStorage implements MediaStorage {
 
@@ -33,66 +23,66 @@ public class CloudinaryMediaStorage implements MediaStorage {
     private final CloudinaryProperties properties;
     private final Clock clock;
 
-<span class="fc" id="L36">    public CloudinaryMediaStorage(RestClient.Builder restClientBuilder, CloudinaryProperties properties, Clock clock) {</span>
-<span class="fc" id="L37">        this.properties = properties;</span>
-<span class="fc" id="L38">        this.clock = clock;</span>
-<span class="fc" id="L39">        this.restClient = restClientBuilder.baseUrl(&quot;https://api.cloudinary.com&quot;).build();</span>
-<span class="fc" id="L40">    }</span>
+<span class="nc" id="L26">    public CloudinaryMediaStorage(RestClient.Builder restClientBuilder, CloudinaryProperties properties, Clock clock) {</span>
+<span class="nc" id="L27">        this.properties = properties;</span>
+<span class="nc" id="L28">        this.clock = clock;</span>
+<span class="nc" id="L29">        this.restClient = restClientBuilder.baseUrl(&quot;https://api.cloudinary.com&quot;).build();</span>
+<span class="nc" id="L30">    }</span>
 
     @Override
     public SignedUpload createSignedUpload(String folder) {
-<span class="fc" id="L44">        long timestamp = clock.instant().getEpochSecond();</span>
-<span class="fc" id="L45">        Map&lt;String, String&gt; paramsToSign = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc" id="L46">        paramsToSign.put(&quot;folder&quot;, folder);</span>
-<span class="fc" id="L47">        paramsToSign.put(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
+<span class="nc" id="L34">        long timestamp = clock.instant().getEpochSecond();</span>
+<span class="nc" id="L35">        Map&lt;String, String&gt; paramsToSign = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L36">        paramsToSign.put(&quot;folder&quot;, folder);</span>
+<span class="nc" id="L37">        paramsToSign.put(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
 
-<span class="fc" id="L49">        String signature = sign(paramsToSign);</span>
-<span class="fc" id="L50">        return new SignedUpload(properties.getCloudName(), properties.getApiKey(), timestamp, signature, folder);</span>
+<span class="nc" id="L39">        String signature = sign(paramsToSign);</span>
+<span class="nc" id="L40">        return new SignedUpload(properties.getCloudName(), properties.getApiKey(), timestamp, signature, folder);</span>
     }
 
     @Override
     public boolean isValidAssetUrl(String secureUrl) {
-<span class="fc bfc" id="L55" title="All 4 branches covered.">        return secureUrl != null &amp;&amp; secureUrl.contains(&quot;res.cloudinary.com/&quot; + properties.getCloudName() + &quot;/&quot;);</span>
+<span class="nc bnc" id="L45" title="All 4 branches missed.">        return secureUrl != null &amp;&amp; secureUrl.contains(&quot;res.cloudinary.com/&quot; + properties.getCloudName() + &quot;/&quot;);</span>
     }
 
     @Override
     public void deleteAsset(String publicId, MediaResourceType resourceType) {
-<span class="fc" id="L60">        long timestamp = clock.instant().getEpochSecond();</span>
-<span class="fc" id="L61">        Map&lt;String, String&gt; paramsToSign = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc" id="L62">        paramsToSign.put(&quot;public_id&quot;, publicId);</span>
-<span class="fc" id="L63">        paramsToSign.put(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
-<span class="fc" id="L64">        String signature = sign(paramsToSign);</span>
+<span class="nc" id="L50">        long timestamp = clock.instant().getEpochSecond();</span>
+<span class="nc" id="L51">        Map&lt;String, String&gt; paramsToSign = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L52">        paramsToSign.put(&quot;public_id&quot;, publicId);</span>
+<span class="nc" id="L53">        paramsToSign.put(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
+<span class="nc" id="L54">        String signature = sign(paramsToSign);</span>
 
-<span class="fc" id="L66">        MultiValueMap&lt;String, String&gt; body = new LinkedMultiValueMap&lt;&gt;();</span>
-<span class="fc" id="L67">        body.add(&quot;public_id&quot;, publicId);</span>
-<span class="fc" id="L68">        body.add(&quot;api_key&quot;, properties.getApiKey());</span>
-<span class="fc" id="L69">        body.add(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
-<span class="fc" id="L70">        body.add(&quot;signature&quot;, signature);</span>
+<span class="nc" id="L56">        MultiValueMap&lt;String, String&gt; body = new LinkedMultiValueMap&lt;&gt;();</span>
+<span class="nc" id="L57">        body.add(&quot;public_id&quot;, publicId);</span>
+<span class="nc" id="L58">        body.add(&quot;api_key&quot;, properties.getApiKey());</span>
+<span class="nc" id="L59">        body.add(&quot;timestamp&quot;, String.valueOf(timestamp));</span>
+<span class="nc" id="L60">        body.add(&quot;signature&quot;, signature);</span>
 
-<span class="fc" id="L72">        restClient.post()</span>
-<span class="fc" id="L73">                .uri(&quot;/v1_1/{cloud}/{type}/destroy&quot;, properties.getCloudName(), resourceType.name().toLowerCase())</span>
-<span class="fc" id="L74">                .contentType(MediaType.APPLICATION_FORM_URLENCODED)</span>
-<span class="fc" id="L75">                .body(body)</span>
-<span class="fc" id="L76">                .retrieve()</span>
-<span class="fc" id="L77">                .toBodilessEntity();</span>
-<span class="fc" id="L78">    }</span>
+<span class="nc" id="L62">        restClient.post()</span>
+<span class="nc" id="L63">                .uri(&quot;/v1_1/{cloud}/{type}/destroy&quot;, properties.getCloudName(), resourceType.name().toLowerCase())</span>
+<span class="nc" id="L64">                .contentType(MediaType.APPLICATION_FORM_URLENCODED)</span>
+<span class="nc" id="L65">                .body(body)</span>
+<span class="nc" id="L66">                .retrieve()</span>
+<span class="nc" id="L67">                .toBodilessEntity();</span>
+<span class="nc" id="L68">    }</span>
 
     /** Cloudinary's documented algorithm: sort params alphabetically, join as key=value&amp;..., append the raw API secret (no separator), SHA-1, hex-encode. */
     private String sign(Map&lt;String, String&gt; params) {
-<span class="fc" id="L82">        String paramString = params.entrySet().stream()</span>
-<span class="fc" id="L83">                .sorted(Map.Entry.comparingByKey())</span>
-<span class="fc" id="L84">                .map(entry -&gt; entry.getKey() + &quot;=&quot; + entry.getValue())</span>
-<span class="fc" id="L85">                .collect(Collectors.joining(&quot;&amp;&quot;));</span>
-<span class="fc" id="L86">        return sha1Hex(paramString + properties.getApiSecret());</span>
+<span class="nc" id="L72">        String paramString = params.entrySet().stream()</span>
+<span class="nc" id="L73">                .sorted(Map.Entry.comparingByKey())</span>
+<span class="nc" id="L74">                .map(entry -&gt; entry.getKey() + &quot;=&quot; + entry.getValue())</span>
+<span class="nc" id="L75">                .collect(Collectors.joining(&quot;&amp;&quot;));</span>
+<span class="nc" id="L76">        return sha1Hex(paramString + properties.getApiSecret());</span>
     }
 
     private static String sha1Hex(String data) {
         try {
-<span class="fc" id="L91">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-1&quot;);</span>
-<span class="fc" id="L92">            byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));</span>
-<span class="fc" id="L93">            return HexFormat.of().formatHex(hash);</span>
-<span class="nc" id="L94">        } catch (Exception e) {</span>
-<span class="nc" id="L95">            throw new IllegalStateException(&quot;Unable to compute SHA-1 signature&quot;, e);</span>
+<span class="nc" id="L81">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-1&quot;);</span>
+<span class="nc" id="L82">            byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L83">            return HexFormat.of().formatHex(hash);</span>
+<span class="nc" id="L84">        } catch (Exception e) {</span>
+<span class="nc" id="L85">            throw new IllegalStateException(&quot;Unable to compute SHA-1 signature&quot;, e);</span>
         }
     }
 }

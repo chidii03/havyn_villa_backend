@@ -10,21 +10,25 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.ResourceAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
 public class OpenAiSupportClient {
 
-<span class="fc" id="L20">    private static final Logger log = LoggerFactory.getLogger(OpenAiSupportClient.class);</span>
+<span class="fc" id="L22">    private static final Logger log = LoggerFactory.getLogger(OpenAiSupportClient.class);</span>
     private static final String SYSTEM_PROMPT = &quot;&quot;&quot;
             You are Havyn Villa's AI Assistant. Help users book, manage trips, use the platform,
             and resolve complaints about bookings, payments, hosting, cancellations, and refunds.
             Ask only for information you need, such as booking reference, dates, and issue details.
             If a user reports a problem, summarize it clearly and tell them it has been flagged for Admin.
             Explain how to navigate search, filters, bookings, wishlist, becoming a host, managing listings,
-            cancellations, refunds, trips, and support. Be professional, concise, and never share other users' data.
+            cancellations, refunds, trips, and support. Trips is where guests review bookings. Hosts manage listings
+            from Host dashboard &gt; Listings. Payments use secure hosted checkout, with Paystack configured by default
+            and Flutterwave available as a provider. Be professional, concise, and never share other users' data.
             &quot;&quot;&quot;;
 
     private final RestClient restClient;
@@ -34,72 +38,110 @@ public class OpenAiSupportClient {
     public OpenAiSupportClient(
             RestClient.Builder restClientBuilder,
             @Value(&quot;${havyn.openai.api-key:}&quot;) String apiKey,
-<span class="nc" id="L37">            @Value(&quot;${havyn.openai.model:gpt-5-mini}&quot;) String model) {</span>
-<span class="nc" id="L38">        this.apiKey = apiKey;</span>
-<span class="nc" id="L39">        this.model = model;</span>
-<span class="nc" id="L40">        this.restClient = restClientBuilder.baseUrl(&quot;https://api.openai.com/v1&quot;).build();</span>
-<span class="nc" id="L41">    }</span>
+<span class="nc" id="L41">            @Value(&quot;${havyn.openai.model:gpt-5-mini}&quot;) String model) {</span>
+<span class="nc" id="L42">        this.apiKey = apiKey;</span>
+<span class="nc" id="L43">        this.model = model;</span>
+<span class="nc" id="L44">        this.restClient = restClientBuilder.baseUrl(&quot;https://api.openai.com/v1&quot;).build();</span>
+<span class="nc" id="L45">    }</span>
 
     public String respond(List&lt;SupportChatMessage&gt; history) {
-<span class="nc bnc" id="L44" title="All 4 branches missed.">        if (apiKey == null || apiKey.isBlank()) {</span>
-<span class="nc" id="L45">            throw new ServiceUnavailableException(&quot;OPENAI_NOT_CONFIGURED&quot;, &quot;AI support chat is not configured yet&quot;);</span>
+<span class="nc bnc" id="L48" title="All 4 branches missed.">        if (apiKey == null || apiKey.isBlank()) {</span>
+<span class="nc" id="L49">            throw new ServiceUnavailableException(&quot;OPENAI_NOT_CONFIGURED&quot;, &quot;AI support chat is not configured yet&quot;);</span>
         }
 
-<span class="nc" id="L48">        String input = inputFrom(history);</span>
+<span class="nc" id="L52">        String input = inputFrom(history);</span>
 
         JsonNode response;
-<span class="nc" id="L51">        String clientRequestId = UUID.randomUUID().toString();</span>
+<span class="nc" id="L55">        String clientRequestId = UUID.randomUUID().toString();</span>
         try {
-<span class="nc" id="L53">            response = restClient.post()</span>
-<span class="nc" id="L54">                    .uri(&quot;/responses&quot;)</span>
-<span class="nc" id="L55">                    .header(&quot;Authorization&quot;, &quot;Bearer &quot; + apiKey)</span>
-<span class="nc" id="L56">                    .header(&quot;X-Client-Request-Id&quot;, clientRequestId)</span>
-<span class="nc" id="L57">                    .body(Map.of(&quot;model&quot;, model, &quot;instructions&quot;, SYSTEM_PROMPT, &quot;input&quot;, input, &quot;store&quot;, false))</span>
-<span class="nc" id="L58">                    .retrieve()</span>
-<span class="nc" id="L59">                    .body(JsonNode.class);</span>
-<span class="nc" id="L60">        } catch (RestClientResponseException e) {</span>
-<span class="nc" id="L61">            log.warn(</span>
-                    &quot;OpenAI support request failed status={} clientRequestId={} body={}&quot;,
-<span class="nc" id="L63">                    e.getStatusCode().value(),</span>
+<span class="nc" id="L57">            response = restClient.post()</span>
+<span class="nc" id="L58">                    .uri(&quot;/responses&quot;)</span>
+<span class="nc" id="L59">                    .header(&quot;Authorization&quot;, &quot;Bearer &quot; + apiKey)</span>
+<span class="nc" id="L60">                    .header(&quot;X-Client-Request-Id&quot;, clientRequestId)</span>
+<span class="nc" id="L61">                    .body(Map.of(&quot;model&quot;, model, &quot;instructions&quot;, SYSTEM_PROMPT, &quot;input&quot;, input, &quot;store&quot;, false))</span>
+<span class="nc" id="L62">                    .retrieve()</span>
+<span class="nc" id="L63">                    .body(JsonNode.class);</span>
+<span class="nc" id="L64">        } catch (RestClientResponseException e) {</span>
+<span class="nc" id="L65">            String code = errorCode(e);</span>
+<span class="nc" id="L66">            log.warn(</span>
+                    &quot;OpenAI support request failed code={} status={} clientRequestId={} body={}&quot;,
+                    code,
+<span class="nc" id="L69">                    e.getStatusCode().value(),</span>
                     clientRequestId,
-<span class="nc" id="L65">                    e.getResponseBodyAsString());</span>
-<span class="nc" id="L66">            throw new ServiceUnavailableException(&quot;OPENAI_REQUEST_FAILED&quot;, &quot;AI support chat is temporarily unavailable&quot;);</span>
-<span class="nc" id="L67">        }</span>
+<span class="nc" id="L71">                    e.getResponseBodyAsString());</span>
+<span class="nc" id="L72">            throw new ServiceUnavailableException(code, userMessage(code));</span>
+<span class="nc" id="L73">        } catch (ResourceAccessException e) {</span>
+<span class="nc" id="L74">            log.warn(&quot;OpenAI support request failed code=OPENAI_NETWORK_ERROR clientRequestId={} message={}&quot;,</span>
+<span class="nc" id="L75">                    clientRequestId, e.getMessage());</span>
+<span class="nc" id="L76">            throw new ServiceUnavailableException(&quot;OPENAI_NETWORK_ERROR&quot;, &quot;AI support chat could not reach the AI service&quot;);</span>
+<span class="nc" id="L77">        } catch (RestClientException e) {</span>
+<span class="nc" id="L78">            log.warn(&quot;OpenAI support request failed code=OPENAI_CLIENT_ERROR clientRequestId={} message={}&quot;,</span>
+<span class="nc" id="L79">                    clientRequestId, e.getMessage());</span>
+<span class="nc" id="L80">            throw new ServiceUnavailableException(&quot;OPENAI_CLIENT_ERROR&quot;, &quot;AI support chat is temporarily unavailable&quot;);</span>
+<span class="nc" id="L81">        }</span>
 
-<span class="nc" id="L69">        String content = extractOutputText(response);</span>
-<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (content.isBlank()) {</span>
-<span class="nc" id="L71">            log.warn(&quot;OpenAI support request returned empty content clientRequestId={} response={}&quot;, clientRequestId, response);</span>
-<span class="nc" id="L72">            throw new ServiceUnavailableException(&quot;OPENAI_EMPTY_RESPONSE&quot;, &quot;AI support chat returned an empty response&quot;);</span>
+<span class="nc" id="L83">        String content = extractOutputText(response);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (content.isBlank()) {</span>
+<span class="nc" id="L85">            log.warn(&quot;OpenAI support request returned empty content clientRequestId={} response={}&quot;, clientRequestId, response);</span>
+<span class="nc" id="L86">            throw new ServiceUnavailableException(&quot;OPENAI_EMPTY_RESPONSE&quot;, &quot;AI support chat returned an empty response&quot;);</span>
         }
-<span class="nc" id="L74">        return content.trim();</span>
+<span class="nc" id="L88">        return content.trim();</span>
+    }
+
+    private String errorCode(RestClientResponseException e) {
+<span class="nc" id="L92">        int status = e.getStatusCode().value();</span>
+<span class="nc" id="L93">        String body = e.getResponseBodyAsString().toLowerCase();</span>
+<span class="nc bnc" id="L94" title="All 6 branches missed.">        if (status == 401 || status == 403 || body.contains(&quot;invalid_api_key&quot;)) {</span>
+<span class="nc" id="L95">            return &quot;OPENAI_AUTH_FAILED&quot;;</span>
+        }
+<span class="nc bnc" id="L97" title="All 6 branches missed.">        if (status == 429 &amp;&amp; (body.contains(&quot;insufficient_quota&quot;) || body.contains(&quot;credit_balance_exhausted&quot;))) {</span>
+<span class="nc" id="L98">            return &quot;OPENAI_QUOTA_EXCEEDED&quot;;</span>
+        }
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (status == 429) {</span>
+<span class="nc" id="L101">            return &quot;OPENAI_RATE_LIMITED&quot;;</span>
+        }
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (status &gt;= 500) {</span>
+<span class="nc" id="L104">            return &quot;OPENAI_SERVER_ERROR&quot;;</span>
+        }
+<span class="nc" id="L106">        return &quot;OPENAI_REQUEST_FAILED&quot;;</span>
+    }
+
+    private String userMessage(String code) {
+<span class="nc bnc" id="L110" title="All 5 branches missed.">        return switch (code) {</span>
+<span class="nc" id="L111">            case &quot;OPENAI_AUTH_FAILED&quot; -&gt; &quot;AI support chat is not authenticated with the AI provider&quot;;</span>
+<span class="nc" id="L112">            case &quot;OPENAI_QUOTA_EXCEEDED&quot; -&gt; &quot;AI support chat has no available AI credits right now&quot;;</span>
+<span class="nc" id="L113">            case &quot;OPENAI_RATE_LIMITED&quot; -&gt; &quot;AI support chat is receiving too many requests right now&quot;;</span>
+<span class="nc" id="L114">            case &quot;OPENAI_SERVER_ERROR&quot; -&gt; &quot;The AI provider is temporarily unavailable&quot;;</span>
+<span class="nc" id="L115">            default -&gt; &quot;AI support chat is temporarily unavailable&quot;;</span>
+        };
     }
 
     private String inputFrom(List&lt;SupportChatMessage&gt; history) {
-<span class="nc" id="L78">        StringBuilder builder = new StringBuilder(&quot;Recent conversation:\n&quot;);</span>
-<span class="nc" id="L79">        history.stream().skip(Math.max(0, history.size() - 20)).forEach(message -&gt; {</span>
-<span class="nc bnc" id="L80" title="All 2 branches missed.">            String role = message.getRole() == SupportChatRole.USER ? &quot;User&quot; : &quot;Assistant&quot;;</span>
-<span class="nc" id="L81">            builder.append(role).append(&quot;: &quot;).append(message.getBody()).append('\n');</span>
-<span class="nc" id="L82">        });</span>
-<span class="nc" id="L83">        builder.append(&quot;\nReply as Havyn Villa's AI Assistant to the latest user message.&quot;);</span>
-<span class="nc" id="L84">        return builder.toString();</span>
+<span class="nc" id="L120">        StringBuilder builder = new StringBuilder(&quot;Recent conversation:\n&quot;);</span>
+<span class="nc" id="L121">        history.stream().skip(Math.max(0, history.size() - 20)).forEach(message -&gt; {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            String role = message.getRole() == SupportChatRole.USER ? &quot;User&quot; : &quot;Assistant&quot;;</span>
+<span class="nc" id="L123">            builder.append(role).append(&quot;: &quot;).append(message.getBody()).append('\n');</span>
+<span class="nc" id="L124">        });</span>
+<span class="nc" id="L125">        builder.append(&quot;\nReply as Havyn Villa's AI Assistant to the latest user message.&quot;);</span>
+<span class="nc" id="L126">        return builder.toString();</span>
     }
 
     private String extractOutputText(JsonNode response) {
-<span class="nc" id="L88">        StringBuilder builder = new StringBuilder();</span>
-<span class="nc bnc" id="L89" title="All 2 branches missed.">        for (JsonNode outputItem : response.path(&quot;output&quot;)) {</span>
-<span class="nc bnc" id="L90" title="All 2 branches missed.">            for (JsonNode contentItem : outputItem.path(&quot;content&quot;)) {</span>
-<span class="nc bnc" id="L91" title="All 4 branches missed.">                if (&quot;output_text&quot;.equals(contentItem.path(&quot;type&quot;).asText()) || contentItem.hasNonNull(&quot;text&quot;)) {</span>
-<span class="nc" id="L92">                    String text = contentItem.path(&quot;text&quot;).asText(&quot;&quot;);</span>
-<span class="nc bnc" id="L93" title="All 2 branches missed.">                    if (!text.isBlank()) {</span>
-<span class="nc bnc" id="L94" title="All 2 branches missed.">                        if (builder.length() &gt; 0) {</span>
-<span class="nc" id="L95">                            builder.append('\n');</span>
+<span class="nc" id="L130">        StringBuilder builder = new StringBuilder();</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        for (JsonNode outputItem : response.path(&quot;output&quot;)) {</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            for (JsonNode contentItem : outputItem.path(&quot;content&quot;)) {</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">                if (&quot;output_text&quot;.equals(contentItem.path(&quot;type&quot;).asText()) || contentItem.hasNonNull(&quot;text&quot;)) {</span>
+<span class="nc" id="L134">                    String text = contentItem.path(&quot;text&quot;).asText(&quot;&quot;);</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                    if (!text.isBlank()) {</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                        if (builder.length() &gt; 0) {</span>
+<span class="nc" id="L137">                            builder.append('\n');</span>
                         }
-<span class="nc" id="L97">                        builder.append(text);</span>
+<span class="nc" id="L139">                        builder.append(text);</span>
                     }
                 }
-<span class="nc" id="L100">            }</span>
-<span class="nc" id="L101">        }</span>
-<span class="nc" id="L102">        return builder.toString();</span>
+<span class="nc" id="L142">            }</span>
+<span class="nc" id="L143">        }</span>
+<span class="nc" id="L144">        return builder.toString();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

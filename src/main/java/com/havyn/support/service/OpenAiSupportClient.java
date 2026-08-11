@@ -10,7 +10,9 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.ResourceAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +26,9 @@ public class OpenAiSupportClient {
             Ask only for information you need, such as booking reference, dates, and issue details.
             If a user reports a problem, summarize it clearly and tell them it has been flagged for Admin.
             Explain how to navigate search, filters, bookings, wishlist, becoming a host, managing listings,
-            cancellations, refunds, trips, and support. Be professional, concise, and never share other users' data.
+            cancellations, refunds, trips, and support. Trips is where guests review bookings. Hosts manage listings
+            from Host dashboard > Listings. Payments use secure hosted checkout, with Paystack configured by default
+            and Flutterwave available as a provider. Be professional, concise, and never share other users' data.
             """;
 
     private final RestClient restClient;
@@ -58,12 +62,22 @@ public class OpenAiSupportClient {
                     .retrieve()
                     .body(JsonNode.class);
         } catch (RestClientResponseException e) {
+            String code = errorCode(e);
             log.warn(
-                    "OpenAI support request failed status={} clientRequestId={} body={}",
+                    "OpenAI support request failed code={} status={} clientRequestId={} body={}",
+                    code,
                     e.getStatusCode().value(),
                     clientRequestId,
                     e.getResponseBodyAsString());
-            throw new ServiceUnavailableException("OPENAI_REQUEST_FAILED", "AI support chat is temporarily unavailable");
+            throw new ServiceUnavailableException(code, userMessage(code));
+        } catch (ResourceAccessException e) {
+            log.warn("OpenAI support request failed code=OPENAI_NETWORK_ERROR clientRequestId={} message={}",
+                    clientRequestId, e.getMessage());
+            throw new ServiceUnavailableException("OPENAI_NETWORK_ERROR", "AI support chat could not reach the AI service");
+        } catch (RestClientException e) {
+            log.warn("OpenAI support request failed code=OPENAI_CLIENT_ERROR clientRequestId={} message={}",
+                    clientRequestId, e.getMessage());
+            throw new ServiceUnavailableException("OPENAI_CLIENT_ERROR", "AI support chat is temporarily unavailable");
         }
 
         String content = extractOutputText(response);
@@ -72,6 +86,34 @@ public class OpenAiSupportClient {
             throw new ServiceUnavailableException("OPENAI_EMPTY_RESPONSE", "AI support chat returned an empty response");
         }
         return content.trim();
+    }
+
+    private String errorCode(RestClientResponseException e) {
+        int status = e.getStatusCode().value();
+        String body = e.getResponseBodyAsString().toLowerCase();
+        if (status == 401 || status == 403 || body.contains("invalid_api_key")) {
+            return "OPENAI_AUTH_FAILED";
+        }
+        if (status == 429 && (body.contains("insufficient_quota") || body.contains("credit_balance_exhausted"))) {
+            return "OPENAI_QUOTA_EXCEEDED";
+        }
+        if (status == 429) {
+            return "OPENAI_RATE_LIMITED";
+        }
+        if (status >= 500) {
+            return "OPENAI_SERVER_ERROR";
+        }
+        return "OPENAI_REQUEST_FAILED";
+    }
+
+    private String userMessage(String code) {
+        return switch (code) {
+            case "OPENAI_AUTH_FAILED" -> "AI support chat is not authenticated with the AI provider";
+            case "OPENAI_QUOTA_EXCEEDED" -> "AI support chat has no available AI credits right now";
+            case "OPENAI_RATE_LIMITED" -> "AI support chat is receiving too many requests right now";
+            case "OPENAI_SERVER_ERROR" -> "The AI provider is temporarily unavailable";
+            default -> "AI support chat is temporarily unavailable";
+        };
     }
 
     private String inputFrom(List<SupportChatMessage> history) {

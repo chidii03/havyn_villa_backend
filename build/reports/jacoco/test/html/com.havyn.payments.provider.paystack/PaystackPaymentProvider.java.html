@@ -49,10 +49,10 @@ import org.springframework.web.client.RestClientResponseException;
 @Component
 public class PaystackPaymentProvider implements PaymentProvider {
 
-<span class="fc" id="L52">    private static final Logger log = LoggerFactory.getLogger(PaystackPaymentProvider.class);</span>
+<span class="nc" id="L52">    private static final Logger log = LoggerFactory.getLogger(PaystackPaymentProvider.class);</span>
     private static final String NAME = &quot;paystack&quot;;
     private static final String SIGNATURE_HEADER = &quot;x-paystack-signature&quot;;
-<span class="fc" id="L55">    private static final BigDecimal SMALLEST_UNIT_MULTIPLIER = BigDecimal.valueOf(100);</span>
+<span class="nc" id="L55">    private static final BigDecimal SMALLEST_UNIT_MULTIPLIER = BigDecimal.valueOf(100);</span>
 
     private final RestClient restClient;
     private final PaystackProperties properties;
@@ -70,11 +70,11 @@ public class PaystackPaymentProvider implements PaymentProvider {
             RestClient.Builder restClientBuilder,
             PaystackProperties properties,
             ObjectMapper objectMapper,
-<span class="fc" id="L73">            MeterRegistry meterRegistry) {</span>
-<span class="fc" id="L74">        this.properties = properties;</span>
-<span class="fc" id="L75">        this.objectMapper = objectMapper;</span>
-<span class="fc" id="L76">        this.meterRegistry = meterRegistry;</span>
-<span class="pc bpc" id="L77" title="2 of 4 branches missed.">        if (properties.getConnectTimeout() != null || properties.getReadTimeout() != null) {</span>
+<span class="nc" id="L73">            MeterRegistry meterRegistry) {</span>
+<span class="nc" id="L74">        this.properties = properties;</span>
+<span class="nc" id="L75">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L76">        this.meterRegistry = meterRegistry;</span>
+<span class="nc bnc" id="L77" title="All 4 branches missed.">        if (properties.getConnectTimeout() != null || properties.getReadTimeout() != null) {</span>
 <span class="nc" id="L78">            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();</span>
 <span class="nc bnc" id="L79" title="All 2 branches missed.">            if (properties.getConnectTimeout() != null) {</span>
 <span class="nc" id="L80">                requestFactory.setConnectTimeout(properties.getConnectTimeout());</span>
@@ -84,37 +84,37 @@ public class PaystackPaymentProvider implements PaymentProvider {
             }
 <span class="nc" id="L85">            restClientBuilder.requestFactory(requestFactory);</span>
         }
-<span class="fc" id="L87">        this.restClient = restClientBuilder</span>
-<span class="fc" id="L88">                .baseUrl(properties.getBaseUrl())</span>
-<span class="fc" id="L89">                .defaultHeader(&quot;Authorization&quot;, &quot;Bearer &quot; + properties.getSecretKey())</span>
-<span class="fc" id="L90">                .build();</span>
-<span class="fc" id="L91">    }</span>
+<span class="nc" id="L87">        this.restClient = restClientBuilder</span>
+<span class="nc" id="L88">                .baseUrl(properties.getBaseUrl())</span>
+<span class="nc" id="L89">                .defaultHeader(&quot;Authorization&quot;, &quot;Bearer &quot; + properties.getSecretKey())</span>
+<span class="nc" id="L90">                .build();</span>
+<span class="nc" id="L91">    }</span>
 
     @Override
     public String name() {
-<span class="fc" id="L95">        return NAME;</span>
+<span class="nc" id="L95">        return NAME;</span>
     }
 
     @Override
     public PaymentIntentResult createIntent(PaymentIntentRequest request) {
-<span class="pc bpc" id="L100" title="2 of 4 branches missed.">        if (properties.getSecretKey() == null || properties.getSecretKey().isBlank()) {</span>
+<span class="nc bnc" id="L100" title="All 4 branches missed.">        if (properties.getSecretKey() == null || properties.getSecretKey().isBlank()) {</span>
 <span class="nc" id="L101">            throw new ServiceUnavailableException(&quot;PAYMENT_PROVIDER_NOT_CONFIGURED&quot;, &quot;Paystack checkout is not configured yet&quot;);</span>
         }
-<span class="fc" id="L103">        Map&lt;String, Object&gt; body = Map.of(</span>
-<span class="fc" id="L104">                &quot;email&quot;, request.customerEmail(),</span>
-<span class="fc" id="L105">                &quot;amount&quot;, String.valueOf(toSmallestUnit(request.amount())),</span>
-<span class="fc" id="L106">                &quot;currency&quot;, request.currency(),</span>
-<span class="fc" id="L107">                &quot;reference&quot;, request.reference(),</span>
-<span class="fc" id="L108">                &quot;callback_url&quot;, properties.getCallbackUrl());</span>
+<span class="nc" id="L103">        Map&lt;String, Object&gt; body = Map.of(</span>
+<span class="nc" id="L104">                &quot;email&quot;, request.customerEmail(),</span>
+<span class="nc" id="L105">                &quot;amount&quot;, String.valueOf(toSmallestUnit(request.amount())),</span>
+<span class="nc" id="L106">                &quot;currency&quot;, request.currency(),</span>
+<span class="nc" id="L107">                &quot;reference&quot;, request.reference(),</span>
+<span class="nc" id="L108">                &quot;callback_url&quot;, properties.getCallbackUrl());</span>
 
         JsonNode response;
         try {
-<span class="fc" id="L112">            response = restClient.post()</span>
-<span class="fc" id="L113">                    .uri(&quot;/transaction/initialize&quot;)</span>
-<span class="fc" id="L114">                    .contentType(MediaType.APPLICATION_JSON)</span>
-<span class="fc" id="L115">                    .body(body)</span>
-<span class="fc" id="L116">                    .retrieve()</span>
-<span class="fc" id="L117">                    .body(JsonNode.class);</span>
+<span class="nc" id="L112">            response = restClient.post()</span>
+<span class="nc" id="L113">                    .uri(&quot;/transaction/initialize&quot;)</span>
+<span class="nc" id="L114">                    .contentType(MediaType.APPLICATION_JSON)</span>
+<span class="nc" id="L115">                    .body(body)</span>
+<span class="nc" id="L116">                    .retrieve()</span>
+<span class="nc" id="L117">                    .body(JsonNode.class);</span>
 <span class="nc" id="L118">        } catch (RestClientResponseException ex) {</span>
 <span class="nc" id="L119">            String message = &quot;Paystack checkout could not be started&quot;;</span>
             try {
@@ -130,93 +130,93 @@ public class PaystackPaymentProvider implements PaymentProvider {
 <span class="nc" id="L130">            throw new ServiceUnavailableException(</span>
                     &quot;PAYSTACK_INITIALIZE_TIMEOUT&quot;,
                     &quot;Paystack checkout timed out. Please try again in a moment.&quot;);
-<span class="fc" id="L133">        }</span>
+<span class="nc" id="L133">        }</span>
 
-<span class="fc" id="L135">        JsonNode data = response.path(&quot;data&quot;);</span>
-<span class="fc" id="L136">        String checkoutUrl = data.path(&quot;authorization_url&quot;).asText();</span>
-<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (checkoutUrl.isBlank()) {</span>
+<span class="nc" id="L135">        JsonNode data = response.path(&quot;data&quot;);</span>
+<span class="nc" id="L136">        String checkoutUrl = data.path(&quot;authorization_url&quot;).asText();</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (checkoutUrl.isBlank()) {</span>
 <span class="nc" id="L138">            throw new IllegalStateException(&quot;Paystack did not return a hosted checkout link&quot;);</span>
         }
-<span class="fc" id="L140">        return new PaymentIntentResult(data.path(&quot;reference&quot;).asText(request.reference()), checkoutUrl);</span>
+<span class="nc" id="L140">        return new PaymentIntentResult(data.path(&quot;reference&quot;).asText(request.reference()), checkoutUrl);</span>
     }
 
     @Override
     public RefundResult refund(RefundRequest request) {
-<span class="fc" id="L145">        Map&lt;String, Object&gt; body = Map.of(</span>
-<span class="fc" id="L146">                &quot;transaction&quot;, request.providerRef(),</span>
-<span class="fc" id="L147">                &quot;amount&quot;, toSmallestUnit(request.amount()));</span>
+<span class="nc" id="L145">        Map&lt;String, Object&gt; body = Map.of(</span>
+<span class="nc" id="L146">                &quot;transaction&quot;, request.providerRef(),</span>
+<span class="nc" id="L147">                &quot;amount&quot;, toSmallestUnit(request.amount()));</span>
 
-<span class="fc" id="L149">        JsonNode response = restClient.post()</span>
-<span class="fc" id="L150">                .uri(&quot;/refund&quot;)</span>
-<span class="fc" id="L151">                .body(body)</span>
-<span class="fc" id="L152">                .retrieve()</span>
-<span class="fc" id="L153">                .body(JsonNode.class);</span>
+<span class="nc" id="L149">        JsonNode response = restClient.post()</span>
+<span class="nc" id="L150">                .uri(&quot;/refund&quot;)</span>
+<span class="nc" id="L151">                .body(body)</span>
+<span class="nc" id="L152">                .retrieve()</span>
+<span class="nc" id="L153">                .body(JsonNode.class);</span>
 
-<span class="fc" id="L155">        boolean succeeded = response.path(&quot;status&quot;).asBoolean(false);</span>
-<span class="fc" id="L156">        String refundRef = response.path(&quot;data&quot;).path(&quot;id&quot;).asText(null);</span>
-<span class="fc" id="L157">        return new RefundResult(refundRef, succeeded);</span>
+<span class="nc" id="L155">        boolean succeeded = response.path(&quot;status&quot;).asBoolean(false);</span>
+<span class="nc" id="L156">        String refundRef = response.path(&quot;data&quot;).path(&quot;id&quot;).asText(null);</span>
+<span class="nc" id="L157">        return new RefundResult(refundRef, succeeded);</span>
     }
 
     @Override
     public WebhookEvent parseWebhook(String rawBody, HttpHeaders headers) {
-<span class="fc" id="L162">        String signatureHeader = headers.getFirst(SIGNATURE_HEADER);</span>
-<span class="fc bfc" id="L163" title="All 2 branches covered.">        if (!verifySignature(rawBody, signatureHeader)) {</span>
+<span class="nc" id="L162">        String signatureHeader = headers.getFirst(SIGNATURE_HEADER);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        if (!verifySignature(rawBody, signatureHeader)) {</span>
             // Either a real spoofing attempt or a misconfigured secret — either way, a
             // real security-monitoring setup should alert on this.
-<span class="fc" id="L166">            log.warn(&quot;Rejected {} webhook: invalid or missing signature&quot;, NAME);</span>
-<span class="fc" id="L167">            meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, NAME, &quot;outcome&quot;, &quot;invalid_signature&quot;).increment();</span>
-<span class="fc" id="L168">            throw new InvalidWebhookSignatureException();</span>
+<span class="nc" id="L166">            log.warn(&quot;Rejected {} webhook: invalid or missing signature&quot;, NAME);</span>
+<span class="nc" id="L167">            meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, NAME, &quot;outcome&quot;, &quot;invalid_signature&quot;).increment();</span>
+<span class="nc" id="L168">            throw new InvalidWebhookSignatureException();</span>
         }
 
-<span class="fc" id="L171">        JsonNode root = parse(rawBody);</span>
-<span class="fc" id="L172">        String event = root.path(&quot;event&quot;).asText(&quot;&quot;);</span>
-<span class="fc" id="L173">        JsonNode data = root.path(&quot;data&quot;);</span>
+<span class="nc" id="L171">        JsonNode root = parse(rawBody);</span>
+<span class="nc" id="L172">        String event = root.path(&quot;event&quot;).asText(&quot;&quot;);</span>
+<span class="nc" id="L173">        JsonNode data = root.path(&quot;data&quot;);</span>
 
-<span class="pc bpc" id="L175" title="1 of 4 branches missed.">        WebhookEventType type = switch (event) {</span>
-<span class="fc" id="L176">            case &quot;charge.success&quot; -&gt; WebhookEventType.CHARGE_SUCCEEDED;</span>
-<span class="fc" id="L177">            case &quot;charge.failed&quot; -&gt; WebhookEventType.CHARGE_FAILED;</span>
+<span class="nc bnc" id="L175" title="All 4 branches missed.">        WebhookEventType type = switch (event) {</span>
+<span class="nc" id="L176">            case &quot;charge.success&quot; -&gt; WebhookEventType.CHARGE_SUCCEEDED;</span>
+<span class="nc" id="L177">            case &quot;charge.failed&quot; -&gt; WebhookEventType.CHARGE_FAILED;</span>
 <span class="nc" id="L178">            case &quot;refund.processed&quot; -&gt; WebhookEventType.REFUND_PROCESSED;</span>
-<span class="fc" id="L179">            default -&gt; WebhookEventType.UNKNOWN;</span>
+<span class="nc" id="L179">            default -&gt; WebhookEventType.UNKNOWN;</span>
         };
 
-<span class="fc" id="L182">        String reference = data.path(&quot;reference&quot;).asText(null);</span>
-<span class="fc bfc" id="L183" title="All 2 branches covered.">        BigDecimal amount = data.hasNonNull(&quot;amount&quot;) ? fromSmallestUnit(data.path(&quot;amount&quot;).asLong()) : null;</span>
-<span class="fc" id="L184">        String currency = data.path(&quot;currency&quot;).asText(null);</span>
+<span class="nc" id="L182">        String reference = data.path(&quot;reference&quot;).asText(null);</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        BigDecimal amount = data.hasNonNull(&quot;amount&quot;) ? fromSmallestUnit(data.path(&quot;amount&quot;).asLong()) : null;</span>
+<span class="nc" id="L184">        String currency = data.path(&quot;currency&quot;).asText(null);</span>
 
-<span class="fc" id="L186">        return new WebhookEvent(type, reference, amount, currency, rawBody);</span>
+<span class="nc" id="L186">        return new WebhookEvent(type, reference, amount, currency, rawBody);</span>
     }
 
     boolean verifySignature(String rawBody, String signatureHeader) {
-<span class="pc bpc" id="L190" title="1 of 4 branches missed.">        if (signatureHeader == null || signatureHeader.isBlank()) {</span>
-<span class="fc" id="L191">            return false;</span>
+<span class="nc bnc" id="L190" title="All 4 branches missed.">        if (signatureHeader == null || signatureHeader.isBlank()) {</span>
+<span class="nc" id="L191">            return false;</span>
         }
-<span class="fc" id="L193">        String computed = hmacSha512Hex(rawBody, properties.getSecretKey());</span>
-<span class="fc" id="L194">        return MessageDigest.isEqual(</span>
-<span class="fc" id="L195">                computed.getBytes(StandardCharsets.UTF_8), signatureHeader.trim().getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L193">        String computed = hmacSha512Hex(rawBody, properties.getSecretKey());</span>
+<span class="nc" id="L194">        return MessageDigest.isEqual(</span>
+<span class="nc" id="L195">                computed.getBytes(StandardCharsets.UTF_8), signatureHeader.trim().getBytes(StandardCharsets.UTF_8));</span>
     }
 
     private static String hmacSha512Hex(String data, String secret) {
         try {
-<span class="fc" id="L200">            Mac mac = Mac.getInstance(&quot;HmacSHA512&quot;);</span>
-<span class="fc" id="L201">            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), &quot;HmacSHA512&quot;));</span>
-<span class="fc" id="L202">            byte[] digest = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));</span>
-<span class="fc" id="L203">            return HexFormat.of().formatHex(digest);</span>
+<span class="nc" id="L200">            Mac mac = Mac.getInstance(&quot;HmacSHA512&quot;);</span>
+<span class="nc" id="L201">            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), &quot;HmacSHA512&quot;));</span>
+<span class="nc" id="L202">            byte[] digest = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L203">            return HexFormat.of().formatHex(digest);</span>
 <span class="nc" id="L204">        } catch (Exception e) {</span>
 <span class="nc" id="L205">            throw new IllegalStateException(&quot;Unable to compute HMAC-SHA512&quot;, e);</span>
         }
     }
 
     private long toSmallestUnit(BigDecimal amount) {
-<span class="fc" id="L210">        return amount.setScale(2, RoundingMode.UNNECESSARY).multiply(SMALLEST_UNIT_MULTIPLIER).longValueExact();</span>
+<span class="nc" id="L210">        return amount.setScale(2, RoundingMode.UNNECESSARY).multiply(SMALLEST_UNIT_MULTIPLIER).longValueExact();</span>
     }
 
     private BigDecimal fromSmallestUnit(long amount) {
-<span class="fc" id="L214">        return BigDecimal.valueOf(amount).divide(SMALLEST_UNIT_MULTIPLIER, 2, RoundingMode.UNNECESSARY);</span>
+<span class="nc" id="L214">        return BigDecimal.valueOf(amount).divide(SMALLEST_UNIT_MULTIPLIER, 2, RoundingMode.UNNECESSARY);</span>
     }
 
     private JsonNode parse(String rawBody) {
         try {
-<span class="fc" id="L219">            return objectMapper.readTree(rawBody);</span>
+<span class="nc" id="L219">            return objectMapper.readTree(rawBody);</span>
 <span class="nc" id="L220">        } catch (Exception e) {</span>
 <span class="nc" id="L221">            throw new IllegalArgumentException(&quot;Malformed webhook payload&quot;, e);</span>
         }

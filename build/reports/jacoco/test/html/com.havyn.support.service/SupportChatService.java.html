@@ -25,6 +25,10 @@ public class SupportChatService {
 <span class="fc" id="L25">    private static final List&lt;String&gt; COMPLAINT_TERMS = List.of(</span>
             &quot;complaint&quot;, &quot;problem&quot;, &quot;issue&quot;, &quot;refund&quot;, &quot;charged&quot;, &quot;payment failed&quot;, &quot;cancel&quot;, &quot;dirty&quot;, &quot;unsafe&quot;, &quot;host&quot;, &quot;scam&quot;,
             &quot;not working&quot;, &quot;wrong&quot;, &quot;dispute&quot;, &quot;support ticket&quot;, &quot;bad experience&quot;);
+<span class="fc" id="L28">    private static final List&lt;String&gt; DETAIL_TERMS = List.of(</span>
+            &quot;booking&quot;, &quot;reference&quot;, &quot;transaction&quot;, &quot;payment&quot;, &quot;paid&quot;, &quot;receipt&quot;, &quot;property&quot;, &quot;shortlet&quot;, &quot;apartment&quot;,
+            &quot;host&quot;, &quot;lekki&quot;, &quot;ikeja&quot;, &quot;uyo&quot;, &quot;tomorrow&quot;, &quot;today&quot;, &quot;yesterday&quot;, &quot;check-in&quot;, &quot;checkout&quot;, &quot;august&quot;,
+            &quot;january&quot;, &quot;february&quot;, &quot;march&quot;, &quot;april&quot;, &quot;may&quot;, &quot;june&quot;, &quot;july&quot;, &quot;september&quot;, &quot;october&quot;, &quot;november&quot;, &quot;december&quot;);
 
     private final SupportChatMessageRepository messageRepository;
     private final SupportTicketRepository ticketRepository;
@@ -33,66 +37,107 @@ public class SupportChatService {
     public SupportChatService(
             SupportChatMessageRepository messageRepository,
             SupportTicketRepository ticketRepository,
-<span class="fc" id="L36">            OpenAiSupportClient openAiSupportClient) {</span>
-<span class="fc" id="L37">        this.messageRepository = messageRepository;</span>
-<span class="fc" id="L38">        this.ticketRepository = ticketRepository;</span>
-<span class="fc" id="L39">        this.openAiSupportClient = openAiSupportClient;</span>
-<span class="fc" id="L40">    }</span>
+<span class="fc" id="L40">            OpenAiSupportClient openAiSupportClient) {</span>
+<span class="fc" id="L41">        this.messageRepository = messageRepository;</span>
+<span class="fc" id="L42">        this.ticketRepository = ticketRepository;</span>
+<span class="fc" id="L43">        this.openAiSupportClient = openAiSupportClient;</span>
+<span class="fc" id="L44">    }</span>
 
     @Transactional(readOnly = true)
     public List&lt;SupportChatMessage&gt; history(UUID userId) {
-<span class="fc" id="L44">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
+<span class="fc" id="L48">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
     }
 
     @Transactional
     public List&lt;SupportChatMessage&gt; send(UUID userId, String body) {
-<span class="fc" id="L49">        String trimmed = body.trim();</span>
-<span class="fc" id="L50">        SupportChatMessage userMessage = messageRepository.save(new SupportChatMessage(userId, SupportChatRole.USER, trimmed));</span>
-<span class="fc" id="L51">        boolean complaint = isComplaint(trimmed);</span>
-<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (complaint) {</span>
-<span class="fc" id="L53">            ticketRepository.save(new SupportTicket(userId, bookingReference(trimmed), summarize(trimmed), trimmed));</span>
-        }
+<span class="fc" id="L53">        String trimmed = body.trim();</span>
+<span class="fc" id="L54">        SupportChatMessage userMessage = messageRepository.save(new SupportChatMessage(userId, SupportChatRole.USER, trimmed));</span>
 <span class="fc" id="L55">        List&lt;SupportChatMessage&gt; history = messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);</span>
+<span class="fc" id="L56">        boolean complaint = isComplaint(trimmed);</span>
+<span class="pc bpc" id="L57" title="3 of 4 branches missed.">        boolean supportFollowUp = !complaint &amp;&amp; isSupportFollowUp(trimmed, history);</span>
+<span class="pc bpc" id="L58" title="3 of 4 branches missed.">        if (complaint || supportFollowUp) {</span>
+<span class="fc" id="L59">            ticketRepository.save(new SupportTicket(userId, bookingReference(trimmed), summarize(trimmed), trimmed));</span>
+        }
         String answer;
         try {
-<span class="fc" id="L58">            answer = openAiSupportClient.respond(history);</span>
-<span class="nc" id="L59">        } catch (ServiceUnavailableException e) {</span>
-<span class="nc" id="L60">            log.warn(&quot;Support chat OpenAI response unavailable userId={} code={}&quot;, userId, e.getCode());</span>
-<span class="nc" id="L61">            answer = fallbackAnswer(trimmed, complaint);</span>
-<span class="fc" id="L62">        }</span>
-<span class="fc" id="L63">        messageRepository.save(new SupportChatMessage(userId, SupportChatRole.ASSISTANT, answer));</span>
-<span class="fc" id="L64">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userMessage.getUserId());</span>
+<span class="fc" id="L63">            answer = openAiSupportClient.respond(history);</span>
+<span class="nc" id="L64">        } catch (ServiceUnavailableException e) {</span>
+<span class="nc" id="L65">            log.warn(&quot;Support chat OpenAI response unavailable userId={} code={}&quot;, userId, e.getCode());</span>
+<span class="nc" id="L66">            answer = fallbackAnswer(trimmed, complaint, supportFollowUp);</span>
+<span class="fc" id="L67">        }</span>
+<span class="fc" id="L68">        messageRepository.save(new SupportChatMessage(userId, SupportChatRole.ASSISTANT, answer));</span>
+<span class="fc" id="L69">        return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userMessage.getUserId());</span>
     }
 
     private boolean isComplaint(String body) {
-<span class="fc" id="L68">        String normalized = body.toLowerCase(Locale.ROOT);</span>
-<span class="fc" id="L69">        return COMPLAINT_TERMS.stream().anyMatch(normalized::contains);</span>
+<span class="fc" id="L73">        String normalized = body.toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L74">        return COMPLAINT_TERMS.stream().anyMatch(normalized::contains);</span>
     }
 
     private String bookingReference(String body) {
-<span class="fc" id="L73">        Matcher matcher = BOOKING_REFERENCE.matcher(body);</span>
-<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        return matcher.find() ? matcher.group().toUpperCase(Locale.ROOT) : null;</span>
+<span class="fc" id="L78">        Matcher matcher = BOOKING_REFERENCE.matcher(body);</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        return matcher.find() ? matcher.group().toUpperCase(Locale.ROOT) : null;</span>
     }
 
     private String summarize(String body) {
-<span class="fc" id="L78">        String normalized = body.replaceAll(&quot;\\s+&quot;, &quot; &quot;).trim();</span>
-<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (normalized.length() &lt;= 240) {</span>
-<span class="fc" id="L80">            return normalized;</span>
+<span class="fc" id="L83">        String normalized = body.replaceAll(&quot;\\s+&quot;, &quot; &quot;).trim();</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (normalized.length() &lt;= 240) {</span>
+<span class="fc" id="L85">            return normalized;</span>
         }
-<span class="nc" id="L82">        return normalized.substring(0, 237) + &quot;...&quot;;</span>
+<span class="nc" id="L87">        return normalized.substring(0, 237) + &quot;...&quot;;</span>
     }
 
-    private String fallbackAnswer(String body, boolean complaint) {
-<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (complaint) {</span>
-<span class="nc" id="L87">            String reference = bookingReference(body);</span>
-<span class="nc bnc" id="L88" title="All 2 branches missed.">            String referenceLine = reference == null ? &quot;&quot; : &quot; with booking reference &quot; + reference;</span>
-<span class="nc" id="L89">            return &quot;Thanks for explaining. I've flagged this for Admin&quot; + referenceLine</span>
-                    + &quot;. Please add any dates, property name, payment reference, or host details that could help us review it faster.&quot;;
+    private boolean isSupportFollowUp(String body, List&lt;SupportChatMessage&gt; history) {
+<span class="nc" id="L91">        String normalized = body.toLowerCase(Locale.ROOT);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (looksLikeNavigationQuestion(normalized)) {</span>
+<span class="nc" id="L93">            return false;</span>
         }
-<span class="nc" id="L92">        return &quot;&quot;&quot;</span>
+<span class="nc" id="L95">        boolean hasRecentTicketPrompt = history.stream()</span>
+<span class="nc" id="L96">                .skip(Math.max(0, history.size() - 8))</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                .filter(message -&gt; message.getRole() == SupportChatRole.ASSISTANT)</span>
+<span class="nc" id="L98">                .map(SupportChatMessage::getBody)</span>
+<span class="nc" id="L99">                .map(value -&gt; value.toLowerCase(Locale.ROOT))</span>
+<span class="nc bnc" id="L100" title="All 6 branches missed.">                .anyMatch(value -&gt; value.contains(&quot;flagged&quot;) || value.contains(&quot;support ticket&quot;) || value.contains(&quot;admin&quot;));</span>
+<span class="nc bnc" id="L101" title="All 4 branches missed.">        return hasRecentTicketPrompt &amp;&amp; DETAIL_TERMS.stream().anyMatch(normalized::contains);</span>
+    }
+
+    private boolean looksLikeNavigationQuestion(String normalized) {
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        return normalized.matches(&quot;.*\\b(where|how|show me|open|go to|find)\\b.*&quot;)</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                &amp;&amp; normalized.matches(&quot;.*\\b(trips|wishlist|favorites|host dashboard|listing|search|filters|cancel)\\b.*&quot;);</span>
+    }
+
+    private String fallbackAnswer(String body, boolean complaint, boolean supportFollowUp) {
+<span class="nc" id="L110">        String normalized = body.toLowerCase(Locale.ROOT);</span>
+<span class="nc bnc" id="L111" title="All 4 branches missed.">        if (complaint || supportFollowUp) {</span>
+<span class="nc" id="L112">            String reference = bookingReference(body);</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            String referenceLine = reference == null ? &quot;&quot; : &quot; with booking reference &quot; + reference;</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            if (supportFollowUp) {</span>
+<span class="nc" id="L115">                return &quot;Got it. I've added those details to the Admin support queue&quot; + referenceLine</span>
+                        + &quot;. If you have a payment transaction ID, property name, host name, or screenshot details, send them too so the team can review faster.&quot;;
+            }
+<span class="nc" id="L118">            return &quot;Thanks for explaining. I've flagged this for Admin&quot; + referenceLine</span>
+                    + &quot;. Please share the booking reference if you have it, plus the property name, dates, payment reference, or host details so the team can review it faster.&quot;;
+        }
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (normalized.matches(&quot;.*\\b(hello|hi|hey|good morning|good afternoon|good evening)\\b.*&quot;)) {</span>
+<span class="nc" id="L122">            return &quot;Hello. I can help with bookings, trips, hosting, cancellations, refunds, and using Havyn Villa. What would you like to do?&quot;;</span>
+        }
+<span class="nc bnc" id="L124" title="All 6 branches missed.">        if (normalized.contains(&quot;payment gateway&quot;) || normalized.contains(&quot;paystack&quot;) || normalized.contains(&quot;flutterwave&quot;)</span>
+<span class="nc bnc" id="L125" title="All 6 branches missed.">                || normalized.contains(&quot;payment method&quot;) || normalized.contains(&quot;card&quot;) || normalized.contains(&quot;bank transfer&quot;)) {</span>
+<span class="nc" id="L126">            return &quot;Havyn Villa uses secure hosted checkout. The backend is configured for Paystack by default, with Flutterwave also available. Guests can pay with supported cards and bank transfer options when the checkout provider offers them.&quot;;</span>
+        }
+<span class="nc bnc" id="L128" title="All 6 branches missed.">        if (normalized.contains(&quot;become a host&quot;) || normalized.contains(&quot;hosting&quot;) || normalized.contains(&quot;host&quot;)) {</span>
+<span class="nc" id="L129">            return &quot;To become a host, use Become a host from the header, complete the host verification steps, then create and manage listings from Host dashboard &gt; Listings.&quot;;</span>
+        }
+<span class="nc bnc" id="L131" title="All 4 branches missed.">        if (normalized.contains(&quot;wishlist&quot;) || normalized.contains(&quot;favorite&quot;)) {</span>
+<span class="nc" id="L132">            return &quot;To save a place, open a property and use the heart button. Your saved homes appear on the Wishlists page when you're signed in.&quot;;</span>
+        }
+<span class="nc bnc" id="L134" title="All 4 branches missed.">        if (normalized.contains(&quot;trip&quot;) || normalized.contains(&quot;booking&quot;)) {</span>
+<span class="nc" id="L135">            return &quot;You can review your bookings from Trips. Open a trip to see the property, dates, guests, payment status, and cancellation options.&quot;;</span>
+        }
+<span class="nc" id="L137">        return &quot;&quot;&quot;</span>
                 I can help with search, filters, bookings, wishlists, trips, becoming a host, listing management, cancellations, refunds, and support.
-                Tell me what you want to do, and I'll guide you step by step.
-<span class="nc" id="L95">                &quot;&quot;&quot;.trim();</span>
+                Please mention the page or task you want help with, and I'll guide you step by step.
+<span class="nc" id="L140">                &quot;&quot;&quot;.trim();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -27,17 +27,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AdminUserService {
 
-<span class="fc" id="L30">    private static final Set&lt;String&gt; GRANTABLE_ROLE_CODES = Set.of(&quot;HOST&quot;, &quot;ADMIN&quot;);</span>
+<span class="nc" id="L30">    private static final Set&lt;String&gt; GRANTABLE_ROLE_CODES = Set.of(&quot;HOST&quot;, &quot;ADMIN&quot;);</span>
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final AuditLogService auditLogService;
 
-<span class="fc" id="L36">    public AdminUserService(UserRepository userRepository, RoleRepository roleRepository, AuditLogService auditLogService) {</span>
-<span class="fc" id="L37">        this.userRepository = userRepository;</span>
-<span class="fc" id="L38">        this.roleRepository = roleRepository;</span>
-<span class="fc" id="L39">        this.auditLogService = auditLogService;</span>
-<span class="fc" id="L40">    }</span>
+<span class="nc" id="L36">    public AdminUserService(UserRepository userRepository, RoleRepository roleRepository, AuditLogService auditLogService) {</span>
+<span class="nc" id="L37">        this.userRepository = userRepository;</span>
+<span class="nc" id="L38">        this.roleRepository = roleRepository;</span>
+<span class="nc" id="L39">        this.auditLogService = auditLogService;</span>
+<span class="nc" id="L40">    }</span>
 
     @Transactional(readOnly = true)
     public Page&lt;User&gt; list(String emailSearch, Pageable pageable) {
@@ -49,64 +49,64 @@ public class AdminUserService {
 
     @Transactional
     public User grantRole(UUID adminId, UUID userId, String roleCode) {
-<span class="fc" id="L52">        validateGrantableRole(roleCode);</span>
-<span class="fc" id="L53">        User user = findUser(userId);</span>
-<span class="fc" id="L54">        Role role = findRole(roleCode);</span>
-<span class="fc" id="L55">        Set&lt;String&gt; before = roleCodes(user);</span>
-<span class="fc" id="L56">        user.addRole(role);</span>
-<span class="fc" id="L57">        auditLogService.record(adminId, &quot;USER_ROLE_GRANTED&quot;, &quot;User&quot;, userId, Map.of(&quot;roles&quot;, before), Map.of(&quot;roles&quot;, roleCodes(user)));</span>
-<span class="fc" id="L58">        return user;</span>
+<span class="nc" id="L52">        validateGrantableRole(roleCode);</span>
+<span class="nc" id="L53">        User user = findUser(userId);</span>
+<span class="nc" id="L54">        Role role = findRole(roleCode);</span>
+<span class="nc" id="L55">        Set&lt;String&gt; before = roleCodes(user);</span>
+<span class="nc" id="L56">        user.addRole(role);</span>
+<span class="nc" id="L57">        auditLogService.record(adminId, &quot;USER_ROLE_GRANTED&quot;, &quot;User&quot;, userId, Map.of(&quot;roles&quot;, before), Map.of(&quot;roles&quot;, roleCodes(user)));</span>
+<span class="nc" id="L58">        return user;</span>
     }
 
     @Transactional
     public User revokeRole(UUID adminId, UUID userId, String roleCode) {
-<span class="fc" id="L63">        validateGrantableRole(roleCode);</span>
-<span class="pc bpc" id="L64" title="1 of 4 branches missed.">        if (adminId.equals(userId) &amp;&amp; &quot;ADMIN&quot;.equals(roleCode)) {</span>
-<span class="fc" id="L65">            throw new BadRequestException(&quot;CANNOT_REVOKE_OWN_ADMIN_ROLE&quot;, &quot;You cannot revoke your own admin role&quot;);</span>
+<span class="nc" id="L63">        validateGrantableRole(roleCode);</span>
+<span class="nc bnc" id="L64" title="All 4 branches missed.">        if (adminId.equals(userId) &amp;&amp; &quot;ADMIN&quot;.equals(roleCode)) {</span>
+<span class="nc" id="L65">            throw new BadRequestException(&quot;CANNOT_REVOKE_OWN_ADMIN_ROLE&quot;, &quot;You cannot revoke your own admin role&quot;);</span>
         }
-<span class="fc" id="L67">        User user = findUser(userId);</span>
-<span class="fc" id="L68">        Role role = findRole(roleCode);</span>
-<span class="fc" id="L69">        Set&lt;String&gt; before = roleCodes(user);</span>
-<span class="fc" id="L70">        user.removeRole(role);</span>
-<span class="fc" id="L71">        auditLogService.record(adminId, &quot;USER_ROLE_REVOKED&quot;, &quot;User&quot;, userId, Map.of(&quot;roles&quot;, before), Map.of(&quot;roles&quot;, roleCodes(user)));</span>
-<span class="fc" id="L72">        return user;</span>
+<span class="nc" id="L67">        User user = findUser(userId);</span>
+<span class="nc" id="L68">        Role role = findRole(roleCode);</span>
+<span class="nc" id="L69">        Set&lt;String&gt; before = roleCodes(user);</span>
+<span class="nc" id="L70">        user.removeRole(role);</span>
+<span class="nc" id="L71">        auditLogService.record(adminId, &quot;USER_ROLE_REVOKED&quot;, &quot;User&quot;, userId, Map.of(&quot;roles&quot;, before), Map.of(&quot;roles&quot;, roleCodes(user)));</span>
+<span class="nc" id="L72">        return user;</span>
     }
 
     @Transactional
     public User suspend(UUID adminId, UUID userId) {
-<span class="fc" id="L77">        User user = findUser(userId);</span>
-<span class="fc" id="L78">        UserStatus before = user.getStatus();</span>
-<span class="fc" id="L79">        user.setStatus(UserStatus.SUSPENDED);</span>
-<span class="fc" id="L80">        auditLogService.record(adminId, &quot;USER_SUSPENDED&quot;, &quot;User&quot;, userId, Map.of(&quot;status&quot;, before), Map.of(&quot;status&quot;, user.getStatus()));</span>
-<span class="fc" id="L81">        return user;</span>
+<span class="nc" id="L77">        User user = findUser(userId);</span>
+<span class="nc" id="L78">        UserStatus before = user.getStatus();</span>
+<span class="nc" id="L79">        user.setStatus(UserStatus.SUSPENDED);</span>
+<span class="nc" id="L80">        auditLogService.record(adminId, &quot;USER_SUSPENDED&quot;, &quot;User&quot;, userId, Map.of(&quot;status&quot;, before), Map.of(&quot;status&quot;, user.getStatus()));</span>
+<span class="nc" id="L81">        return user;</span>
     }
 
     @Transactional
     public User reactivate(UUID adminId, UUID userId) {
-<span class="fc" id="L86">        User user = findUser(userId);</span>
-<span class="fc" id="L87">        UserStatus before = user.getStatus();</span>
-<span class="fc" id="L88">        user.setStatus(UserStatus.ACTIVE);</span>
-<span class="fc" id="L89">        auditLogService.record(adminId, &quot;USER_REACTIVATED&quot;, &quot;User&quot;, userId, Map.of(&quot;status&quot;, before), Map.of(&quot;status&quot;, user.getStatus()));</span>
-<span class="fc" id="L90">        return user;</span>
+<span class="nc" id="L86">        User user = findUser(userId);</span>
+<span class="nc" id="L87">        UserStatus before = user.getStatus();</span>
+<span class="nc" id="L88">        user.setStatus(UserStatus.ACTIVE);</span>
+<span class="nc" id="L89">        auditLogService.record(adminId, &quot;USER_REACTIVATED&quot;, &quot;User&quot;, userId, Map.of(&quot;status&quot;, before), Map.of(&quot;status&quot;, user.getStatus()));</span>
+<span class="nc" id="L90">        return user;</span>
     }
 
     private void validateGrantableRole(String roleCode) {
-<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (!GRANTABLE_ROLE_CODES.contains(roleCode)) {</span>
-<span class="fc" id="L95">            throw new BadRequestException(&quot;INVALID_ROLE&quot;, &quot;Role must be one of &quot; + GRANTABLE_ROLE_CODES);</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (!GRANTABLE_ROLE_CODES.contains(roleCode)) {</span>
+<span class="nc" id="L95">            throw new BadRequestException(&quot;INVALID_ROLE&quot;, &quot;Role must be one of &quot; + GRANTABLE_ROLE_CODES);</span>
         }
-<span class="fc" id="L97">    }</span>
+<span class="nc" id="L97">    }</span>
 
     private Role findRole(String roleCode) {
-<span class="fc" id="L100">        return roleRepository.findByCode(roleCode)</span>
-<span class="pc" id="L101">                .orElseThrow(() -&gt; new IllegalStateException(roleCode + &quot; role must be seeded by V1__init.sql&quot;));</span>
+<span class="nc" id="L100">        return roleRepository.findByCode(roleCode)</span>
+<span class="nc" id="L101">                .orElseThrow(() -&gt; new IllegalStateException(roleCode + &quot; role must be seeded by V1__init.sql&quot;));</span>
     }
 
     private User findUser(UUID userId) {
-<span class="fc" id="L105">        return userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
+<span class="nc" id="L105">        return userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
     }
 
     private Set&lt;String&gt; roleCodes(User user) {
-<span class="fc" id="L109">        return user.getRoles().stream().map(Role::getCode).collect(Collectors.toCollection(TreeSet::new));</span>
+<span class="nc" id="L109">        return user.getRoles().stream().map(Role::getCode).collect(Collectors.toCollection(TreeSet::new));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

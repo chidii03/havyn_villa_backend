@@ -11,11 +11,11 @@ import java.util.UUID;
  * know notifications/ exists — same cross-module pattern as
  * {@code BookingConfirmedEvent}/{@code BookingCancelledEvent}.
  */
-<span class="fc" id="L14">public record MessageSentEvent(UUID messageId, UUID conversationId, UUID senderId, UUID recipientId, UUID propertyId, Instant occurredAt)</span>
+<span class="nc" id="L14">public record MessageSentEvent(UUID messageId, UUID conversationId, UUID senderId, UUID recipientId, UUID propertyId, Instant occurredAt)</span>
         implements DomainEvent {
 
     public static MessageSentEvent of(UUID messageId, UUID conversationId, UUID senderId, UUID recipientId, UUID propertyId) {
-<span class="fc" id="L18">        return new MessageSentEvent(messageId, conversationId, senderId, recipientId, propertyId, Instant.now());</span>
+<span class="nc" id="L18">        return new MessageSentEvent(messageId, conversationId, senderId, recipientId, propertyId, Instant.now());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

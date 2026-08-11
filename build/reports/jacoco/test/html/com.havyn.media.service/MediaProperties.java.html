@@ -5,29 +5,29 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** {@code havyn.media.*} — validation limits, per project-docs/prompts/14-media-storage.md#4. */
 @ConfigurationProperties(prefix = &quot;havyn.media&quot;)
-<span class="fc" id="L8">public class MediaProperties {</span>
+<span class="nc" id="L8">public class MediaProperties {</span>
 
-<span class="fc" id="L10">    private int maxPerListing = 20;</span>
-<span class="fc" id="L11">    private long maxImageBytes = 10 * 1024 * 1024;</span>
-<span class="fc" id="L12">    private long maxVideoBytes = 200 * 1024 * 1024;</span>
-<span class="fc" id="L13">    private List&lt;String&gt; allowedImageFormats = List.of(&quot;jpg&quot;, &quot;jpeg&quot;, &quot;png&quot;, &quot;webp&quot;);</span>
-<span class="fc" id="L14">    private List&lt;String&gt; allowedVideoFormats = List.of(&quot;mp4&quot;, &quot;mov&quot;);</span>
+<span class="nc" id="L10">    private int maxPerListing = 20;</span>
+<span class="nc" id="L11">    private long maxImageBytes = 10 * 1024 * 1024;</span>
+<span class="nc" id="L12">    private long maxVideoBytes = 200 * 1024 * 1024;</span>
+<span class="nc" id="L13">    private List&lt;String&gt; allowedImageFormats = List.of(&quot;jpg&quot;, &quot;jpeg&quot;, &quot;png&quot;, &quot;webp&quot;);</span>
+<span class="nc" id="L14">    private List&lt;String&gt; allowedVideoFormats = List.of(&quot;mp4&quot;, &quot;mov&quot;);</span>
 
     public int getMaxPerListing() {
-<span class="fc" id="L17">        return maxPerListing;</span>
+<span class="nc" id="L17">        return maxPerListing;</span>
     }
 
     public void setMaxPerListing(int maxPerListing) {
-<span class="fc" id="L21">        this.maxPerListing = maxPerListing;</span>
-<span class="fc" id="L22">    }</span>
+<span class="nc" id="L21">        this.maxPerListing = maxPerListing;</span>
+<span class="nc" id="L22">    }</span>
 
     public long getMaxImageBytes() {
-<span class="fc" id="L25">        return maxImageBytes;</span>
+<span class="nc" id="L25">        return maxImageBytes;</span>
     }
 
     public void setMaxImageBytes(long maxImageBytes) {
-<span class="fc" id="L29">        this.maxImageBytes = maxImageBytes;</span>
-<span class="fc" id="L30">    }</span>
+<span class="nc" id="L29">        this.maxImageBytes = maxImageBytes;</span>
+<span class="nc" id="L30">    }</span>
 
     public long getMaxVideoBytes() {
 <span class="nc" id="L33">        return maxVideoBytes;</span>
@@ -38,7 +38,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 <span class="nc" id="L38">    }</span>
 
     public List&lt;String&gt; getAllowedImageFormats() {
-<span class="fc" id="L41">        return allowedImageFormats;</span>
+<span class="nc" id="L41">        return allowedImageFormats;</span>
     }
 
     public void setAllowedImageFormats(List&lt;String&gt; allowedImageFormats) {

@@ -246,6 +246,28 @@ public class PropertyService {
     }
 
     @Transactional(readOnly = true)
+    public PropertyDetail getOwnedDetail(UUID hostId, UUID propertyId) {
+        Property property = propertyRepository.findDetailByIdAndHostId(propertyId, hostId)
+                .orElseThrow(() -> NotFoundException.of("Property", propertyId));
+        return PropertyDetail.from(property);
+    }
+
+    @Transactional
+    public PropertyDetail createDetail(UUID hostId, CreatePropertyRequest request) {
+        return PropertyDetail.from(create(hostId, request));
+    }
+
+    @Transactional
+    public PropertyDetail updateDetail(UUID hostId, UUID propertyId, UpdatePropertyRequest request) {
+        return PropertyDetail.from(update(hostId, propertyId, request));
+    }
+
+    @Transactional
+    public PropertyDetail transitionDetail(UUID hostId, UUID propertyId, PropertyStatus target) {
+        return PropertyDetail.from(transition(hostId, propertyId, target));
+    }
+
+    @Transactional(readOnly = true)
     public Page<Property> listOwned(UUID hostId, Pageable pageable) {
         return propertyRepository.findAllByHostId(hostId, pageable);
     }
@@ -343,12 +365,8 @@ public class PropertyService {
     }
 
     private Property findOwned(UUID hostId, UUID propertyId) {
-        Property property = propertyRepository.findById(propertyId)
+        return propertyRepository.findByIdAndHostId(propertyId, hostId)
                 .orElseThrow(() -> NotFoundException.of("Property", propertyId));
-        if (!property.getHostId().equals(hostId)) {
-            throw new ForbiddenException("You do not have access to this listing");
-        }
-        return property;
     }
 
     private PropertyType findType(String code) {

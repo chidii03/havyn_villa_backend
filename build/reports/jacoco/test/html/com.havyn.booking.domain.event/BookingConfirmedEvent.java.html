@@ -12,11 +12,11 @@ import java.util.UUID;
  * exists — same cross-module pattern as {@code PropertyChangedEvent}/
  * {@code BookingRefundDueEvent}.
  */
-<span class="fc" id="L15">public record BookingConfirmedEvent(UUID bookingId, UUID guestId, UUID propertyId, LocalDate checkIn, LocalDate checkOut, Instant occurredAt)</span>
+<span class="nc" id="L15">public record BookingConfirmedEvent(UUID bookingId, UUID guestId, UUID propertyId, LocalDate checkIn, LocalDate checkOut, Instant occurredAt)</span>
         implements DomainEvent {
 
     public static BookingConfirmedEvent of(UUID bookingId, UUID guestId, UUID propertyId, LocalDate checkIn, LocalDate checkOut) {
-<span class="fc" id="L19">        return new BookingConfirmedEvent(bookingId, guestId, propertyId, checkIn, checkOut, Instant.now());</span>
+<span class="nc" id="L19">        return new BookingConfirmedEvent(bookingId, guestId, propertyId, checkIn, checkOut, Instant.now());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

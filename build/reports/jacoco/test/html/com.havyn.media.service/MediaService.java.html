@@ -42,60 +42,60 @@ public class MediaService {
             PropertyRepository propertyRepository,
             MediaStorage mediaStorage,
             MediaProperties properties,
-<span class="fc" id="L45">            ApplicationEventPublisher eventPublisher) {</span>
-<span class="fc" id="L46">        this.propertyMediaRepository = propertyMediaRepository;</span>
-<span class="fc" id="L47">        this.propertyRepository = propertyRepository;</span>
-<span class="fc" id="L48">        this.mediaStorage = mediaStorage;</span>
-<span class="fc" id="L49">        this.properties = properties;</span>
-<span class="fc" id="L50">        this.eventPublisher = eventPublisher;</span>
-<span class="fc" id="L51">    }</span>
+<span class="nc" id="L45">            ApplicationEventPublisher eventPublisher) {</span>
+<span class="nc" id="L46">        this.propertyMediaRepository = propertyMediaRepository;</span>
+<span class="nc" id="L47">        this.propertyRepository = propertyRepository;</span>
+<span class="nc" id="L48">        this.mediaStorage = mediaStorage;</span>
+<span class="nc" id="L49">        this.properties = properties;</span>
+<span class="nc" id="L50">        this.eventPublisher = eventPublisher;</span>
+<span class="nc" id="L51">    }</span>
 
     @Transactional(readOnly = true)
     public SignedUpload generateUploadSignature(UUID hostId, UUID propertyId) {
-<span class="fc" id="L55">        findOwned(hostId, propertyId);</span>
-<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (propertyMediaRepository.countByPropertyId(propertyId) &gt;= properties.getMaxPerListing()) {</span>
-<span class="fc" id="L57">            throw mediaLimitReached();</span>
+<span class="nc" id="L55">        findOwned(hostId, propertyId);</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (propertyMediaRepository.countByPropertyId(propertyId) &gt;= properties.getMaxPerListing()) {</span>
+<span class="nc" id="L57">            throw mediaLimitReached();</span>
         }
-<span class="fc" id="L59">        return mediaStorage.createSignedUpload(&quot;hosts/&quot; + hostId + &quot;/properties/&quot; + propertyId);</span>
+<span class="nc" id="L59">        return mediaStorage.createSignedUpload(&quot;hosts/&quot; + hostId + &quot;/properties/&quot; + propertyId);</span>
     }
 
     @Transactional
     public PropertyMedia addMedia(UUID hostId, UUID propertyId, AddMediaRequest request) {
-<span class="fc" id="L64">        findOwned(hostId, propertyId);</span>
+<span class="nc" id="L64">        findOwned(hostId, propertyId);</span>
 
-<span class="fc" id="L66">        validateFormat(request.resourceType(), request.format());</span>
+<span class="nc" id="L66">        validateFormat(request.resourceType(), request.format());</span>
 
-<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        long maxBytes = request.resourceType() == MediaResourceType.VIDEO ? properties.getMaxVideoBytes() : properties.getMaxImageBytes();</span>
-<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (request.bytes() &gt; maxBytes) {</span>
-<span class="fc" id="L70">            mediaStorage.deleteAsset(request.publicId(), request.resourceType());</span>
-<span class="fc" id="L71">            throw new BadRequestException(&quot;MEDIA_TOO_LARGE&quot;, &quot;That file exceeds the &quot; + maxBytes + &quot; byte limit&quot;);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        long maxBytes = request.resourceType() == MediaResourceType.VIDEO ? properties.getMaxVideoBytes() : properties.getMaxImageBytes();</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (request.bytes() &gt; maxBytes) {</span>
+<span class="nc" id="L70">            mediaStorage.deleteAsset(request.publicId(), request.resourceType());</span>
+<span class="nc" id="L71">            throw new BadRequestException(&quot;MEDIA_TOO_LARGE&quot;, &quot;That file exceeds the &quot; + maxBytes + &quot; byte limit&quot;);</span>
         }
 
-<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (!mediaStorage.isValidAssetUrl(request.secureUrl())) {</span>
-<span class="fc" id="L75">            throw new BadRequestException(&quot;INVALID_MEDIA_SOURCE&quot;, &quot;This file wasn't uploaded to the configured storage&quot;);</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (!mediaStorage.isValidAssetUrl(request.secureUrl())) {</span>
+<span class="nc" id="L75">            throw new BadRequestException(&quot;INVALID_MEDIA_SOURCE&quot;, &quot;This file wasn't uploaded to the configured storage&quot;);</span>
         }
 
-<span class="fc" id="L78">        long currentCount = propertyMediaRepository.countByPropertyId(propertyId);</span>
-<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (currentCount &gt;= properties.getMaxPerListing()) {</span>
+<span class="nc" id="L78">        long currentCount = propertyMediaRepository.countByPropertyId(propertyId);</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (currentCount &gt;= properties.getMaxPerListing()) {</span>
 <span class="nc" id="L80">            mediaStorage.deleteAsset(request.publicId(), request.resourceType());</span>
 <span class="nc" id="L81">            throw mediaLimitReached();</span>
         }
 
-<span class="fc" id="L84">        PropertyMedia media = new PropertyMedia(</span>
+<span class="nc" id="L84">        PropertyMedia media = new PropertyMedia(</span>
                 propertyId,
-<span class="fc" id="L86">                request.secureUrl(),</span>
-<span class="fc" id="L87">                request.publicId(),</span>
-<span class="fc" id="L88">                request.resourceType(),</span>
-<span class="fc" id="L89">                request.format().toLowerCase(),</span>
-<span class="fc" id="L90">                request.width(),</span>
-<span class="fc" id="L91">                request.height(),</span>
-<span class="fc" id="L92">                request.duration(),</span>
-<span class="fc" id="L93">                request.bytes(),</span>
+<span class="nc" id="L86">                request.secureUrl(),</span>
+<span class="nc" id="L87">                request.publicId(),</span>
+<span class="nc" id="L88">                request.resourceType(),</span>
+<span class="nc" id="L89">                request.format().toLowerCase(),</span>
+<span class="nc" id="L90">                request.width(),</span>
+<span class="nc" id="L91">                request.height(),</span>
+<span class="nc" id="L92">                request.duration(),</span>
+<span class="nc" id="L93">                request.bytes(),</span>
                 (int) currentCount,
-<span class="fc" id="L95">                request.alt());</span>
-<span class="fc" id="L96">        PropertyMedia saved = propertyMediaRepository.save(media);</span>
-<span class="fc" id="L97">        publishChanged(propertyId);</span>
-<span class="fc" id="L98">        return saved;</span>
+<span class="nc" id="L95">                request.alt());</span>
+<span class="nc" id="L96">        PropertyMedia saved = propertyMediaRepository.save(media);</span>
+<span class="nc" id="L97">        publishChanged(propertyId);</span>
+<span class="nc" id="L98">        return saved;</span>
     }
 
     @Transactional
@@ -113,33 +113,33 @@ public class MediaService {
 
     @Transactional
     public List&lt;PropertyMedia&gt; reorder(UUID hostId, UUID propertyId, List&lt;UUID&gt; orderedMediaIds) {
-<span class="fc" id="L116">        findOwned(hostId, propertyId);</span>
-<span class="fc" id="L117">        List&lt;PropertyMedia&gt; existing = propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
+<span class="nc" id="L116">        findOwned(hostId, propertyId);</span>
+<span class="nc" id="L117">        List&lt;PropertyMedia&gt; existing = propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
 
-<span class="fc" id="L119">        Set&lt;UUID&gt; existingIds = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L120">        existing.forEach(media -&gt; existingIds.add(media.getId()));</span>
-<span class="fc" id="L121">        Set&lt;UUID&gt; requestedIds = new HashSet&lt;&gt;(orderedMediaIds);</span>
-<span class="pc bpc" id="L122" title="1 of 4 branches missed.">        if (!existingIds.equals(requestedIds) || orderedMediaIds.size() != existing.size()) {</span>
-<span class="fc" id="L123">            throw new BadRequestException(</span>
+<span class="nc" id="L119">        Set&lt;UUID&gt; existingIds = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L120">        existing.forEach(media -&gt; existingIds.add(media.getId()));</span>
+<span class="nc" id="L121">        Set&lt;UUID&gt; requestedIds = new HashSet&lt;&gt;(orderedMediaIds);</span>
+<span class="nc bnc" id="L122" title="All 4 branches missed.">        if (!existingIds.equals(requestedIds) || orderedMediaIds.size() != existing.size()) {</span>
+<span class="nc" id="L123">            throw new BadRequestException(</span>
                     &quot;INVALID_MEDIA_ORDER&quot;, &quot;orderedMediaIds must list exactly this listing's media, each exactly once&quot;);
         }
 
-<span class="fc bfc" id="L127" title="All 2 branches covered.">        for (PropertyMedia media : existing) {</span>
-<span class="fc" id="L128">            media.setPosition(orderedMediaIds.indexOf(media.getId()));</span>
-<span class="fc" id="L129">        }</span>
-<span class="fc" id="L130">        publishChanged(propertyId);</span>
-<span class="fc" id="L131">        return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        for (PropertyMedia media : existing) {</span>
+<span class="nc" id="L128">            media.setPosition(orderedMediaIds.indexOf(media.getId()));</span>
+<span class="nc" id="L129">        }</span>
+<span class="nc" id="L130">        publishChanged(propertyId);</span>
+<span class="nc" id="L131">        return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
     }
 
     @Transactional
     public void delete(UUID hostId, UUID propertyId, UUID mediaId) {
-<span class="fc" id="L136">        findOwned(hostId, propertyId);</span>
-<span class="fc" id="L137">        PropertyMedia media = propertyMediaRepository.findByIdAndPropertyId(mediaId, propertyId)</span>
-<span class="pc" id="L138">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Media&quot;, mediaId));</span>
-<span class="fc" id="L139">        mediaStorage.deleteAsset(media.getPublicId(), media.getResourceType());</span>
-<span class="fc" id="L140">        propertyMediaRepository.delete(media);</span>
-<span class="fc" id="L141">        publishChanged(propertyId);</span>
-<span class="fc" id="L142">    }</span>
+<span class="nc" id="L136">        findOwned(hostId, propertyId);</span>
+<span class="nc" id="L137">        PropertyMedia media = propertyMediaRepository.findByIdAndPropertyId(mediaId, propertyId)</span>
+<span class="nc" id="L138">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Media&quot;, mediaId));</span>
+<span class="nc" id="L139">        mediaStorage.deleteAsset(media.getPublicId(), media.getResourceType());</span>
+<span class="nc" id="L140">        propertyMediaRepository.delete(media);</span>
+<span class="nc" id="L141">        publishChanged(propertyId);</span>
+<span class="nc" id="L142">    }</span>
 
     @Transactional(readOnly = true)
     public List&lt;PropertyMedia&gt; list(UUID hostId, UUID propertyId) {
@@ -150,39 +150,39 @@ public class MediaService {
     /** Public read — only for listings the public can already see (matches PropertyController's ACTIVE-only 404 story, no info leak on draft/suspended). */
     @Transactional(readOnly = true)
     public List&lt;PropertyMedia&gt; listPublic(UUID propertyId) {
-<span class="pc" id="L153">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
-<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (property.getStatus() != PropertyStatus.ACTIVE) {</span>
-<span class="fc" id="L155">            throw NotFoundException.of(&quot;Property&quot;, propertyId);</span>
+<span class="nc" id="L153">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if (property.getStatus() != PropertyStatus.ACTIVE) {</span>
+<span class="nc" id="L155">            throw NotFoundException.of(&quot;Property&quot;, propertyId);</span>
         }
-<span class="fc" id="L157">        return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
+<span class="nc" id="L157">        return propertyMediaRepository.findAllByPropertyIdOrderByPositionAsc(propertyId);</span>
     }
 
     private Property findOwned(UUID hostId, UUID propertyId) {
-<span class="pc" id="L161">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
-<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (!property.getHostId().equals(hostId)) {</span>
-<span class="fc" id="L163">            throw new ForbiddenException(&quot;You do not have access to this listing's media&quot;);</span>
+<span class="nc" id="L161">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (!property.getHostId().equals(hostId)) {</span>
+<span class="nc" id="L163">            throw new ForbiddenException(&quot;You do not have access to this listing's media&quot;);</span>
         }
-<span class="fc" id="L165">        return property;</span>
+<span class="nc" id="L165">        return property;</span>
     }
 
     private void validateFormat(MediaResourceType resourceType, String format) {
-<span class="fc" id="L169">        String normalized = format.toLowerCase();</span>
-<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        List&lt;String&gt; allowed = resourceType == MediaResourceType.VIDEO</span>
+<span class="nc" id="L169">        String normalized = format.toLowerCase();</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        List&lt;String&gt; allowed = resourceType == MediaResourceType.VIDEO</span>
 <span class="nc" id="L171">                ? properties.getAllowedVideoFormats()</span>
-<span class="fc" id="L172">                : properties.getAllowedImageFormats();</span>
-<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (!allowed.contains(normalized)) {</span>
-<span class="fc" id="L174">            throw new BadRequestException(</span>
-<span class="fc" id="L175">                    &quot;UNSUPPORTED_MEDIA_FORMAT&quot;, &quot;\&quot;&quot; + format + &quot;\&quot; isn't an allowed &quot; + resourceType.name().toLowerCase() + &quot; format&quot;);</span>
+<span class="nc" id="L172">                : properties.getAllowedImageFormats();</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (!allowed.contains(normalized)) {</span>
+<span class="nc" id="L174">            throw new BadRequestException(</span>
+<span class="nc" id="L175">                    &quot;UNSUPPORTED_MEDIA_FORMAT&quot;, &quot;\&quot;&quot; + format + &quot;\&quot; isn't an allowed &quot; + resourceType.name().toLowerCase() + &quot; format&quot;);</span>
         }
-<span class="fc" id="L177">    }</span>
+<span class="nc" id="L177">    }</span>
 
     private BadRequestException mediaLimitReached() {
-<span class="fc" id="L180">        return new BadRequestException(</span>
-<span class="fc" id="L181">                &quot;MEDIA_LIMIT_REACHED&quot;, &quot;This listing already has the maximum of &quot; + properties.getMaxPerListing() + &quot; photos/videos&quot;);</span>
+<span class="nc" id="L180">        return new BadRequestException(</span>
+<span class="nc" id="L181">                &quot;MEDIA_LIMIT_REACHED&quot;, &quot;This listing already has the maximum of &quot; + properties.getMaxPerListing() + &quot; photos/videos&quot;);</span>
     }
 
     private void publishChanged(UUID propertyId) {
-<span class="fc" id="L185">        eventPublisher.publishEvent(PropertyChangedEvent.of(propertyId));</span>
-<span class="fc" id="L186">    }</span>
+<span class="nc" id="L185">        eventPublisher.publishEvent(PropertyChangedEvent.of(propertyId));</span>
+<span class="nc" id="L186">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

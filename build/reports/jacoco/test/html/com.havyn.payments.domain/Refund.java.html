@@ -22,7 +22,7 @@ public class Refund extends BaseEntity {
     @Column(name = &quot;reason&quot;)
     private String reason;
 
-<span class="pc" id="L25">    @Enumerated(EnumType.STRING)</span>
+<span class="nc" id="L25">    @Enumerated(EnumType.STRING)</span>
     @Column(name = &quot;status&quot;, nullable = false, length = 20)
     private RefundStatus status = RefundStatus.PENDING;
 
@@ -33,11 +33,11 @@ public class Refund extends BaseEntity {
         // JPA
 <span class="nc" id="L34">    }</span>
 
-<span class="fc" id="L36">    public Refund(UUID paymentId, BigDecimal amount, String reason) {</span>
-<span class="fc" id="L37">        this.paymentId = paymentId;</span>
-<span class="fc" id="L38">        this.amount = amount;</span>
-<span class="fc" id="L39">        this.reason = reason;</span>
-<span class="fc" id="L40">    }</span>
+<span class="nc" id="L36">    public Refund(UUID paymentId, BigDecimal amount, String reason) {</span>
+<span class="nc" id="L37">        this.paymentId = paymentId;</span>
+<span class="nc" id="L38">        this.amount = amount;</span>
+<span class="nc" id="L39">        this.reason = reason;</span>
+<span class="nc" id="L40">    }</span>
 
     public UUID getPaymentId() {
 <span class="nc" id="L43">        return paymentId;</span>
@@ -60,9 +60,9 @@ public class Refund extends BaseEntity {
     }
 
     public void markSucceeded(String providerRef) {
-<span class="fc" id="L63">        this.status = RefundStatus.SUCCEEDED;</span>
-<span class="fc" id="L64">        this.providerRef = providerRef;</span>
-<span class="fc" id="L65">    }</span>
+<span class="nc" id="L63">        this.status = RefundStatus.SUCCEEDED;</span>
+<span class="nc" id="L64">        this.providerRef = providerRef;</span>
+<span class="nc" id="L65">    }</span>
 
     public void markFailed() {
 <span class="nc" id="L68">        this.status = RefundStatus.FAILED;</span>

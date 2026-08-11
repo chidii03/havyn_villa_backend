@@ -25,6 +25,10 @@ public class SupportChatService {
     private static final List<String> COMPLAINT_TERMS = List.of(
             "complaint", "problem", "issue", "refund", "charged", "payment failed", "cancel", "dirty", "unsafe", "host", "scam",
             "not working", "wrong", "dispute", "support ticket", "bad experience");
+    private static final List<String> DETAIL_TERMS = List.of(
+            "booking", "reference", "transaction", "payment", "paid", "receipt", "property", "shortlet", "apartment",
+            "host", "lekki", "ikeja", "uyo", "tomorrow", "today", "yesterday", "check-in", "checkout", "august",
+            "january", "february", "march", "april", "may", "june", "july", "september", "october", "november", "december");
 
     private final SupportChatMessageRepository messageRepository;
     private final SupportTicketRepository ticketRepository;
@@ -48,17 +52,18 @@ public class SupportChatService {
     public List<SupportChatMessage> send(UUID userId, String body) {
         String trimmed = body.trim();
         SupportChatMessage userMessage = messageRepository.save(new SupportChatMessage(userId, SupportChatRole.USER, trimmed));
+        List<SupportChatMessage> history = messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);
         boolean complaint = isComplaint(trimmed);
-        if (complaint) {
+        boolean supportFollowUp = !complaint && isSupportFollowUp(trimmed, history);
+        if (complaint || supportFollowUp) {
             ticketRepository.save(new SupportTicket(userId, bookingReference(trimmed), summarize(trimmed), trimmed));
         }
-        List<SupportChatMessage> history = messageRepository.findAllByUserIdOrderByCreatedAtAsc(userId);
         String answer;
         try {
             answer = openAiSupportClient.respond(history);
         } catch (ServiceUnavailableException e) {
             log.warn("Support chat OpenAI response unavailable userId={} code={}", userId, e.getCode());
-            answer = fallbackAnswer(trimmed, complaint);
+            answer = fallbackAnswer(trimmed, complaint, supportFollowUp);
         }
         messageRepository.save(new SupportChatMessage(userId, SupportChatRole.ASSISTANT, answer));
         return messageRepository.findAllByUserIdOrderByCreatedAtAsc(userMessage.getUserId());
@@ -82,16 +87,56 @@ public class SupportChatService {
         return normalized.substring(0, 237) + "...";
     }
 
-    private String fallbackAnswer(String body, boolean complaint) {
-        if (complaint) {
+    private boolean isSupportFollowUp(String body, List<SupportChatMessage> history) {
+        String normalized = body.toLowerCase(Locale.ROOT);
+        if (looksLikeNavigationQuestion(normalized)) {
+            return false;
+        }
+        boolean hasRecentTicketPrompt = history.stream()
+                .skip(Math.max(0, history.size() - 8))
+                .filter(message -> message.getRole() == SupportChatRole.ASSISTANT)
+                .map(SupportChatMessage::getBody)
+                .map(value -> value.toLowerCase(Locale.ROOT))
+                .anyMatch(value -> value.contains("flagged") || value.contains("support ticket") || value.contains("admin"));
+        return hasRecentTicketPrompt && DETAIL_TERMS.stream().anyMatch(normalized::contains);
+    }
+
+    private boolean looksLikeNavigationQuestion(String normalized) {
+        return normalized.matches(".*\\b(where|how|show me|open|go to|find)\\b.*")
+                && normalized.matches(".*\\b(trips|wishlist|favorites|host dashboard|listing|search|filters|cancel)\\b.*");
+    }
+
+    private String fallbackAnswer(String body, boolean complaint, boolean supportFollowUp) {
+        String normalized = body.toLowerCase(Locale.ROOT);
+        if (complaint || supportFollowUp) {
             String reference = bookingReference(body);
             String referenceLine = reference == null ? "" : " with booking reference " + reference;
+            if (supportFollowUp) {
+                return "Got it. I've added those details to the Admin support queue" + referenceLine
+                        + ". If you have a payment transaction ID, property name, host name, or screenshot details, send them too so the team can review faster.";
+            }
             return "Thanks for explaining. I've flagged this for Admin" + referenceLine
-                    + ". Please add any dates, property name, payment reference, or host details that could help us review it faster.";
+                    + ". Please share the booking reference if you have it, plus the property name, dates, payment reference, or host details so the team can review it faster.";
+        }
+        if (normalized.matches(".*\\b(hello|hi|hey|good morning|good afternoon|good evening)\\b.*")) {
+            return "Hello. I can help with bookings, trips, hosting, cancellations, refunds, and using Havyn Villa. What would you like to do?";
+        }
+        if (normalized.contains("payment gateway") || normalized.contains("paystack") || normalized.contains("flutterwave")
+                || normalized.contains("payment method") || normalized.contains("card") || normalized.contains("bank transfer")) {
+            return "Havyn Villa uses secure hosted checkout. The backend is configured for Paystack by default, with Flutterwave also available. Guests can pay with supported cards and bank transfer options when the checkout provider offers them.";
+        }
+        if (normalized.contains("become a host") || normalized.contains("hosting") || normalized.contains("host")) {
+            return "To become a host, use Become a host from the header, complete the host verification steps, then create and manage listings from Host dashboard > Listings.";
+        }
+        if (normalized.contains("wishlist") || normalized.contains("favorite")) {
+            return "To save a place, open a property and use the heart button. Your saved homes appear on the Wishlists page when you're signed in.";
+        }
+        if (normalized.contains("trip") || normalized.contains("booking")) {
+            return "You can review your bookings from Trips. Open a trip to see the property, dates, guests, payment status, and cancellation options.";
         }
         return """
                 I can help with search, filters, bookings, wishlists, trips, becoming a host, listing management, cancellations, refunds, and support.
-                Tell me what you want to do, and I'll guide you step by step.
+                Please mention the page or task you want help with, and I'll guide you step by step.
                 """.trim();
     }
 }

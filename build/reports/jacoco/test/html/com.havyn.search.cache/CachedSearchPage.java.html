@@ -15,14 +15,14 @@ import java.util.List;
  * parameter, so {@code List&lt;SearchResultItem&gt; data} is a concrete field signature
  * Jackson can round-trip correctly without any {@code @class} tagging at all.
  */
-<span class="fc" id="L18">public record CachedSearchPage(List&lt;SearchResultItem&gt; data, int page, int size, long total, String nextCursor) {</span>
+<span class="nc" id="L18">public record CachedSearchPage(List&lt;SearchResultItem&gt; data, int page, int size, long total, String nextCursor) {</span>
 
     public static CachedSearchPage from(PageResponse&lt;SearchResultItem&gt; page) {
-<span class="fc" id="L21">        return new CachedSearchPage(page.data(), page.page(), page.size(), page.total(), page.nextCursor());</span>
+<span class="nc" id="L21">        return new CachedSearchPage(page.data(), page.page(), page.size(), page.total(), page.nextCursor());</span>
     }
 
     public PageResponse&lt;SearchResultItem&gt; toPageResponse() {
-<span class="fc" id="L25">        return new PageResponse&lt;&gt;(data, page, size, total, nextCursor);</span>
+<span class="nc" id="L25">        return new PageResponse&lt;&gt;(data, page, size, total, nextCursor);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

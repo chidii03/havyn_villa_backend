@@ -19,42 +19,17 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-/**
- * Stateless JWT security: CSRF disabled (bearer tokens, not cookie sessions — the
- * refresh cookie is only ever read by /api/v1/auth/refresh, which doesn't need CSRF
- * protection since it doesn't rely on ambient cookie auth for anything sensitive), no
- * HTTP session, actuator health/info + OpenAPI docs + the auth endpoints themselves
- * are public. Everything else requires a valid access token; {@code @PreAuthorize} on
- * individual endpoints (see {@link EnableMethodSecurity}) adds role/object-level checks
- * on top as each module is built.
- */
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-<span class="fc" id="L34">public class SecurityConfig {</span>
+<span class="nc" id="L26">public class SecurityConfig {</span>
 
-    // Public browse/discovery + pricing-preview endpoints (prompts 10/11/12).
-    // /api/v1/properties/** also covers POST /api/v1/properties/{id}/quote (prompt
-    // 12) — a POST verb, but it persists nothing (pure price calculation), so it's
-    // safe alongside the GET-only property/search endpoints under the same prefix.
-    // Host-scoped listing management stays under /api/v1/host/listings, and booking
-    // creation under /api/v1/bookings — neither is in this list; both require auth.
-    // /api/v1/payments/webhook/** (prompt 13) must also be public — providers can't
-    // authenticate with our bearer tokens; the endpoint verifies a provider-specific
-    // signature itself instead. POST /api/v1/payments/intent stays authenticated
-    // (guest-initiated, not in this list).
-    //
-    // POST /api/v1/properties/{id}/reviews (prompt 15) and POST
-    // /api/v1/properties/{id}/conversations (prompt 16) are exceptions carved back out
-    // of PUBLIC_PATHS below — both require auth to create (only an eligible guest may
-    // review; only a real, non-host caller may start a conversation) even though GET
-    // .../reviews and the rest of /api/v1/properties/** are public. These matchers are
-    // registered before PUBLIC_PATHS so the more specific, method-scoped rules win.
-<span class="fc" id="L53">    private static final String[] AUTH_REQUIRED_PROPERTY_POST_PATHS = {</span>
+<span class="nc" id="L28">    private static final String[] AUTH_REQUIRED_PROPERTY_POST_PATHS = {</span>
             &quot;/api/v1/properties/*/reviews&quot;, &quot;/api/v1/properties/*/conversations&quot;
     };
 
-<span class="fc" id="L57">    private static final String[] PUBLIC_PATHS = {</span>
+<span class="nc" id="L32">    private static final String[] PUBLIC_PATHS = {</span>
             &quot;/actuator/health&quot;, &quot;/actuator/health/**&quot;, &quot;/actuator/info&quot;,
             &quot;/swagger-ui.html&quot;, &quot;/swagger-ui/**&quot;, &quot;/v3/api-docs&quot;, &quot;/v3/api-docs/**&quot;,
             &quot;/api/v1/auth/**&quot;,
@@ -65,51 +40,46 @@ import static org.springframework.security.config.Customizer.withDefaults;
             &quot;/api/v1/payments/webhook/**&quot;
     };
 
-    // script-src/style-src need 'unsafe-inline' for springdoc's self-hosted Swagger UI
-    // (/swagger-ui.html) — the only HTML this API ever serves; every other response is
-    // JSON, which browsers never execute as a document (X-Content-Type-Options: nosniff
-    // below is what actually matters there, not CSP). frame-ancestors 'none' still
-    // blocks clickjacking-via-iframe on that HTML regardless.
     private static final String CONTENT_SECURITY_POLICY =
             &quot;default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; &quot;
                     + &quot;img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'&quot;;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
-<span class="fc" id="L79">        http</span>
-<span class="fc" id="L80">                .csrf(csrf -&gt; csrf.disable())</span>
-<span class="fc" id="L81">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
-<span class="fc" id="L82">                .authorizeHttpRequests(auth -&gt; auth</span>
-<span class="fc" id="L83">                        .requestMatchers(HttpMethod.OPTIONS, &quot;/**&quot;).permitAll()</span>
-<span class="fc" id="L84">                        .requestMatchers(HttpMethod.POST, AUTH_REQUIRED_PROPERTY_POST_PATHS).authenticated()</span>
-<span class="fc" id="L85">                        .requestMatchers(PUBLIC_PATHS).permitAll()</span>
-<span class="fc" id="L86">                        .anyRequest().authenticated())</span>
-<span class="fc" id="L87">                .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class)</span>
-<span class="fc" id="L88">                .exceptionHandling(ex -&gt; ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))</span>
-<span class="fc" id="L89">                .httpBasic(basic -&gt; basic.disable())</span>
-<span class="fc" id="L90">                .formLogin(form -&gt; form.disable())</span>
+<span class="nc" id="L49">        http</span>
+<span class="nc" id="L50">                .csrf(csrf -&gt; csrf.disable())</span>
+<span class="nc" id="L51">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="nc" id="L52">                .authorizeHttpRequests(auth -&gt; auth</span>
+<span class="nc" id="L53">                        .requestMatchers(HttpMethod.OPTIONS, &quot;/**&quot;).permitAll()</span>
+<span class="nc" id="L54">                        .requestMatchers(HttpMethod.POST, AUTH_REQUIRED_PROPERTY_POST_PATHS).authenticated()</span>
+<span class="nc" id="L55">                        .requestMatchers(PUBLIC_PATHS).permitAll()</span>
+<span class="nc" id="L56">                        .anyRequest().authenticated())</span>
+<span class="nc" id="L57">                .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class)</span>
+<span class="nc" id="L58">                .exceptionHandling(ex -&gt; ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))</span>
+<span class="nc" id="L59">                .httpBasic(basic -&gt; basic.disable())</span>
+<span class="nc" id="L60">                .formLogin(form -&gt; form.disable())</span>
                 // security/01-security-plan.md#platform: &quot;Secure headers (HSTS,
                 // X-Content-Type-Options, Referrer-Policy, CSP)&quot;. X-Content-Type-Options:
                 // nosniff and X-Frame-Options: DENY are Spring Security defaults, made
                 // explicit here rather than left implicit.
-<span class="fc" id="L95">                .headers(headers -&gt; headers</span>
-<span class="fc" id="L96">                        .contentTypeOptions(withDefaults())</span>
-<span class="fc" id="L97">                        .frameOptions(frame -&gt; frame.deny())</span>
-<span class="fc" id="L98">                        .referrerPolicy(referrer -&gt; referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))</span>
-<span class="fc" id="L99">                        .contentSecurityPolicy(csp -&gt; csp.policyDirectives(CONTENT_SECURITY_POLICY))</span>
+<span class="nc" id="L65">                .headers(headers -&gt; headers</span>
+<span class="nc" id="L66">                        .contentTypeOptions(withDefaults())</span>
+<span class="nc" id="L67">                        .frameOptions(frame -&gt; frame.deny())</span>
+<span class="nc" id="L68">                        .referrerPolicy(referrer -&gt; referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))</span>
+<span class="nc" id="L69">                        .contentSecurityPolicy(csp -&gt; csp.policyDirectives(CONTENT_SECURITY_POLICY))</span>
                         // Only takes effect over HTTPS (browsers ignore it on plain HTTP,
                         // i.e. local dev) — real effect once a reverse proxy terminates TLS
                         // in front of this (prompts 27/29).
-<span class="fc" id="L103">                        .httpStrictTransportSecurity(hsts -&gt; hsts</span>
-<span class="fc" id="L104">                                .includeSubDomains(true)</span>
-<span class="fc" id="L105">                                .maxAgeInSeconds(Duration.ofDays(365).toSeconds())));</span>
-<span class="fc" id="L106">        return http.build();</span>
+<span class="nc" id="L73">                        .httpStrictTransportSecurity(hsts -&gt; hsts</span>
+<span class="nc" id="L74">                                .includeSubDomains(true)</span>
+<span class="nc" id="L75">                                .maxAgeInSeconds(Duration.ofDays(365).toSeconds())));</span>
+<span class="nc" id="L76">        return http.build();</span>
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         // security/01-security-plan.md's documented target.
-<span class="fc" id="L112">        return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();</span>
+<span class="nc" id="L82">        return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

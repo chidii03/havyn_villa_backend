@@ -45,32 +45,32 @@ public class ReviewService {
     private final BookingRepository bookingRepository;
     private final PropertyRepository propertyRepository;
 
-<span class="fc" id="L48">    public ReviewService(ReviewRepository reviewRepository, BookingRepository bookingRepository, PropertyRepository propertyRepository) {</span>
-<span class="fc" id="L49">        this.reviewRepository = reviewRepository;</span>
-<span class="fc" id="L50">        this.bookingRepository = bookingRepository;</span>
-<span class="fc" id="L51">        this.propertyRepository = propertyRepository;</span>
-<span class="fc" id="L52">    }</span>
+<span class="nc" id="L48">    public ReviewService(ReviewRepository reviewRepository, BookingRepository bookingRepository, PropertyRepository propertyRepository) {</span>
+<span class="nc" id="L49">        this.reviewRepository = reviewRepository;</span>
+<span class="nc" id="L50">        this.bookingRepository = bookingRepository;</span>
+<span class="nc" id="L51">        this.propertyRepository = propertyRepository;</span>
+<span class="nc" id="L52">    }</span>
 
     @Transactional
     public Review create(UUID guestId, UUID propertyId, CreateReviewRequest request) {
-<span class="fc" id="L56">        Booking booking = bookingRepository.findById(request.bookingId())</span>
-<span class="fc" id="L57">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, request.bookingId()));</span>
-<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (!booking.getGuestId().equals(guestId)) {</span>
-<span class="fc" id="L59">            throw new ForbiddenException(&quot;You do not have access to this booking&quot;);</span>
+<span class="nc" id="L56">        Booking booking = bookingRepository.findById(request.bookingId())</span>
+<span class="nc" id="L57">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, request.bookingId()));</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (!booking.getGuestId().equals(guestId)) {</span>
+<span class="nc" id="L59">            throw new ForbiddenException(&quot;You do not have access to this booking&quot;);</span>
         }
-<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (!booking.getPropertyId().equals(propertyId)) {</span>
-<span class="fc" id="L62">            throw new BadRequestException(&quot;BOOKING_PROPERTY_MISMATCH&quot;, &quot;This booking is not for this property&quot;);</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        if (!booking.getPropertyId().equals(propertyId)) {</span>
+<span class="nc" id="L62">            throw new BadRequestException(&quot;BOOKING_PROPERTY_MISMATCH&quot;, &quot;This booking is not for this property&quot;);</span>
         }
-<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (booking.getStatus() != BookingStatus.COMPLETED) {</span>
-<span class="fc" id="L65">            throw new ConflictException(&quot;BOOKING_NOT_ELIGIBLE&quot;, &quot;Only a completed stay can be reviewed&quot;);</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (booking.getStatus() != BookingStatus.COMPLETED) {</span>
+<span class="nc" id="L65">            throw new ConflictException(&quot;BOOKING_NOT_ELIGIBLE&quot;, &quot;Only a completed stay can be reviewed&quot;);</span>
         }
-<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (reviewRepository.existsByBookingId(booking.getId())) {</span>
-<span class="fc" id="L68">            throw new ConflictException(&quot;ALREADY_REVIEWED&quot;, &quot;This booking has already been reviewed&quot;);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (reviewRepository.existsByBookingId(booking.getId())) {</span>
+<span class="nc" id="L68">            throw new ConflictException(&quot;ALREADY_REVIEWED&quot;, &quot;This booking has already been reviewed&quot;);</span>
         }
 
-<span class="fc" id="L71">        Review review = reviewRepository.save(new Review(booking.getId(), propertyId, guestId, request.rating(), request.comment()));</span>
-<span class="fc" id="L72">        recomputeAggregateRating(propertyId);</span>
-<span class="fc" id="L73">        return review;</span>
+<span class="nc" id="L71">        Review review = reviewRepository.save(new Review(booking.getId(), propertyId, guestId, request.rating(), request.comment()));</span>
+<span class="nc" id="L72">        recomputeAggregateRating(propertyId);</span>
+<span class="nc" id="L73">        return review;</span>
     }
 
     @Transactional(readOnly = true)
@@ -79,11 +79,11 @@ public class ReviewService {
     }
 
     private void recomputeAggregateRating(UUID propertyId) {
-<span class="pc" id="L82">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
-<span class="fc" id="L83">        Double average = reviewRepository.averageRating(propertyId);</span>
-<span class="fc" id="L84">        long count = reviewRepository.countByPropertyId(propertyId);</span>
-<span class="fc bfc" id="L85" title="All 2 branches covered.">        BigDecimal ratingAvg = average == null ? BigDecimal.ZERO : BigDecimal.valueOf(average).setScale(2, RoundingMode.HALF_UP);</span>
-<span class="fc" id="L86">        property.applyAggregateRating(ratingAvg, (int) count);</span>
-<span class="fc" id="L87">    }</span>
+<span class="nc" id="L82">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="nc" id="L83">        Double average = reviewRepository.averageRating(propertyId);</span>
+<span class="nc" id="L84">        long count = reviewRepository.countByPropertyId(propertyId);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        BigDecimal ratingAvg = average == null ? BigDecimal.ZERO : BigDecimal.valueOf(average).setScale(2, RoundingMode.HALF_UP);</span>
+<span class="nc" id="L86">        property.applyAggregateRating(ratingAvg, (int) count);</span>
+<span class="nc" id="L87">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

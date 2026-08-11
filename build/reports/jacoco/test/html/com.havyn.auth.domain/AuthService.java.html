@@ -43,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
-<span class="fc" id="L46">    private static final Logger log = LoggerFactory.getLogger(AuthService.class);</span>
+<span class="nc" id="L46">    private static final Logger log = LoggerFactory.getLogger(AuthService.class);</span>
     private static final String DEFAULT_ROLE_CODE = &quot;CUSTOMER&quot;;
     private static final String GOOGLE_PASSWORD_PLACEHOLDER = &quot;GOOGLE_ACCOUNT_NO_PASSWORD_LOGIN&quot;;
 
@@ -64,16 +64,16 @@ public class AuthService {
             JwtService jwtService,
             RefreshTokenService refreshTokenService,
             VerificationTokenService verificationTokenService,
-<span class="fc" id="L67">            Mailer mailer) {</span>
-<span class="fc" id="L68">        this.userRepository = userRepository;</span>
-<span class="fc" id="L69">        this.profileRepository = profileRepository;</span>
-<span class="fc" id="L70">        this.roleRepository = roleRepository;</span>
-<span class="fc" id="L71">        this.passwordEncoder = passwordEncoder;</span>
-<span class="fc" id="L72">        this.jwtService = jwtService;</span>
-<span class="fc" id="L73">        this.refreshTokenService = refreshTokenService;</span>
-<span class="fc" id="L74">        this.verificationTokenService = verificationTokenService;</span>
-<span class="fc" id="L75">        this.mailer = mailer;</span>
-<span class="fc" id="L76">    }</span>
+<span class="nc" id="L67">            Mailer mailer) {</span>
+<span class="nc" id="L68">        this.userRepository = userRepository;</span>
+<span class="nc" id="L69">        this.profileRepository = profileRepository;</span>
+<span class="nc" id="L70">        this.roleRepository = roleRepository;</span>
+<span class="nc" id="L71">        this.passwordEncoder = passwordEncoder;</span>
+<span class="nc" id="L72">        this.jwtService = jwtService;</span>
+<span class="nc" id="L73">        this.refreshTokenService = refreshTokenService;</span>
+<span class="nc" id="L74">        this.verificationTokenService = verificationTokenService;</span>
+<span class="nc" id="L75">        this.mailer = mailer;</span>
+<span class="nc" id="L76">    }</span>
 
     @Transactional
     public AuthResult register(String email, String rawPassword, String fullName) {
@@ -98,19 +98,19 @@ public class AuthService {
     }
 
     public AuthResult login(String email, String rawPassword) {
-<span class="fc" id="L101">        String normalizedEmail = email.trim().toLowerCase();</span>
-<span class="fc" id="L102">        User user = userRepository.findByEmail(normalizedEmail).orElse(null);</span>
-<span class="pc bpc" id="L103" title="1 of 4 branches missed.">        if (user == null || !passwordEncoder.matches(rawPassword, user.getPasswordHash())) {</span>
+<span class="nc" id="L101">        String normalizedEmail = email.trim().toLowerCase();</span>
+<span class="nc" id="L102">        User user = userRepository.findByEmail(normalizedEmail).orElse(null);</span>
+<span class="nc bnc" id="L103" title="All 4 branches missed.">        if (user == null || !passwordEncoder.matches(rawPassword, user.getPasswordHash())) {</span>
             // Deliberately still logs a value derived from the attempted email — the
             // *response* to the caller stays generic (no enumeration, see
             // InvalidCredentialsException's callers), and ops/security still needs to
             // be able to spot the same address being hammered repeatedly — but a
             // hash, not the raw address, keeps the log itself free of PII.
-<span class="fc" id="L109">            log.warn(&quot;Failed login attempt emailHash={}&quot;, shortHash(normalizedEmail));</span>
-<span class="fc" id="L110">            throw new InvalidCredentialsException();</span>
+<span class="nc" id="L109">            log.warn(&quot;Failed login attempt emailHash={}&quot;, shortHash(normalizedEmail));</span>
+<span class="nc" id="L110">            throw new InvalidCredentialsException();</span>
         }
-<span class="fc" id="L112">        log.info(&quot;Login succeeded userId={}&quot;, user.getId());</span>
-<span class="fc" id="L113">        return issueTokens(user);</span>
+<span class="nc" id="L112">        log.info(&quot;Login succeeded userId={}&quot;, user.getId());</span>
+<span class="nc" id="L113">        return issueTokens(user);</span>
     }
 
     @Transactional
@@ -141,9 +141,9 @@ public class AuthService {
     /** First 12 hex chars of SHA-256 — enough to correlate repeated attempts, not to reverse the input. */
     private static String shortHash(String value) {
         try {
-<span class="fc" id="L144">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
-<span class="fc" id="L145">            String hex = HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));</span>
-<span class="fc" id="L146">            return hex.substring(0, 12);</span>
+<span class="nc" id="L144">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
+<span class="nc" id="L145">            String hex = HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L146">            return hex.substring(0, 12);</span>
 <span class="nc" id="L147">        } catch (NoSuchAlgorithmException e) {</span>
 <span class="nc" id="L148">            throw new IllegalStateException(&quot;SHA-256 must be available&quot;, e);</span>
         }
@@ -212,10 +212,10 @@ public class AuthService {
 <span class="nc" id="L212">    }</span>
 
     private AuthResult issueTokens(User user) {
-<span class="fc" id="L215">        Set&lt;String&gt; roles = roleCodes(user);</span>
-<span class="fc" id="L216">        String accessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), roles);</span>
-<span class="fc" id="L217">        RefreshTokenService.Issued issued = refreshTokenService.issue(user.getId());</span>
-<span class="fc" id="L218">        return new AuthResult(accessToken, issued.token(), jwtService.accessTtl().toSeconds(), user);</span>
+<span class="nc" id="L215">        Set&lt;String&gt; roles = roleCodes(user);</span>
+<span class="nc" id="L216">        String accessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), roles);</span>
+<span class="nc" id="L217">        RefreshTokenService.Issued issued = refreshTokenService.issue(user.getId());</span>
+<span class="nc" id="L218">        return new AuthResult(accessToken, issued.token(), jwtService.accessTtl().toSeconds(), user);</span>
     }
 
     private String safeFullName(GoogleTokenVerifier.GoogleUser googleUser) {
@@ -227,7 +227,7 @@ public class AuthService {
     }
 
     private Set&lt;String&gt; roleCodes(User user) {
-<span class="fc" id="L230">        return user.getRoles().stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet());</span>
+<span class="nc" id="L230">        return user.getRoles().stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

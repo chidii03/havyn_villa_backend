@@ -35,33 +35,33 @@ public class FlutterwavePaymentProvider implements PaymentProvider {
             RestClient.Builder restClientBuilder,
             FlutterwaveProperties properties,
             ObjectMapper objectMapper,
-<span class="fc" id="L38">            MeterRegistry meterRegistry) {</span>
-<span class="fc" id="L39">        this.properties = properties;</span>
-<span class="fc" id="L40">        this.objectMapper = objectMapper;</span>
-<span class="fc" id="L41">        this.meterRegistry = meterRegistry;</span>
-<span class="fc" id="L42">        this.restClient = restClientBuilder.baseUrl(properties.getBaseUrl())</span>
-<span class="fc" id="L43">                .defaultHeader(&quot;Authorization&quot;, &quot;Bearer &quot; + properties.getSecretKey())</span>
-<span class="fc" id="L44">                .build();</span>
-<span class="fc" id="L45">    }</span>
+<span class="nc" id="L38">            MeterRegistry meterRegistry) {</span>
+<span class="nc" id="L39">        this.properties = properties;</span>
+<span class="nc" id="L40">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L41">        this.meterRegistry = meterRegistry;</span>
+<span class="nc" id="L42">        this.restClient = restClientBuilder.baseUrl(properties.getBaseUrl())</span>
+<span class="nc" id="L43">                .defaultHeader(&quot;Authorization&quot;, &quot;Bearer &quot; + properties.getSecretKey())</span>
+<span class="nc" id="L44">                .build();</span>
+<span class="nc" id="L45">    }</span>
 
     @Override
 <span class="nc" id="L48">    public String name() { return NAME; }</span>
 
     @Override
     public PaymentIntentResult createIntent(PaymentIntentRequest request) {
-<span class="fc" id="L52">        requireConfigured(properties.getSecretKey(), &quot;FLUTTERWAVE_SECRET_KEY&quot;);</span>
-<span class="fc" id="L53">        requireConfigured(properties.getRedirectUrl(), &quot;FLUTTERWAVE_REDIRECT_URL&quot;);</span>
-<span class="fc" id="L54">        Map&lt;String, Object&gt; body = Map.of(</span>
-<span class="fc" id="L55">                &quot;tx_ref&quot;, request.reference(),</span>
-<span class="fc" id="L56">                &quot;amount&quot;, request.amount().toPlainString(),</span>
-<span class="fc" id="L57">                &quot;currency&quot;, request.currency(),</span>
-<span class="fc" id="L58">                &quot;redirect_url&quot;, properties.getRedirectUrl(),</span>
-<span class="fc" id="L59">                &quot;customer&quot;, Map.of(&quot;email&quot;, request.customerEmail()),</span>
-<span class="fc" id="L60">                &quot;customizations&quot;, Map.of(&quot;title&quot;, &quot;Havyn Villa booking&quot;));</span>
-<span class="fc" id="L61">        JsonNode response = restClient.post().uri(&quot;/payments&quot;).body(body).retrieve().body(JsonNode.class);</span>
-<span class="fc" id="L62">        String link = response.path(&quot;data&quot;).path(&quot;link&quot;).asText();</span>
-<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        if (link.isBlank()) throw new IllegalStateException(&quot;Flutterwave did not return a hosted checkout link&quot;);</span>
-<span class="fc" id="L64">        return new PaymentIntentResult(request.reference(), link);</span>
+<span class="nc" id="L52">        requireConfigured(properties.getSecretKey(), &quot;FLUTTERWAVE_SECRET_KEY&quot;);</span>
+<span class="nc" id="L53">        requireConfigured(properties.getRedirectUrl(), &quot;FLUTTERWAVE_REDIRECT_URL&quot;);</span>
+<span class="nc" id="L54">        Map&lt;String, Object&gt; body = Map.of(</span>
+<span class="nc" id="L55">                &quot;tx_ref&quot;, request.reference(),</span>
+<span class="nc" id="L56">                &quot;amount&quot;, request.amount().toPlainString(),</span>
+<span class="nc" id="L57">                &quot;currency&quot;, request.currency(),</span>
+<span class="nc" id="L58">                &quot;redirect_url&quot;, properties.getRedirectUrl(),</span>
+<span class="nc" id="L59">                &quot;customer&quot;, Map.of(&quot;email&quot;, request.customerEmail()),</span>
+<span class="nc" id="L60">                &quot;customizations&quot;, Map.of(&quot;title&quot;, &quot;Havyn Villa booking&quot;));</span>
+<span class="nc" id="L61">        JsonNode response = restClient.post().uri(&quot;/payments&quot;).body(body).retrieve().body(JsonNode.class);</span>
+<span class="nc" id="L62">        String link = response.path(&quot;data&quot;).path(&quot;link&quot;).asText();</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (link.isBlank()) throw new IllegalStateException(&quot;Flutterwave did not return a hosted checkout link&quot;);</span>
+<span class="nc" id="L64">        return new PaymentIntentResult(request.reference(), link);</span>
     }
 
     @Override
@@ -73,28 +73,28 @@ public class FlutterwavePaymentProvider implements PaymentProvider {
 
     @Override
     public WebhookEvent parseWebhook(String rawBody, HttpHeaders headers) {
-<span class="fc" id="L76">        requireConfigured(properties.getWebhookHash(), &quot;FLUTTERWAVE_WEBHOOK_HASH&quot;);</span>
-<span class="fc" id="L77">        String signature = headers.getFirst(SIGNATURE_HEADER);</span>
-<span class="pc bpc" id="L78" title="1 of 4 branches missed.">        if (signature == null || !MessageDigest.isEqual(</span>
-<span class="fc" id="L79">                signature.trim().getBytes(java.nio.charset.StandardCharsets.UTF_8),</span>
-<span class="fc" id="L80">                properties.getWebhookHash().getBytes(java.nio.charset.StandardCharsets.UTF_8))) {</span>
-<span class="fc" id="L81">            meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, NAME, &quot;outcome&quot;, &quot;invalid_signature&quot;).increment();</span>
-<span class="fc" id="L82">            throw new InvalidWebhookSignatureException();</span>
+<span class="nc" id="L76">        requireConfigured(properties.getWebhookHash(), &quot;FLUTTERWAVE_WEBHOOK_HASH&quot;);</span>
+<span class="nc" id="L77">        String signature = headers.getFirst(SIGNATURE_HEADER);</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">        if (signature == null || !MessageDigest.isEqual(</span>
+<span class="nc" id="L79">                signature.trim().getBytes(java.nio.charset.StandardCharsets.UTF_8),</span>
+<span class="nc" id="L80">                properties.getWebhookHash().getBytes(java.nio.charset.StandardCharsets.UTF_8))) {</span>
+<span class="nc" id="L81">            meterRegistry.counter(&quot;havyn.payment.webhook&quot;, &quot;provider&quot;, NAME, &quot;outcome&quot;, &quot;invalid_signature&quot;).increment();</span>
+<span class="nc" id="L82">            throw new InvalidWebhookSignatureException();</span>
         }
         JsonNode root;
-<span class="pc" id="L85">        try { root = objectMapper.readTree(rawBody); } catch (Exception ex) { throw new IllegalArgumentException(&quot;Malformed Flutterwave webhook payload&quot;, ex); }</span>
-<span class="fc" id="L86">        JsonNode data = root.path(&quot;data&quot;);</span>
-<span class="fc" id="L87">        String status = data.path(&quot;status&quot;).asText(&quot;&quot;);</span>
-<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        WebhookEventType type = &quot;successful&quot;.equals(status) ? WebhookEventType.CHARGE_SUCCEEDED</span>
-<span class="pc bnc" id="L89" title="All 2 branches missed.">                : &quot;failed&quot;.equals(status) ? WebhookEventType.CHARGE_FAILED : WebhookEventType.UNKNOWN;</span>
-<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        BigDecimal amount = data.hasNonNull(&quot;amount&quot;) ? data.path(&quot;amount&quot;).decimalValue() : null;</span>
-<span class="fc" id="L91">        return new WebhookEvent(type, data.path(&quot;tx_ref&quot;).asText(null), amount, data.path(&quot;currency&quot;).asText(null), rawBody);</span>
+<span class="nc" id="L85">        try { root = objectMapper.readTree(rawBody); } catch (Exception ex) { throw new IllegalArgumentException(&quot;Malformed Flutterwave webhook payload&quot;, ex); }</span>
+<span class="nc" id="L86">        JsonNode data = root.path(&quot;data&quot;);</span>
+<span class="nc" id="L87">        String status = data.path(&quot;status&quot;).asText(&quot;&quot;);</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        WebhookEventType type = &quot;successful&quot;.equals(status) ? WebhookEventType.CHARGE_SUCCEEDED</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                : &quot;failed&quot;.equals(status) ? WebhookEventType.CHARGE_FAILED : WebhookEventType.UNKNOWN;</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        BigDecimal amount = data.hasNonNull(&quot;amount&quot;) ? data.path(&quot;amount&quot;).decimalValue() : null;</span>
+<span class="nc" id="L91">        return new WebhookEvent(type, data.path(&quot;tx_ref&quot;).asText(null), amount, data.path(&quot;currency&quot;).asText(null), rawBody);</span>
     }
 
     private static void requireConfigured(String value, String key) {
-<span class="pc bpc" id="L95" title="2 of 4 branches missed.">        if (value == null || value.isBlank()) {</span>
+<span class="nc bnc" id="L95" title="All 4 branches missed.">        if (value == null || value.isBlank()) {</span>
 <span class="nc" id="L96">            throw new ServiceUnavailableException(&quot;PAYMENT_PROVIDER_NOT_CONFIGURED&quot;, &quot;Flutterwave checkout is not configured yet&quot;);</span>
         }
-<span class="fc" id="L98">    }</span>
+<span class="nc" id="L98">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -50,8 +50,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class BookingService {
 
-<span class="fc" id="L53">    private static final Set&lt;BookingStatus&gt; ACTIVE_STATUSES = Set.of(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED);</span>
-<span class="fc" id="L54">    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);</span>
+<span class="nc" id="L53">    private static final Set&lt;BookingStatus&gt; ACTIVE_STATUSES = Set.of(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED);</span>
+<span class="nc" id="L54">    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);</span>
     private static final String BOOKINGS_ENABLED_SETTING_KEY = &quot;bookings_enabled&quot;;
 
     private final BookingRepository bookingRepository;
@@ -75,18 +75,18 @@ public class BookingService {
             ApplicationEventPublisher eventPublisher,
             Clock clock,
             @Value(&quot;${havyn.booking.hold-duration-minutes:15}&quot;) long holdDurationMinutes,
-<span class="fc" id="L78">            MeterRegistry meterRegistry) {</span>
-<span class="fc" id="L79">        this.bookingRepository = bookingRepository;</span>
-<span class="fc" id="L80">        this.propertyService = propertyService;</span>
-<span class="fc" id="L81">        this.propertyRepository = propertyRepository;</span>
-<span class="fc" id="L82">        this.availabilityRepository = availabilityRepository;</span>
-<span class="fc" id="L83">        this.pricingService = pricingService;</span>
-<span class="fc" id="L84">        this.platformSettingRepository = platformSettingRepository;</span>
-<span class="fc" id="L85">        this.eventPublisher = eventPublisher;</span>
-<span class="fc" id="L86">        this.clock = clock;</span>
-<span class="fc" id="L87">        this.holdDuration = Duration.ofMinutes(holdDurationMinutes);</span>
-<span class="fc" id="L88">        this.meterRegistry = meterRegistry;</span>
-<span class="fc" id="L89">    }</span>
+<span class="nc" id="L78">            MeterRegistry meterRegistry) {</span>
+<span class="nc" id="L79">        this.bookingRepository = bookingRepository;</span>
+<span class="nc" id="L80">        this.propertyService = propertyService;</span>
+<span class="nc" id="L81">        this.propertyRepository = propertyRepository;</span>
+<span class="nc" id="L82">        this.availabilityRepository = availabilityRepository;</span>
+<span class="nc" id="L83">        this.pricingService = pricingService;</span>
+<span class="nc" id="L84">        this.platformSettingRepository = platformSettingRepository;</span>
+<span class="nc" id="L85">        this.eventPublisher = eventPublisher;</span>
+<span class="nc" id="L86">        this.clock = clock;</span>
+<span class="nc" id="L87">        this.holdDuration = Duration.ofMinutes(holdDurationMinutes);</span>
+<span class="nc" id="L88">        this.meterRegistry = meterRegistry;</span>
+<span class="nc" id="L89">    }</span>
 
     @Transactional(readOnly = true)
     public PricingBreakdown quote(UUID propertyId, LocalDate checkIn, LocalDate checkOut, int guests) {
@@ -111,52 +111,52 @@ public class BookingService {
      */
     @Transactional
     public Booking create(UUID guestId, String idempotencyKey, CreateBookingRequest request) {
-<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (!bookingsEnabled()) {</span>
-<span class="fc" id="L115">            throw new ServiceUnavailableException(&quot;BOOKINGS_DISABLED&quot;, &quot;Bookings are temporarily disabled. Please try again later.&quot;);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (!bookingsEnabled()) {</span>
+<span class="nc" id="L115">            throw new ServiceUnavailableException(&quot;BOOKINGS_DISABLED&quot;, &quot;Bookings are temporarily disabled. Please try again later.&quot;);</span>
         }
 
-<span class="fc" id="L118">        UUID propertyId = request.propertyId();</span>
-<span class="fc" id="L119">        expireStaleHolds(propertyId);</span>
+<span class="nc" id="L118">        UUID propertyId = request.propertyId();</span>
+<span class="nc" id="L119">        expireStaleHolds(propertyId);</span>
 
-<span class="fc" id="L121">        Property property = propertyService.getActive(propertyId);</span>
-<span class="fc" id="L122">        validateDates(request.checkIn(), request.checkOut());</span>
-<span class="fc" id="L123">        validateCapacity(property, request.guests());</span>
+<span class="nc" id="L121">        Property property = propertyService.getActive(propertyId);</span>
+<span class="nc" id="L122">        validateDates(request.checkIn(), request.checkOut());</span>
+<span class="nc" id="L123">        validateCapacity(property, request.guests());</span>
 
-<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (!isAvailable(propertyId, request.checkIn(), request.checkOut())) {</span>
-<span class="fc" id="L126">            meterRegistry.counter(&quot;havyn.booking.create.failed&quot;, &quot;reason&quot;, &quot;dates_unavailable&quot;).increment();</span>
-<span class="fc" id="L127">            throw new ConflictException(&quot;DATES_UNAVAILABLE&quot;, &quot;These dates are no longer available&quot;);</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (!isAvailable(propertyId, request.checkIn(), request.checkOut())) {</span>
+<span class="nc" id="L126">            meterRegistry.counter(&quot;havyn.booking.create.failed&quot;, &quot;reason&quot;, &quot;dates_unavailable&quot;).increment();</span>
+<span class="nc" id="L127">            throw new ConflictException(&quot;DATES_UNAVAILABLE&quot;, &quot;These dates are no longer available&quot;);</span>
         }
 
-<span class="fc" id="L130">        PricingBreakdown pricing = pricingService.quote(property, request.checkIn(), request.checkOut());</span>
-<span class="fc bfc" id="L131" title="All 2 branches covered.">        if (pricing.grandTotal().compareTo(request.expectedTotal()) != 0) {</span>
-<span class="fc" id="L132">            meterRegistry.counter(&quot;havyn.booking.create.failed&quot;, &quot;reason&quot;, &quot;price_changed&quot;).increment();</span>
-<span class="fc" id="L133">            throw new ConflictException(&quot;PRICE_CHANGED&quot;, &quot;The price for these dates has changed — please refresh and try again&quot;);</span>
+<span class="nc" id="L130">        PricingBreakdown pricing = pricingService.quote(property, request.checkIn(), request.checkOut());</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (pricing.grandTotal().compareTo(request.expectedTotal()) != 0) {</span>
+<span class="nc" id="L132">            meterRegistry.counter(&quot;havyn.booking.create.failed&quot;, &quot;reason&quot;, &quot;price_changed&quot;).increment();</span>
+<span class="nc" id="L133">            throw new ConflictException(&quot;PRICE_CHANGED&quot;, &quot;The price for these dates has changed — please refresh and try again&quot;);</span>
         }
 
-<span class="fc" id="L136">        Booking booking = new Booking(</span>
+<span class="nc" id="L136">        Booking booking = new Booking(</span>
                 propertyId,
                 guestId,
-<span class="fc" id="L139">                request.checkIn(),</span>
-<span class="fc" id="L140">                request.checkOut(),</span>
-<span class="fc" id="L141">                pricing.nights(),</span>
-<span class="fc" id="L142">                request.guests(),</span>
-<span class="fc" id="L143">                pricing.baseTotal(),</span>
-<span class="fc" id="L144">                pricing.cleaningFee(),</span>
-<span class="fc" id="L145">                pricing.serviceFee(),</span>
-<span class="fc" id="L146">                pricing.discountTotal(),</span>
-<span class="fc" id="L147">                pricing.taxTotal(),</span>
-<span class="fc" id="L148">                pricing.commissionAmount(),</span>
-<span class="fc" id="L149">                pricing.grandTotal(),</span>
-<span class="fc" id="L150">                pricing.currency());</span>
-<span class="fc" id="L151">        booking.setHoldExpiresAt(clock.instant().plus(holdDuration));</span>
-<span class="fc" id="L152">        booking.setIdempotencyKey(idempotencyKey);</span>
+<span class="nc" id="L139">                request.checkIn(),</span>
+<span class="nc" id="L140">                request.checkOut(),</span>
+<span class="nc" id="L141">                pricing.nights(),</span>
+<span class="nc" id="L142">                request.guests(),</span>
+<span class="nc" id="L143">                pricing.baseTotal(),</span>
+<span class="nc" id="L144">                pricing.cleaningFee(),</span>
+<span class="nc" id="L145">                pricing.serviceFee(),</span>
+<span class="nc" id="L146">                pricing.discountTotal(),</span>
+<span class="nc" id="L147">                pricing.taxTotal(),</span>
+<span class="nc" id="L148">                pricing.commissionAmount(),</span>
+<span class="nc" id="L149">                pricing.grandTotal(),</span>
+<span class="nc" id="L150">                pricing.currency());</span>
+<span class="nc" id="L151">        booking.setHoldExpiresAt(clock.instant().plus(holdDuration));</span>
+<span class="nc" id="L152">        booking.setIdempotencyKey(idempotencyKey);</span>
 
-<span class="fc" id="L154">        Booking saved = bookingRepository.save(booking);</span>
-<span class="fc" id="L155">        markAvailabilityBooked(property, request.checkIn(), request.checkOut(), saved.getId());</span>
-<span class="fc" id="L156">        eventPublisher.publishEvent(PropertyChangedEvent.of(propertyId));</span>
-<span class="fc" id="L157">        meterRegistry.counter(&quot;havyn.booking.created&quot;).increment();</span>
+<span class="nc" id="L154">        Booking saved = bookingRepository.save(booking);</span>
+<span class="nc" id="L155">        markAvailabilityBooked(property, request.checkIn(), request.checkOut(), saved.getId());</span>
+<span class="nc" id="L156">        eventPublisher.publishEvent(PropertyChangedEvent.of(propertyId));</span>
+<span class="nc" id="L157">        meterRegistry.counter(&quot;havyn.booking.created&quot;).increment();</span>
 
-<span class="fc" id="L159">        return saved;</span>
+<span class="nc" id="L159">        return saved;</span>
     }
 
     /**
@@ -170,9 +170,9 @@ public class BookingService {
      * not fail closed — a missing setting shouldn't itself take the platform down).
      */
     private boolean bookingsEnabled() {
-<span class="fc" id="L173">        return platformSettingRepository.findById(BOOKINGS_ENABLED_SETTING_KEY)</span>
-<span class="pc bpc" id="L174" title="1 of 2 branches missed.">                .map(setting -&gt; !&quot;false&quot;.equalsIgnoreCase(setting.getValue()))</span>
-<span class="fc" id="L175">                .orElse(true);</span>
+<span class="nc" id="L173">        return platformSettingRepository.findById(BOOKINGS_ENABLED_SETTING_KEY)</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                .map(setting -&gt; !&quot;false&quot;.equalsIgnoreCase(setting.getValue()))</span>
+<span class="nc" id="L175">                .orElse(true);</span>
     }
 
     @Transactional(readOnly = true)
@@ -231,42 +231,42 @@ public class BookingService {
      */
     @Transactional
     public CancellationOutcome cancel(UUID guestId, UUID bookingId) {
-<span class="fc" id="L234">        Booking booking = findOwned(guestId, bookingId);</span>
+<span class="nc" id="L234">        Booking booking = findOwned(guestId, bookingId);</span>
 
-<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (booking.getStatus() == BookingStatus.PENDING) {</span>
-<span class="fc" id="L237">            booking.transitionTo(BookingStatus.CANCELLED);</span>
-<span class="fc" id="L238">            clearAvailabilityBooking(booking);</span>
-<span class="fc" id="L239">            eventPublisher.publishEvent(PropertyChangedEvent.of(booking.getPropertyId()));</span>
-<span class="fc" id="L240">            eventPublisher.publishEvent(BookingCancelledEvent.of(booking.getId(), booking.getGuestId(), booking.getPropertyId(), false));</span>
-<span class="fc" id="L241">            meterRegistry.counter(&quot;havyn.booking.cancelled&quot;, &quot;refunded&quot;, &quot;false&quot;).increment();</span>
-<span class="fc" id="L242">            return new CancellationOutcome(booking, BigDecimal.ZERO, BigDecimal.ZERO);</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">        if (booking.getStatus() == BookingStatus.PENDING) {</span>
+<span class="nc" id="L237">            booking.transitionTo(BookingStatus.CANCELLED);</span>
+<span class="nc" id="L238">            clearAvailabilityBooking(booking);</span>
+<span class="nc" id="L239">            eventPublisher.publishEvent(PropertyChangedEvent.of(booking.getPropertyId()));</span>
+<span class="nc" id="L240">            eventPublisher.publishEvent(BookingCancelledEvent.of(booking.getId(), booking.getGuestId(), booking.getPropertyId(), false));</span>
+<span class="nc" id="L241">            meterRegistry.counter(&quot;havyn.booking.cancelled&quot;, &quot;refunded&quot;, &quot;false&quot;).increment();</span>
+<span class="nc" id="L242">            return new CancellationOutcome(booking, BigDecimal.ZERO, BigDecimal.ZERO);</span>
         }
 
-<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (booking.getStatus() == BookingStatus.CONFIRMED) {</span>
-<span class="fc" id="L246">            String cancellationPolicy = propertyRepository.findById(booking.getPropertyId())</span>
-<span class="fc" id="L247">                    .map(Property::getCancellationPolicy)</span>
-<span class="fc" id="L248">                    .orElse(&quot;STRICT&quot;); // conservative fallback if the listing was somehow deleted</span>
-<span class="fc" id="L249">            long daysUntilCheckIn = ChronoUnit.DAYS.between(LocalDate.now(clock), booking.getCheckIn());</span>
-<span class="fc" id="L250">            BigDecimal refundPercentage = CancellationPolicyCalculator.refundPercentage(cancellationPolicy, daysUntilCheckIn);</span>
-<span class="fc" id="L251">            BigDecimal refundAmount = booking.getGrandTotal()</span>
-<span class="fc" id="L252">                    .multiply(refundPercentage)</span>
-<span class="fc" id="L253">                    .divide(HUNDRED, 2, RoundingMode.HALF_UP);</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        if (booking.getStatus() == BookingStatus.CONFIRMED) {</span>
+<span class="nc" id="L246">            String cancellationPolicy = propertyRepository.findById(booking.getPropertyId())</span>
+<span class="nc" id="L247">                    .map(Property::getCancellationPolicy)</span>
+<span class="nc" id="L248">                    .orElse(&quot;STRICT&quot;); // conservative fallback if the listing was somehow deleted</span>
+<span class="nc" id="L249">            long daysUntilCheckIn = ChronoUnit.DAYS.between(LocalDate.now(clock), booking.getCheckIn());</span>
+<span class="nc" id="L250">            BigDecimal refundPercentage = CancellationPolicyCalculator.refundPercentage(cancellationPolicy, daysUntilCheckIn);</span>
+<span class="nc" id="L251">            BigDecimal refundAmount = booking.getGrandTotal()</span>
+<span class="nc" id="L252">                    .multiply(refundPercentage)</span>
+<span class="nc" id="L253">                    .divide(HUNDRED, 2, RoundingMode.HALF_UP);</span>
 
-<span class="fc bfc" id="L255" title="All 2 branches covered.">            booking.transitionTo(refundPercentage.signum() &gt; 0 ? BookingStatus.REFUNDED : BookingStatus.CANCELLED);</span>
-<span class="fc" id="L256">            clearAvailabilityBooking(booking);</span>
-<span class="fc" id="L257">            eventPublisher.publishEvent(PropertyChangedEvent.of(booking.getPropertyId()));</span>
-<span class="fc" id="L258">            eventPublisher.publishEvent(</span>
-<span class="fc bfc" id="L259" title="All 2 branches covered.">                    BookingCancelledEvent.of(booking.getId(), booking.getGuestId(), booking.getPropertyId(), refundAmount.signum() &gt; 0));</span>
-<span class="fc bfc" id="L260" title="All 2 branches covered.">            if (refundAmount.signum() &gt; 0) {</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">            booking.transitionTo(refundPercentage.signum() &gt; 0 ? BookingStatus.REFUNDED : BookingStatus.CANCELLED);</span>
+<span class="nc" id="L256">            clearAvailabilityBooking(booking);</span>
+<span class="nc" id="L257">            eventPublisher.publishEvent(PropertyChangedEvent.of(booking.getPropertyId()));</span>
+<span class="nc" id="L258">            eventPublisher.publishEvent(</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">                    BookingCancelledEvent.of(booking.getId(), booking.getGuestId(), booking.getPropertyId(), refundAmount.signum() &gt; 0));</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">            if (refundAmount.signum() &gt; 0) {</span>
                 // payments/ (prompt 13) listens for this to call the real provider refund —
                 // booking/ never needs to know payments/ exists. See BookingRefundDueEvent's Javadoc.
-<span class="fc" id="L263">                eventPublisher.publishEvent(BookingRefundDueEvent.of(booking.getId(), refundAmount));</span>
+<span class="nc" id="L263">                eventPublisher.publishEvent(BookingRefundDueEvent.of(booking.getId(), refundAmount));</span>
             }
-<span class="fc bfc" id="L265" title="All 2 branches covered.">            meterRegistry.counter(&quot;havyn.booking.cancelled&quot;, &quot;refunded&quot;, String.valueOf(refundAmount.signum() &gt; 0)).increment();</span>
-<span class="fc" id="L266">            return new CancellationOutcome(booking, refundPercentage, refundAmount);</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            meterRegistry.counter(&quot;havyn.booking.cancelled&quot;, &quot;refunded&quot;, String.valueOf(refundAmount.signum() &gt; 0)).increment();</span>
+<span class="nc" id="L266">            return new CancellationOutcome(booking, refundPercentage, refundAmount);</span>
         }
 
-<span class="fc" id="L269">        throw new BadRequestException(&quot;BOOKING_NOT_CANCELLABLE&quot;, &quot;This booking can no longer be cancelled&quot;);</span>
+<span class="nc" id="L269">        throw new BadRequestException(&quot;BOOKING_NOT_CANCELLABLE&quot;, &quot;This booking can no longer be cancelled&quot;);</span>
     }
 
     /**
@@ -277,23 +277,23 @@ public class BookingService {
      */
     @Transactional
     public boolean confirmPayment(UUID bookingId) {
-<span class="pc" id="L280">        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
-<span class="fc bfc" id="L281" title="All 2 branches covered.">        if (booking.getStatus() != BookingStatus.PENDING) {</span>
-<span class="fc" id="L282">            return false;</span>
+<span class="nc" id="L280">        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">        if (booking.getStatus() != BookingStatus.PENDING) {</span>
+<span class="nc" id="L282">            return false;</span>
         }
-<span class="fc" id="L284">        booking.assignReferenceId(nextReferenceId());</span>
-<span class="fc" id="L285">        booking.transitionTo(BookingStatus.CONFIRMED);</span>
+<span class="nc" id="L284">        booking.assignReferenceId(nextReferenceId());</span>
+<span class="nc" id="L285">        booking.transitionTo(BookingStatus.CONFIRMED);</span>
         // notifications/ (prompt 16) listens for this to notify the guest — booking/
         // never needs to know notifications/ exists. See BookingConfirmedEvent's Javadoc.
-<span class="fc" id="L288">        eventPublisher.publishEvent(</span>
-<span class="fc" id="L289">                BookingConfirmedEvent.of(booking.getId(), booking.getGuestId(), booking.getPropertyId(), booking.getCheckIn(), booking.getCheckOut()));</span>
-<span class="fc" id="L290">        return true;</span>
+<span class="nc" id="L288">        eventPublisher.publishEvent(</span>
+<span class="nc" id="L289">                BookingConfirmedEvent.of(booking.getId(), booking.getGuestId(), booking.getPropertyId(), booking.getCheckIn(), booking.getCheckOut()));</span>
+<span class="nc" id="L290">        return true;</span>
     }
 
     private String nextReferenceId() {
-<span class="fc" id="L294">        int year = LocalDate.now(clock.withZone(ZoneOffset.UTC)).getYear();</span>
-<span class="fc" id="L295">        long sequence = bookingRepository.nextBookingReferenceSequence();</span>
-<span class="fc" id="L296">        return &quot;HV-&quot; + year + &quot;-&quot; + String.format(&quot;%06d&quot;, sequence);</span>
+<span class="nc" id="L294">        int year = LocalDate.now(clock.withZone(ZoneOffset.UTC)).getYear();</span>
+<span class="nc" id="L295">        long sequence = bookingRepository.nextBookingReferenceSequence();</span>
+<span class="nc" id="L296">        return &quot;HV-&quot; + year + &quot;-&quot; + String.format(&quot;%06d&quot;, sequence);</span>
     }
 
     /** Global hygiene sweep so an expired hold frees up even if nobody else tries to book that specific property again. */
@@ -315,67 +315,67 @@ public class BookingService {
 <span class="nc" id="L315">    }</span>
 
     private void expireStaleHolds(UUID propertyId) {
-<span class="fc" id="L318">        List&lt;Booking&gt; expired = bookingRepository</span>
-<span class="fc" id="L319">                .findAllByPropertyIdAndStatusAndHoldExpiresAtBefore(propertyId, BookingStatus.PENDING, clock.instant());</span>
-<span class="pc bpc" id="L320" title="1 of 2 branches missed.">        for (Booking booking : expired) {</span>
+<span class="nc" id="L318">        List&lt;Booking&gt; expired = bookingRepository</span>
+<span class="nc" id="L319">                .findAllByPropertyIdAndStatusAndHoldExpiresAtBefore(propertyId, BookingStatus.PENDING, clock.instant());</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        for (Booking booking : expired) {</span>
 <span class="nc" id="L321">            booking.transitionTo(BookingStatus.CANCELLED);</span>
 <span class="nc" id="L322">            clearAvailabilityBooking(booking);</span>
 <span class="nc" id="L323">        }</span>
-<span class="pc bpc" id="L324" title="1 of 2 branches missed.">        if (!expired.isEmpty()) {</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        if (!expired.isEmpty()) {</span>
 <span class="nc" id="L325">            meterRegistry.counter(&quot;havyn.booking.hold_expired&quot;, &quot;trigger&quot;, &quot;lazy_on_create&quot;).increment(expired.size());</span>
         }
-<span class="fc" id="L327">    }</span>
+<span class="nc" id="L327">    }</span>
 
     private boolean isAvailable(UUID propertyId, LocalDate checkIn, LocalDate checkOut) {
-<span class="fc" id="L330">        boolean blocked = availabilityRepository</span>
-<span class="fc" id="L331">                .findAllByProperty_IdAndDateBetweenOrderByDateAsc(propertyId, checkIn, checkOut.minusDays(1))</span>
-<span class="fc" id="L332">                .stream()</span>
-<span class="fc" id="L333">                .anyMatch(Availability::isBlocked);</span>
-<span class="pc bpc" id="L334" title="1 of 2 branches missed.">        if (blocked) {</span>
+<span class="nc" id="L330">        boolean blocked = availabilityRepository</span>
+<span class="nc" id="L331">                .findAllByProperty_IdAndDateBetweenOrderByDateAsc(propertyId, checkIn, checkOut.minusDays(1))</span>
+<span class="nc" id="L332">                .stream()</span>
+<span class="nc" id="L333">                .anyMatch(Availability::isBlocked);</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">        if (blocked) {</span>
 <span class="nc" id="L335">            return false;</span>
         }
-<span class="fc bfc" id="L337" title="All 2 branches covered.">        return !bookingRepository.existsOverlapping(propertyId, checkIn, checkOut, ACTIVE_STATUSES);</span>
+<span class="nc bnc" id="L337" title="All 2 branches missed.">        return !bookingRepository.existsOverlapping(propertyId, checkIn, checkOut, ACTIVE_STATUSES);</span>
     }
 
     private void markAvailabilityBooked(Property property, LocalDate checkIn, LocalDate checkOut, UUID bookingId) {
-<span class="fc bfc" id="L341" title="All 2 branches covered.">        for (LocalDate date = checkIn; date.isBefore(checkOut); date = date.plusDays(1)) {</span>
-<span class="fc" id="L342">            LocalDate currentDate = date;</span>
-<span class="fc" id="L343">            Availability availability = availabilityRepository</span>
-<span class="fc" id="L344">                    .findByProperty_IdAndDate(property.getId(), currentDate)</span>
-<span class="fc" id="L345">                    .orElseGet(() -&gt; availabilityRepository.save(new Availability(property, currentDate, false, null)));</span>
-<span class="fc" id="L346">            availability.setBookingId(bookingId);</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">        for (LocalDate date = checkIn; date.isBefore(checkOut); date = date.plusDays(1)) {</span>
+<span class="nc" id="L342">            LocalDate currentDate = date;</span>
+<span class="nc" id="L343">            Availability availability = availabilityRepository</span>
+<span class="nc" id="L344">                    .findByProperty_IdAndDate(property.getId(), currentDate)</span>
+<span class="nc" id="L345">                    .orElseGet(() -&gt; availabilityRepository.save(new Availability(property, currentDate, false, null)));</span>
+<span class="nc" id="L346">            availability.setBookingId(bookingId);</span>
         }
-<span class="fc" id="L348">    }</span>
+<span class="nc" id="L348">    }</span>
 
     private void clearAvailabilityBooking(Booking booking) {
-<span class="fc bfc" id="L351" title="All 2 branches covered.">        for (LocalDate date = booking.getCheckIn(); date.isBefore(booking.getCheckOut()); date = date.plusDays(1)) {</span>
-<span class="fc" id="L352">            availabilityRepository.findByProperty_IdAndDate(booking.getPropertyId(), date)</span>
-<span class="pc" id="L353">                    .filter(availability -&gt; booking.getId().equals(availability.getBookingId()))</span>
-<span class="pc" id="L354">                    .ifPresent(availability -&gt; availability.setBookingId(null));</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        for (LocalDate date = booking.getCheckIn(); date.isBefore(booking.getCheckOut()); date = date.plusDays(1)) {</span>
+<span class="nc" id="L352">            availabilityRepository.findByProperty_IdAndDate(booking.getPropertyId(), date)</span>
+<span class="nc" id="L353">                    .filter(availability -&gt; booking.getId().equals(availability.getBookingId()))</span>
+<span class="nc" id="L354">                    .ifPresent(availability -&gt; availability.setBookingId(null));</span>
         }
-<span class="fc" id="L356">    }</span>
+<span class="nc" id="L356">    }</span>
 
     private void validateDates(LocalDate checkIn, LocalDate checkOut) {
-<span class="fc bfc" id="L359" title="All 2 branches covered.">        if (!checkIn.isBefore(checkOut)) {</span>
-<span class="fc" id="L360">            throw new BadRequestException(&quot;INVALID_DATE_RANGE&quot;, &quot;checkIn must be before checkOut&quot;);</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">        if (!checkIn.isBefore(checkOut)) {</span>
+<span class="nc" id="L360">            throw new BadRequestException(&quot;INVALID_DATE_RANGE&quot;, &quot;checkIn must be before checkOut&quot;);</span>
         }
-<span class="fc bfc" id="L362" title="All 2 branches covered.">        if (checkIn.isBefore(LocalDate.now(clock))) {</span>
-<span class="fc" id="L363">            throw new BadRequestException(&quot;INVALID_DATE_RANGE&quot;, &quot;checkIn cannot be in the past&quot;);</span>
+<span class="nc bnc" id="L362" title="All 2 branches missed.">        if (checkIn.isBefore(LocalDate.now(clock))) {</span>
+<span class="nc" id="L363">            throw new BadRequestException(&quot;INVALID_DATE_RANGE&quot;, &quot;checkIn cannot be in the past&quot;);</span>
         }
-<span class="fc" id="L365">    }</span>
+<span class="nc" id="L365">    }</span>
 
     private void validateCapacity(Property property, int guests) {
-<span class="fc bfc" id="L368" title="All 2 branches covered.">        if (guests &gt; property.getCapacity()) {</span>
-<span class="fc" id="L369">            throw new BadRequestException(&quot;EXCEEDS_CAPACITY&quot;, &quot;This property sleeps at most &quot; + property.getCapacity() + &quot; guests&quot;);</span>
+<span class="nc bnc" id="L368" title="All 2 branches missed.">        if (guests &gt; property.getCapacity()) {</span>
+<span class="nc" id="L369">            throw new BadRequestException(&quot;EXCEEDS_CAPACITY&quot;, &quot;This property sleeps at most &quot; + property.getCapacity() + &quot; guests&quot;);</span>
         }
-<span class="fc" id="L371">    }</span>
+<span class="nc" id="L371">    }</span>
 
     private Booking findOwned(UUID guestId, UUID bookingId) {
-<span class="pc" id="L374">        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
-<span class="fc bfc" id="L375" title="All 2 branches covered.">        if (!booking.getGuestId().equals(guestId)) {</span>
-<span class="fc" id="L376">            throw new ForbiddenException(&quot;You do not have access to this booking&quot;);</span>
+<span class="nc" id="L374">        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">        if (!booking.getGuestId().equals(guestId)) {</span>
+<span class="nc" id="L376">            throw new ForbiddenException(&quot;You do not have access to this booking&quot;);</span>
         }
-<span class="fc" id="L378">        return booking;</span>
+<span class="nc" id="L378">        return booking;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

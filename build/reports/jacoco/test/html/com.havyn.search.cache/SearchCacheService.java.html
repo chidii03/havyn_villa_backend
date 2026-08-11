@@ -28,10 +28,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Service
 public class SearchCacheService {
 
-<span class="fc" id="L31">    private static final Logger log = LoggerFactory.getLogger(SearchCacheService.class);</span>
+<span class="nc" id="L31">    private static final Logger log = LoggerFactory.getLogger(SearchCacheService.class);</span>
     private static final String GENERATION_KEY = &quot;havyn:search:gen&quot;;
     private static final String KEY_PREFIX = &quot;havyn:search:&quot;;
-<span class="fc" id="L34">    private static final Duration TTL = Duration.ofSeconds(60);</span>
+<span class="nc" id="L34">    private static final Duration TTL = Duration.ofSeconds(60);</span>
 
     private final StringRedisTemplate stringRedisTemplate;
     private final RedisTemplate&lt;String, Object&gt; objectRedisTemplate;

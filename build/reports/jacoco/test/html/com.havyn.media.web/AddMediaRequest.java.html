@@ -7,7 +7,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 
 /** Sent after the client has already uploaded directly to Cloudinary using a signature from {@code POST .../media/signature}. */
-<span class="fc" id="L10">public record AddMediaRequest(</span>
+<span class="nc" id="L10">public record AddMediaRequest(</span>
         @NotBlank String publicId,
         @NotBlank String secureUrl,
         @NotNull MediaResourceType resourceType,
