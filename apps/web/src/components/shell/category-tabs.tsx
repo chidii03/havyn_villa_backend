@@ -42,7 +42,7 @@ export function CategoryTabs({
   return (
     <nav
       aria-label="Primary"
-      className="flex items-end justify-center gap-10 pt-6 pb-8 md:gap-14"
+      className="flex w-full items-end justify-between gap-1 px-2 pt-6 pb-8 xs:gap-2 sm:justify-center sm:gap-8 sm:px-4 md:gap-14"
     >
       {TABS.map(({ href, label, icon }, index) => {
         const active = index === activeIndex;
@@ -52,13 +52,13 @@ export function CategoryTabs({
             key={label}
             href={href}
             className={cn(
-              "group relative flex flex-col items-center",
-              "px-2 pt-1",
+              "group relative flex flex-1 flex-col items-center sm:flex-none",
+              "px-1 pt-1 sm:px-2",
               "transition-colors duration-200",
               active ? "text-[#222222]" : "text-[#6A6A6A] hover:text-[#222222]",
             )}
           >
-            <span className="mb-0.5 block h-10 w-10 overflow-hidden">
+            <span className="mb-0.5 block h-7 w-7 overflow-hidden xs:h-8 xs:w-8 sm:h-10 sm:w-10">
               <Image
                 src={icon}
                 alt=""
@@ -66,14 +66,14 @@ export function CategoryTabs({
                 height={36}
                 priority
                 className={cn(
-                  "h-10 w-10 border-0 object-contain outline-none transition-transform duration-200",
+                  "h-full w-full border-0 object-contain outline-none transition-transform duration-200",
                   "group-hover:scale-110",
                   !active && "opacity-70 group-hover:opacity-100",
                 )}
               />
             </span>
 
-            <span className="whitespace-nowrap text-sm font-semibold mb-1">
+            <span className="mb-1 whitespace-nowrap text-[11px] font-semibold xs:text-xs sm:text-sm">
               {label}
             </span>
 
