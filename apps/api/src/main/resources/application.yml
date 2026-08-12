@@ -45,7 +45,6 @@ spring:
           starttls:
             enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
 
-# Non-standard app-specific keys (not spring.*) live under this namespace.
 havyn:
   web-base-url: ${WEB_BASE_URL:https://havynvilla.vercel.app}
   mail-from: ${MAIL_FROM:no-reply@havynvilla.com}
