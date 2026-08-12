@@ -90,8 +90,7 @@ public class AuthService {
         user = userRepository.save(user);
         profileRepository.save(new Profile(user, fullName.trim()));
 
-        String verificationToken = verificationTokenService.issueEmailVerificationToken(user.getId());
-        mailer.sendEmailVerification(normalizedEmail, verificationToken);
+        sendEmailVerification(user);
 
         log.info("Registered user userId={}", user.getId());
         return issueTokens(user);
@@ -185,6 +184,15 @@ public class AuthService {
         User user = userRepository.findById(userId).orElseThrow(() -> NotFoundException.of("User", userId));
         user.markEmailVerified(Instant.now());
         log.info("Email verified userId={}", userId);
+    }
+
+    public void sendEmailVerification(User user) {
+        if (user.isEmailVerified()) {
+            return;
+        }
+        String verificationToken = verificationTokenService.issueEmailVerificationToken(user.getId());
+        mailer.sendEmailVerification(user.getEmail(), verificationToken);
+        log.info("Email verification requested userId={}", user.getId());
     }
 
     /** Always completes normally regardless of whether the email exists — no account enumeration. */

@@ -138,17 +138,17 @@ export function CategoryTabs({
                       }
                 }
                 className="
-      absolute
-      -bottom-1.5
-      left-1/2
-      h-0.5
-      w-6
-      -translate-x-1/2
-      rounded-full
-      bg-[#222222]
-      sm:w-7
-      md:w-8
-    "
+                         absolute
+                        -bottom-1.5
+                          left-1/2
+                            h-0.5
+                             w-6
+                       -translate-x-1/2
+                          rounded-full
+                         bg-[#222222]
+                             sm:w-7
+                             md:w-8
+                                "
               />
             )}
           </Link>
