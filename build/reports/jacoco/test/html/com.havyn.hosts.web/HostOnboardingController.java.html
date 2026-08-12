@@ -37,45 +37,51 @@ public class HostOnboardingController {
     private final HostOnboardingService hostOnboardingService;
     private final ProfileRepository profileRepository;
     private final Duration refreshTtl;
+    private final boolean refreshCookieSecure;
+    private final String refreshCookieSameSite;
 
     public HostOnboardingController(
             HostOnboardingService hostOnboardingService,
             ProfileRepository profileRepository,
-<span class="nc" id="L44">            @Value(&quot;${havyn.jwt.refresh-ttl-days}&quot;) long refreshTtlDays) {</span>
-<span class="nc" id="L45">        this.hostOnboardingService = hostOnboardingService;</span>
-<span class="nc" id="L46">        this.profileRepository = profileRepository;</span>
-<span class="nc" id="L47">        this.refreshTtl = Duration.ofDays(refreshTtlDays);</span>
-<span class="nc" id="L48">    }</span>
+            @Value(&quot;${havyn.jwt.refresh-ttl-days}&quot;) long refreshTtlDays,
+            @Value(&quot;${havyn.auth.cookie.secure:false}&quot;) boolean refreshCookieSecure,
+<span class="nc" id="L48">            @Value(&quot;${havyn.auth.cookie.same-site:Lax}&quot;) String refreshCookieSameSite) {</span>
+<span class="nc" id="L49">        this.hostOnboardingService = hostOnboardingService;</span>
+<span class="nc" id="L50">        this.profileRepository = profileRepository;</span>
+<span class="nc" id="L51">        this.refreshTtl = Duration.ofDays(refreshTtlDays);</span>
+<span class="nc" id="L52">        this.refreshCookieSecure = refreshCookieSecure;</span>
+<span class="nc" id="L53">        this.refreshCookieSameSite = refreshCookieSameSite;</span>
+<span class="nc" id="L54">    }</span>
 
     @PostMapping
     public AuthResponse becomeHost(Authentication authentication, HttpServletResponse response) {
-<span class="nc" id="L52">        UUID userId = ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
-<span class="nc" id="L53">        AuthResult result = hostOnboardingService.becomeHost(userId);</span>
-<span class="nc" id="L54">        setRefreshCookie(response, result.refreshToken());</span>
-<span class="nc" id="L55">        return AuthResponse.bearer(result.accessToken(), result.refreshToken(), result.expiresInSeconds(), toSummary(result.user()));</span>
+<span class="nc" id="L58">        UUID userId = ((AuthenticatedUser) authentication.getPrincipal()).userId();</span>
+<span class="nc" id="L59">        AuthResult result = hostOnboardingService.becomeHost(userId);</span>
+<span class="nc" id="L60">        setRefreshCookie(response, result.refreshToken());</span>
+<span class="nc" id="L61">        return AuthResponse.bearer(result.accessToken(), result.refreshToken(), result.expiresInSeconds(), toSummary(result.user()));</span>
     }
 
     private UserSummary toSummary(User user) {
-<span class="nc" id="L59">        Profile profile = profileRepository.findByUser_Id(user.getId()).orElse(null);</span>
-<span class="nc" id="L60">        return new UserSummary(</span>
-<span class="nc" id="L61">                user.getId(),</span>
-<span class="nc" id="L62">                user.getEmail(),</span>
-<span class="nc" id="L63">                user.isEmailVerified(),</span>
-<span class="nc" id="L64">                user.getRoles().stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet()),</span>
-<span class="nc bnc" id="L65" title="All 2 branches missed.">                profile != null ? profile.getFullName() : null,</span>
-<span class="nc bnc" id="L66" title="All 2 branches missed.">                profile != null ? profile.getPhone() : null,</span>
-<span class="nc bnc" id="L67" title="All 2 branches missed.">                profile != null ? profile.getAvatarUrl() : null);</span>
+<span class="nc" id="L65">        Profile profile = profileRepository.findByUser_Id(user.getId()).orElse(null);</span>
+<span class="nc" id="L66">        return new UserSummary(</span>
+<span class="nc" id="L67">                user.getId(),</span>
+<span class="nc" id="L68">                user.getEmail(),</span>
+<span class="nc" id="L69">                user.isEmailVerified(),</span>
+<span class="nc" id="L70">                user.getRoles().stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet()),</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                profile != null ? profile.getFullName() : null,</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                profile != null ? profile.getPhone() : null,</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                profile != null ? profile.getAvatarUrl() : null);</span>
     }
 
     private void setRefreshCookie(HttpServletResponse response, String token) {
-<span class="nc" id="L71">        ResponseCookie cookie = ResponseCookie.from(AuthController.REFRESH_COOKIE_NAME, token)</span>
-<span class="nc" id="L72">                .httpOnly(true)</span>
-<span class="nc" id="L73">                .secure(true)</span>
-<span class="nc" id="L74">                .sameSite(&quot;Lax&quot;)</span>
-<span class="nc" id="L75">                .path(&quot;/api/v1/auth&quot;)</span>
-<span class="nc" id="L76">                .maxAge(refreshTtl)</span>
-<span class="nc" id="L77">                .build();</span>
-<span class="nc" id="L78">        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());</span>
-<span class="nc" id="L79">    }</span>
+<span class="nc" id="L77">        ResponseCookie cookie = ResponseCookie.from(AuthController.REFRESH_COOKIE_NAME, token)</span>
+<span class="nc" id="L78">                .httpOnly(true)</span>
+<span class="nc" id="L79">                .secure(refreshCookieSecure)</span>
+<span class="nc" id="L80">                .sameSite(refreshCookieSameSite)</span>
+<span class="nc" id="L81">                .path(&quot;/api/v1/auth&quot;)</span>
+<span class="nc" id="L82">                .maxAge(refreshTtl)</span>
+<span class="nc" id="L83">                .build();</span>
+<span class="nc" id="L84">        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());</span>
+<span class="nc" id="L85">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

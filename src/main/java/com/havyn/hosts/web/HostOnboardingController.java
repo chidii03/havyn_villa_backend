@@ -37,14 +37,20 @@ public class HostOnboardingController {
     private final HostOnboardingService hostOnboardingService;
     private final ProfileRepository profileRepository;
     private final Duration refreshTtl;
+    private final boolean refreshCookieSecure;
+    private final String refreshCookieSameSite;
 
     public HostOnboardingController(
             HostOnboardingService hostOnboardingService,
             ProfileRepository profileRepository,
-            @Value("${havyn.jwt.refresh-ttl-days}") long refreshTtlDays) {
+            @Value("${havyn.jwt.refresh-ttl-days}") long refreshTtlDays,
+            @Value("${havyn.auth.cookie.secure:false}") boolean refreshCookieSecure,
+            @Value("${havyn.auth.cookie.same-site:Lax}") String refreshCookieSameSite) {
         this.hostOnboardingService = hostOnboardingService;
         this.profileRepository = profileRepository;
         this.refreshTtl = Duration.ofDays(refreshTtlDays);
+        this.refreshCookieSecure = refreshCookieSecure;
+        this.refreshCookieSameSite = refreshCookieSameSite;
     }
 
     @PostMapping
@@ -70,8 +76,8 @@ public class HostOnboardingController {
     private void setRefreshCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from(AuthController.REFRESH_COOKIE_NAME, token)
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
+                .secure(refreshCookieSecure)
+                .sameSite(refreshCookieSameSite)
                 .path("/api/v1/auth")
                 .maxAge(refreshTtl)
                 .build();

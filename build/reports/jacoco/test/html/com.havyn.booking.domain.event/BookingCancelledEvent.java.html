@@ -12,11 +12,11 @@ import java.util.UUID;
  * {@code payments/} to act on), this fires for every cancellation so a notification
  * always goes out, refunded or not.
  */
-<span class="nc" id="L15">public record BookingCancelledEvent(UUID bookingId, UUID guestId, UUID propertyId, boolean refunded, Instant occurredAt)</span>
+<span class="fc" id="L15">public record BookingCancelledEvent(UUID bookingId, UUID guestId, UUID propertyId, boolean refunded, Instant occurredAt)</span>
         implements DomainEvent {
 
     public static BookingCancelledEvent of(UUID bookingId, UUID guestId, UUID propertyId, boolean refunded) {
-<span class="nc" id="L19">        return new BookingCancelledEvent(bookingId, guestId, propertyId, refunded, Instant.now());</span>
+<span class="fc" id="L19">        return new BookingCancelledEvent(bookingId, guestId, propertyId, refunded, Instant.now());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

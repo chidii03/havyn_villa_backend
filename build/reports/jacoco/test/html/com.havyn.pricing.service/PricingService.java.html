@@ -26,8 +26,8 @@ public class PricingService {
     private static final String COMMISSION_SETTING_KEY = &quot;commission_pct&quot;;
     // &quot;default illustrative 12-15%&quot; — project-docs/product/03-business-model.md#17.
     // Only used if the seeded platform_setting row is somehow missing.
-<span class="nc" id="L29">    private static final BigDecimal DEFAULT_COMMISSION_PCT = BigDecimal.valueOf(12);</span>
-<span class="nc" id="L30">    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);</span>
+<span class="fc" id="L29">    private static final BigDecimal DEFAULT_COMMISSION_PCT = BigDecimal.valueOf(12);</span>
+<span class="fc" id="L30">    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);</span>
 
     private final AvailabilityRepository availabilityRepository;
     private final PlatformSettingRepository platformSettingRepository;

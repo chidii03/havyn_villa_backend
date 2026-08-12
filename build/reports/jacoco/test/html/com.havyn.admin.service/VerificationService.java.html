@@ -4,9 +4,11 @@ import com.havyn.admin.domain.VerificationRequest;
 import com.havyn.admin.domain.VerificationStatus;
 import com.havyn.admin.repo.VerificationRequestRepository;
 import com.havyn.audit.service.AuditLogService;
+import com.havyn.common.error.BadRequestException;
 import com.havyn.common.error.ConflictException;
 import com.havyn.common.error.ForbiddenException;
 import com.havyn.common.error.NotFoundException;
+import com.havyn.users.repo.UserRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -29,74 +31,86 @@ public class VerificationService {
     private final VerificationRequestRepository verificationRequestRepository;
     private final AuditLogService auditLogService;
     private final Clock clock;
+    private final UserRepository userRepository;
 
-<span class="nc" id="L33">    public VerificationService(VerificationRequestRepository verificationRequestRepository, AuditLogService auditLogService, Clock clock) {</span>
-<span class="nc" id="L34">        this.verificationRequestRepository = verificationRequestRepository;</span>
-<span class="nc" id="L35">        this.auditLogService = auditLogService;</span>
-<span class="nc" id="L36">        this.clock = clock;</span>
-<span class="nc" id="L37">    }</span>
+    public VerificationService(
+            VerificationRequestRepository verificationRequestRepository,
+            AuditLogService auditLogService,
+            Clock clock,
+<span class="fc" id="L40">            UserRepository userRepository) {</span>
+<span class="fc" id="L41">        this.verificationRequestRepository = verificationRequestRepository;</span>
+<span class="fc" id="L42">        this.auditLogService = auditLogService;</span>
+<span class="fc" id="L43">        this.clock = clock;</span>
+<span class="fc" id="L44">        this.userRepository = userRepository;</span>
+<span class="fc" id="L45">    }</span>
 
     @Transactional
     public VerificationRequest submit(UUID userId, String documentUrl, String notes) {
-<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.PENDING)) {</span>
-<span class="nc" id="L42">            throw new ConflictException(&quot;VERIFICATION_ALREADY_PENDING&quot;, &quot;You already have a verification request awaiting review&quot;);</span>
+<span class="fc" id="L49">        boolean emailVerified = userRepository.findById(userId)</span>
+<span class="pc" id="L50">                .orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId))</span>
+<span class="fc" id="L51">                .isEmailVerified();</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (!emailVerified) {</span>
+<span class="fc" id="L53">            throw new BadRequestException(&quot;EMAIL_NOT_VERIFIED&quot;, &quot;Verify your email before submitting host verification&quot;);</span>
         }
-<span class="nc" id="L44">        return verificationRequestRepository.save(new VerificationRequest(userId, documentUrl, notes));</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.PENDING)) {</span>
+<span class="fc" id="L56">            throw new ConflictException(&quot;VERIFICATION_ALREADY_PENDING&quot;, &quot;You already have a verification request awaiting review&quot;);</span>
+        }
+<span class="fc" id="L58">        return verificationRequestRepository.save(new VerificationRequest(userId, documentUrl, notes));</span>
     }
 
     @Transactional(readOnly = true)
     public Page&lt;VerificationRequest&gt; listOwn(UUID userId, Pageable pageable) {
-<span class="nc" id="L49">        return verificationRequestRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable);</span>
+<span class="nc" id="L63">        return verificationRequestRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable);</span>
     }
 
     @Transactional(readOnly = true)
     public Page&lt;VerificationRequest&gt; listPending(Pageable pageable) {
-<span class="nc" id="L54">        return verificationRequestRepository.findAllByStatusOrderByCreatedAtAsc(VerificationStatus.PENDING, pageable);</span>
+<span class="nc" id="L68">        return verificationRequestRepository.findAllByStatusOrderByCreatedAtAsc(VerificationStatus.PENDING, pageable);</span>
     }
 
     @Transactional(readOnly = true)
     public long countPending() {
-<span class="nc" id="L59">        return verificationRequestRepository.countByStatus(VerificationStatus.PENDING);</span>
+<span class="nc" id="L73">        return verificationRequestRepository.countByStatus(VerificationStatus.PENDING);</span>
     }
 
     @Transactional
     public VerificationRequest approve(UUID adminId, UUID requestId) {
-<span class="nc" id="L64">        VerificationRequest request = findPending(requestId);</span>
-<span class="nc" id="L65">        request.approve(adminId, Instant.now(clock));</span>
-<span class="nc" id="L66">        auditLogService.record(</span>
+<span class="fc" id="L78">        VerificationRequest request = findPending(requestId);</span>
+<span class="fc" id="L79">        request.approve(adminId, Instant.now(clock));</span>
+<span class="fc" id="L80">        auditLogService.record(</span>
                 adminId, &quot;VERIFICATION_APPROVED&quot;, &quot;VerificationRequest&quot;, requestId,
-<span class="nc" id="L68">                Map.of(&quot;status&quot;, &quot;PENDING&quot;), Map.of(&quot;status&quot;, &quot;APPROVED&quot;));</span>
-<span class="nc" id="L69">        return request;</span>
+<span class="fc" id="L82">                Map.of(&quot;status&quot;, &quot;PENDING&quot;), Map.of(&quot;status&quot;, &quot;APPROVED&quot;));</span>
+<span class="fc" id="L83">        return request;</span>
     }
 
     @Transactional
     public VerificationRequest reject(UUID adminId, UUID requestId, String reviewNotes) {
-<span class="nc" id="L74">        VerificationRequest request = findPending(requestId);</span>
-<span class="nc" id="L75">        request.reject(adminId, reviewNotes, Instant.now(clock));</span>
-<span class="nc" id="L76">        auditLogService.record(</span>
+<span class="fc" id="L88">        VerificationRequest request = findPending(requestId);</span>
+<span class="fc" id="L89">        request.reject(adminId, reviewNotes, Instant.now(clock));</span>
+<span class="fc" id="L90">        auditLogService.record(</span>
                 adminId, &quot;VERIFICATION_REJECTED&quot;, &quot;VerificationRequest&quot;, requestId,
-<span class="nc" id="L78">                Map.of(&quot;status&quot;, &quot;PENDING&quot;), Map.of(&quot;status&quot;, &quot;REJECTED&quot;, &quot;reviewNotes&quot;, reviewNotes));</span>
-<span class="nc" id="L79">        return request;</span>
+<span class="fc" id="L92">                Map.of(&quot;status&quot;, &quot;PENDING&quot;), Map.of(&quot;status&quot;, &quot;REJECTED&quot;, &quot;reviewNotes&quot;, reviewNotes));</span>
+<span class="fc" id="L93">        return request;</span>
     }
 
     /** A caller may see a specific request only if they own it — admin-only listing/review endpoints don't call this. */
     @Transactional(readOnly = true)
     public VerificationRequest getOwnedOrAdmin(UUID callerId, UUID requestId) {
-<span class="nc" id="L85">        VerificationRequest request = verificationRequestRepository.findById(requestId)</span>
-<span class="nc" id="L86">                .orElseThrow(() -&gt; NotFoundException.of(&quot;VerificationRequest&quot;, requestId));</span>
-<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (!request.getUserId().equals(callerId)) {</span>
-<span class="nc" id="L88">            throw new ForbiddenException(&quot;You do not have access to this verification request&quot;);</span>
+<span class="fc" id="L99">        VerificationRequest request = verificationRequestRepository.findById(requestId)</span>
+<span class="fc" id="L100">                .orElseThrow(() -&gt; NotFoundException.of(&quot;VerificationRequest&quot;, requestId));</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        if (!request.getUserId().equals(callerId)) {</span>
+<span class="fc" id="L102">            throw new ForbiddenException(&quot;You do not have access to this verification request&quot;);</span>
         }
-<span class="nc" id="L90">        return request;</span>
+<span class="nc" id="L104">        return request;</span>
     }
 
     private VerificationRequest findPending(UUID requestId) {
-<span class="nc" id="L94">        VerificationRequest request = verificationRequestRepository.findById(requestId)</span>
-<span class="nc" id="L95">                .orElseThrow(() -&gt; NotFoundException.of(&quot;VerificationRequest&quot;, requestId));</span>
-<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (request.getStatus() != VerificationStatus.PENDING) {</span>
-<span class="nc" id="L97">            throw new ConflictException(&quot;VERIFICATION_NOT_PENDING&quot;, &quot;This request has already been reviewed&quot;);</span>
+<span class="fc" id="L108">        VerificationRequest request = verificationRequestRepository.findById(requestId)</span>
+<span class="pc" id="L109">                .orElseThrow(() -&gt; NotFoundException.of(&quot;VerificationRequest&quot;, requestId));</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (request.getStatus() != VerificationStatus.PENDING) {</span>
+<span class="fc" id="L111">            throw new ConflictException(&quot;VERIFICATION_NOT_PENDING&quot;, &quot;This request has already been reviewed&quot;);</span>
         }
-<span class="nc" id="L99">        return request;</span>
+<span class="fc" id="L113">        return request;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

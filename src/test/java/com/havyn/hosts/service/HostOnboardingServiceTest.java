@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.havyn.admin.domain.VerificationStatus;
@@ -53,6 +54,8 @@ class HostOnboardingServiceTest {
                 .isInstanceOf(BadRequestException.class)
                 .extracting(ex -> ((BadRequestException) ex).getCode())
                 .isEqualTo("EMAIL_NOT_VERIFIED");
+        verify(authService).sendEmailVerification(any());
+        verifyNoInteractions(roleRepository);
     }
 
     @Test

@@ -31,6 +31,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 
   mail:
     host: ${MAIL_HOST:localhost}
@@ -44,9 +45,8 @@ spring:
           starttls:
             enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
 
-# Non-standard app-specific keys (not spring.*) live under this namespace.
 havyn:
-  web-base-url: ${WEB_BASE_URL:http://localhost:3000}
+  web-base-url: ${WEB_BASE_URL:https://localhost:3000}
   mail-from: ${MAIL_FROM:no-reply@havynvilla.com}
   notification-timezone: ${HAVYN_NOTIFICATION_TIMEZONE:Africa/Lagos}
 
@@ -87,13 +87,13 @@ havyn:
     provider: ${PAYMENTS_PROVIDER:paystack}
     paystack:
       secret-key: ${PAYSTACK_SECRET_KEY:}
-      callback-url: ${PAYSTACK_CALLBACK_URL:http://localhost:3000/trips}
+      callback-url: ${PAYSTACK_CALLBACK_URL:https://localhost:3000/trips}
       connect-timeout: ${PAYSTACK_CONNECT_TIMEOUT:5s}
       read-timeout: ${PAYSTACK_READ_TIMEOUT:15s}
     flutterwave:
       secret-key: ${FLUTTERWAVE_SECRET_KEY:}
       webhook-hash: ${FLUTTERWAVE_WEBHOOK_HASH:}
-      redirect-url: ${FLUTTERWAVE_REDIRECT_URL:http://localhost:3000/trips}
+      redirect-url: ${FLUTTERWAVE_REDIRECT_URL:https://localhost:3000/trips}
 
   rayprop:
     api-key: ${RAYPROP_API_KEY:}

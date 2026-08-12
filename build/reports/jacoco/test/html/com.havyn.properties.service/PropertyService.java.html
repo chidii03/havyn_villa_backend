@@ -44,7 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PropertyService {
 
     /** Who gets the exact address/coordinates on a detail read — see {@link #getActiveDetail}. */
-<span class="nc" id="L47">    private static final Set&lt;BookingStatus&gt; LOCATION_REVEAL_STATUSES = Set.of(BookingStatus.CONFIRMED, BookingStatus.COMPLETED);</span>
+<span class="fc" id="L47">    private static final Set&lt;BookingStatus&gt; LOCATION_REVEAL_STATUSES = Set.of(BookingStatus.CONFIRMED, BookingStatus.COMPLETED);</span>
 
     private final PropertyRepository propertyRepository;
     private final PropertyTypeRepository propertyTypeRepository;

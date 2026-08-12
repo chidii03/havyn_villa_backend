@@ -11,17 +11,17 @@ import java.util.Set;
  * PENDING -&gt; ACTIVE} yet (that belongs to prompt 18 / admin platform, out of this
  * prompt's file scope) — for now a host publishes their own submitted listing.
  */
-<span class="nc" id="L14">public enum PropertyStatus {</span>
-<span class="nc" id="L15">    DRAFT,</span>
-<span class="nc" id="L16">    PENDING,</span>
-<span class="nc" id="L17">    ACTIVE,</span>
-<span class="nc" id="L18">    SUSPENDED;</span>
+<span class="fc" id="L14">public enum PropertyStatus {</span>
+<span class="fc" id="L15">    DRAFT,</span>
+<span class="fc" id="L16">    PENDING,</span>
+<span class="fc" id="L17">    ACTIVE,</span>
+<span class="fc" id="L18">    SUSPENDED;</span>
 
-<span class="nc" id="L20">    private static final Map&lt;PropertyStatus, Set&lt;PropertyStatus&gt;&gt; ALLOWED_TRANSITIONS = Map.of(</span>
-<span class="nc" id="L21">            DRAFT, Set.of(PENDING),</span>
-<span class="nc" id="L22">            PENDING, Set.of(ACTIVE, DRAFT),</span>
-<span class="nc" id="L23">            ACTIVE, Set.of(SUSPENDED),</span>
-<span class="nc" id="L24">            SUSPENDED, Set.of(ACTIVE));</span>
+<span class="fc" id="L20">    private static final Map&lt;PropertyStatus, Set&lt;PropertyStatus&gt;&gt; ALLOWED_TRANSITIONS = Map.of(</span>
+<span class="fc" id="L21">            DRAFT, Set.of(PENDING),</span>
+<span class="fc" id="L22">            PENDING, Set.of(ACTIVE, DRAFT),</span>
+<span class="fc" id="L23">            ACTIVE, Set.of(SUSPENDED),</span>
+<span class="fc" id="L24">            SUSPENDED, Set.of(ACTIVE));</span>
 
     public boolean canTransitionTo(PropertyStatus target) {
 <span class="nc" id="L27">        return ALLOWED_TRANSITIONS.getOrDefault(this, Set.of()).contains(target);</span>

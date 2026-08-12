@@ -4,9 +4,11 @@ import com.havyn.admin.domain.VerificationRequest;
 import com.havyn.admin.domain.VerificationStatus;
 import com.havyn.admin.repo.VerificationRequestRepository;
 import com.havyn.audit.service.AuditLogService;
+import com.havyn.common.error.BadRequestException;
 import com.havyn.common.error.ConflictException;
 import com.havyn.common.error.ForbiddenException;
 import com.havyn.common.error.NotFoundException;
+import com.havyn.users.repo.UserRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -29,15 +31,27 @@ public class VerificationService {
     private final VerificationRequestRepository verificationRequestRepository;
     private final AuditLogService auditLogService;
     private final Clock clock;
+    private final UserRepository userRepository;
 
-    public VerificationService(VerificationRequestRepository verificationRequestRepository, AuditLogService auditLogService, Clock clock) {
+    public VerificationService(
+            VerificationRequestRepository verificationRequestRepository,
+            AuditLogService auditLogService,
+            Clock clock,
+            UserRepository userRepository) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.auditLogService = auditLogService;
         this.clock = clock;
+        this.userRepository = userRepository;
     }
 
     @Transactional
     public VerificationRequest submit(UUID userId, String documentUrl, String notes) {
+        boolean emailVerified = userRepository.findById(userId)
+                .orElseThrow(() -> NotFoundException.of("User", userId))
+                .isEmailVerified();
+        if (!emailVerified) {
+            throw new BadRequestException("EMAIL_NOT_VERIFIED", "Verify your email before submitting host verification");
+        }
         if (verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.PENDING)) {
             throw new ConflictException("VERIFICATION_ALREADY_PENDING", "You already have a verification request awaiting review");
         }

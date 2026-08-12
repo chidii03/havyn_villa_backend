@@ -2,6 +2,9 @@
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SmtpMailer implements Mailer {
 
-<span class="nc" id="L24">    private static final Logger log = LoggerFactory.getLogger(SmtpMailer.class);</span>
+<span class="fc" id="L27">    private static final Logger log = LoggerFactory.getLogger(SmtpMailer.class);</span>
 
     private final JavaMailSender mailSender;
     private final String webBaseUrl;
@@ -30,35 +33,35 @@ public class SmtpMailer implements Mailer {
     public SmtpMailer(
             JavaMailSender mailSender,
             @Value(&quot;${havyn.web-base-url}&quot;) String webBaseUrl,
-<span class="nc" id="L33">            @Value(&quot;${havyn.mail-from}&quot;) String mailFrom) {</span>
-<span class="nc" id="L34">        this.mailSender = mailSender;</span>
-<span class="nc" id="L35">        this.webBaseUrl = webBaseUrl;</span>
-<span class="nc" id="L36">        this.mailFrom = mailFrom;</span>
-<span class="nc" id="L37">    }</span>
+<span class="fc" id="L36">            @Value(&quot;${havyn.mail-from}&quot;) String mailFrom) {</span>
+<span class="fc" id="L37">        this.mailSender = mailSender;</span>
+<span class="fc" id="L38">        this.webBaseUrl = webBaseUrl;</span>
+<span class="fc" id="L39">        this.mailFrom = mailFrom;</span>
+<span class="fc" id="L40">    }</span>
 
     @Override
     public void sendEmailVerification(String toEmail, String rawToken) {
-<span class="nc" id="L41">        String link = webBaseUrl + &quot;/verify-email?token=&quot; + encode(rawToken);</span>
-<span class="nc" id="L42">        send(toEmail, &quot;Verify your Havyn Villa email&quot;,</span>
-<span class="nc" id="L43">                brandedHtml(</span>
+<span class="fc" id="L44">        String link = webBaseUrl + &quot;/verify-email?token=&quot; + encode(rawToken);</span>
+<span class="fc" id="L45">        send(toEmail, &quot;Verify your Havyn Villa email&quot;,</span>
+<span class="fc" id="L46">                brandedHtml(</span>
                         &quot;Verify your email&quot;,
                         &quot;Welcome to Havyn Villa. Confirm your email address before booking or hosting.&quot;,
                         &quot;Verify email&quot;,
                         link,
                         &quot;This link expires in 24 hours. If you didn't create an account, ignore this email.&quot;));
-<span class="nc" id="L49">    }</span>
+<span class="fc" id="L52">    }</span>
 
     @Override
     public void sendPasswordReset(String toEmail, String rawToken) {
-<span class="nc" id="L53">        String link = webBaseUrl + &quot;/reset-password?token=&quot; + encode(rawToken);</span>
-<span class="nc" id="L54">        send(toEmail, &quot;Reset your Havyn Villa password&quot;,</span>
-<span class="nc" id="L55">                brandedHtml(</span>
+<span class="fc" id="L56">        String link = webBaseUrl + &quot;/reset-password?token=&quot; + encode(rawToken);</span>
+<span class="fc" id="L57">        send(toEmail, &quot;Reset your Havyn Villa password&quot;,</span>
+<span class="fc" id="L58">                brandedHtml(</span>
                         &quot;Reset your password&quot;,
                         &quot;We received a request to reset your Havyn Villa password.&quot;,
                         &quot;Reset password&quot;,
                         link,
                         &quot;This link expires in 1 hour. If you didn't request this, ignore this email.&quot;));
-<span class="nc" id="L61">    }</span>
+<span class="fc" id="L64">    }</span>
 
     /**
      * Never throws — see {@link Mailer}'s class doc for why. A down/misconfigured mail
@@ -68,20 +71,26 @@ public class SmtpMailer implements Mailer {
      */
     private void send(String to, String subject, String body) {
         try {
-<span class="nc" id="L71">            var message = mailSender.createMimeMessage();</span>
-<span class="nc" id="L72">            var helper = new MimeMessageHelper(message, &quot;UTF-8&quot;);</span>
-<span class="nc" id="L73">            helper.setFrom(mailFrom);</span>
-<span class="nc" id="L74">            helper.setTo(to);</span>
-<span class="nc" id="L75">            helper.setSubject(subject);</span>
-<span class="nc" id="L76">            helper.setText(body, true);</span>
-<span class="nc" id="L77">            mailSender.send(message);</span>
-<span class="nc" id="L78">        } catch (MailException | jakarta.mail.MessagingException ex) {</span>
-<span class="nc" id="L79">            log.warn(&quot;Failed to send email (subject=\&quot;{}\&quot;), continuing without it: {}&quot;, subject, ex.getMessage());</span>
-<span class="nc" id="L80">        }</span>
-<span class="nc" id="L81">    }</span>
+<span class="fc" id="L74">            var message = mailSender.createMimeMessage();</span>
+<span class="fc" id="L75">            var helper = new MimeMessageHelper(message, &quot;UTF-8&quot;);</span>
+<span class="fc" id="L76">            helper.setFrom(mailFrom);</span>
+<span class="fc" id="L77">            helper.setTo(to);</span>
+<span class="fc" id="L78">            helper.setSubject(subject);</span>
+<span class="fc" id="L79">            helper.setText(body, true);</span>
+<span class="fc" id="L80">            mailSender.send(message);</span>
+<span class="fc" id="L81">            log.info(&quot;Email sent subject=\&quot;{}\&quot; recipientHash={}&quot;, subject, shortHash(to));</span>
+<span class="fc" id="L82">        } catch (MailException | jakarta.mail.MessagingException ex) {</span>
+<span class="fc" id="L83">            log.warn(</span>
+                    &quot;Failed to send email subject=\&quot;{}\&quot; recipientHash={} error={}&quot;,
+                    subject,
+<span class="fc" id="L86">                    shortHash(to),</span>
+<span class="fc" id="L87">                    ex.getMessage(),</span>
+                    ex);
+<span class="fc" id="L89">        }</span>
+<span class="fc" id="L90">    }</span>
 
     private String brandedHtml(String title, String intro, String action, String link, String footnote) {
-<span class="nc" id="L84">        return &quot;&quot;&quot;</span>
+<span class="fc" id="L93">        return &quot;&quot;&quot;</span>
                 &lt;!doctype html&gt;
                 &lt;html&gt;
                   &lt;body style=&quot;margin:0;background:#f4f8ff;font-family:Arial,sans-serif;color:#172033&quot;&gt;
@@ -103,15 +112,25 @@ public class SmtpMailer implements Mailer {
                   &lt;/body&gt;
                 &lt;/html&gt;
                 &quot;&quot;&quot;
-<span class="nc" id="L106">                .formatted(escape(title), escape(intro), escape(link), escape(action), escape(link), escape(footnote));</span>
+<span class="fc" id="L115">                .formatted(escape(title), escape(intro), escape(link), escape(action), escape(link), escape(footnote));</span>
     }
 
     private String escape(String input) {
-<span class="nc" id="L110">        return input.replace(&quot;&amp;&quot;, &quot;&amp;amp;&quot;).replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;).replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;).replace(&quot;\&quot;&quot;, &quot;&amp;quot;&quot;);</span>
+<span class="fc" id="L119">        return input.replace(&quot;&amp;&quot;, &quot;&amp;amp;&quot;).replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;).replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;).replace(&quot;\&quot;&quot;, &quot;&amp;quot;&quot;);</span>
     }
 
     private String encode(String value) {
-<span class="nc" id="L114">        return URLEncoder.encode(value, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L123">        return URLEncoder.encode(value, StandardCharsets.UTF_8);</span>
+    }
+
+    private static String shortHash(String value) {
+        try {
+<span class="fc" id="L128">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
+<span class="fc" id="L129">            String hex = HexFormat.of().formatHex(digest.digest(value.toLowerCase().getBytes(StandardCharsets.UTF_8)));</span>
+<span class="fc" id="L130">            return hex.substring(0, 12);</span>
+<span class="nc" id="L131">        } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L132">            throw new IllegalStateException(&quot;SHA-256 must be available&quot;, e);</span>
+        }
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

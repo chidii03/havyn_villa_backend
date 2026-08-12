@@ -43,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
-<span class="nc" id="L46">    private static final Logger log = LoggerFactory.getLogger(AuthService.class);</span>
+<span class="fc" id="L46">    private static final Logger log = LoggerFactory.getLogger(AuthService.class);</span>
     private static final String DEFAULT_ROLE_CODE = &quot;CUSTOMER&quot;;
     private static final String GOOGLE_PASSWORD_PLACEHOLDER = &quot;GOOGLE_ACCOUNT_NO_PASSWORD_LOGIN&quot;;
 
@@ -90,71 +90,70 @@ public class AuthService {
 <span class="nc" id="L90">        user = userRepository.save(user);</span>
 <span class="nc" id="L91">        profileRepository.save(new Profile(user, fullName.trim()));</span>
 
-<span class="nc" id="L93">        String verificationToken = verificationTokenService.issueEmailVerificationToken(user.getId());</span>
-<span class="nc" id="L94">        mailer.sendEmailVerification(normalizedEmail, verificationToken);</span>
+<span class="nc" id="L93">        sendEmailVerification(user);</span>
 
-<span class="nc" id="L96">        log.info(&quot;Registered user userId={}&quot;, user.getId());</span>
-<span class="nc" id="L97">        return issueTokens(user);</span>
+<span class="nc" id="L95">        log.info(&quot;Registered user userId={}&quot;, user.getId());</span>
+<span class="nc" id="L96">        return issueTokens(user);</span>
     }
 
     public AuthResult login(String email, String rawPassword) {
-<span class="nc" id="L101">        String normalizedEmail = email.trim().toLowerCase();</span>
-<span class="nc" id="L102">        User user = userRepository.findByEmail(normalizedEmail).orElse(null);</span>
-<span class="nc bnc" id="L103" title="All 4 branches missed.">        if (user == null || !passwordEncoder.matches(rawPassword, user.getPasswordHash())) {</span>
+<span class="nc" id="L100">        String normalizedEmail = email.trim().toLowerCase();</span>
+<span class="nc" id="L101">        User user = userRepository.findByEmail(normalizedEmail).orElse(null);</span>
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        if (user == null || !passwordEncoder.matches(rawPassword, user.getPasswordHash())) {</span>
             // Deliberately still logs a value derived from the attempted email — the
             // *response* to the caller stays generic (no enumeration, see
             // InvalidCredentialsException's callers), and ops/security still needs to
             // be able to spot the same address being hammered repeatedly — but a
             // hash, not the raw address, keeps the log itself free of PII.
-<span class="nc" id="L109">            log.warn(&quot;Failed login attempt emailHash={}&quot;, shortHash(normalizedEmail));</span>
-<span class="nc" id="L110">            throw new InvalidCredentialsException();</span>
+<span class="nc" id="L108">            log.warn(&quot;Failed login attempt emailHash={}&quot;, shortHash(normalizedEmail));</span>
+<span class="nc" id="L109">            throw new InvalidCredentialsException();</span>
         }
-<span class="nc" id="L112">        log.info(&quot;Login succeeded userId={}&quot;, user.getId());</span>
-<span class="nc" id="L113">        return issueTokens(user);</span>
+<span class="nc" id="L111">        log.info(&quot;Login succeeded userId={}&quot;, user.getId());</span>
+<span class="nc" id="L112">        return issueTokens(user);</span>
     }
 
     @Transactional
     public AuthResult loginWithGoogle(GoogleTokenVerifier.GoogleUser googleUser) {
-<span class="nc" id="L118">        String normalizedEmail = googleUser.email().trim().toLowerCase();</span>
-<span class="nc" id="L119">        User user = userRepository.findByEmail(normalizedEmail).orElse(null);</span>
+<span class="nc" id="L117">        String normalizedEmail = googleUser.email().trim().toLowerCase();</span>
+<span class="nc" id="L118">        User user = userRepository.findByEmail(normalizedEmail).orElse(null);</span>
 
-<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (user == null) {</span>
-<span class="nc" id="L122">            Role customerRole = roleRepository.findByCode(DEFAULT_ROLE_CODE)</span>
-<span class="nc" id="L123">                    .orElseThrow(() -&gt; new IllegalStateException(DEFAULT_ROLE_CODE + &quot; role must be seeded by V1__init.sql&quot;));</span>
-<span class="nc" id="L124">            user = new User(normalizedEmail, GOOGLE_PASSWORD_PLACEHOLDER);</span>
-<span class="nc" id="L125">            user.addRole(customerRole);</span>
-<span class="nc" id="L126">            user.markEmailVerified(Instant.now());</span>
-<span class="nc" id="L127">            user = userRepository.save(user);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L121">            Role customerRole = roleRepository.findByCode(DEFAULT_ROLE_CODE)</span>
+<span class="nc" id="L122">                    .orElseThrow(() -&gt; new IllegalStateException(DEFAULT_ROLE_CODE + &quot; role must be seeded by V1__init.sql&quot;));</span>
+<span class="nc" id="L123">            user = new User(normalizedEmail, GOOGLE_PASSWORD_PLACEHOLDER);</span>
+<span class="nc" id="L124">            user.addRole(customerRole);</span>
+<span class="nc" id="L125">            user.markEmailVerified(Instant.now());</span>
+<span class="nc" id="L126">            user = userRepository.save(user);</span>
 
-<span class="nc" id="L129">            Profile profile = new Profile(user, safeFullName(googleUser));</span>
-<span class="nc" id="L130">            profile.setAvatarUrl(googleUser.pictureUrl());</span>
-<span class="nc" id="L131">            profileRepository.save(profile);</span>
-<span class="nc" id="L132">            log.info(&quot;Registered Google user userId={}&quot;, user.getId());</span>
-<span class="nc bnc" id="L133" title="All 2 branches missed.">        } else if (!user.isEmailVerified()) {</span>
-<span class="nc" id="L134">            user.markEmailVerified(Instant.now());</span>
+<span class="nc" id="L128">            Profile profile = new Profile(user, safeFullName(googleUser));</span>
+<span class="nc" id="L129">            profile.setAvatarUrl(googleUser.pictureUrl());</span>
+<span class="nc" id="L130">            profileRepository.save(profile);</span>
+<span class="nc" id="L131">            log.info(&quot;Registered Google user userId={}&quot;, user.getId());</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        } else if (!user.isEmailVerified()) {</span>
+<span class="nc" id="L133">            user.markEmailVerified(Instant.now());</span>
         }
 
-<span class="nc" id="L137">        log.info(&quot;Google login succeeded userId={}&quot;, user.getId());</span>
-<span class="nc" id="L138">        return issueTokens(user);</span>
+<span class="nc" id="L136">        log.info(&quot;Google login succeeded userId={}&quot;, user.getId());</span>
+<span class="nc" id="L137">        return issueTokens(user);</span>
     }
 
     /** First 12 hex chars of SHA-256 — enough to correlate repeated attempts, not to reverse the input. */
     private static String shortHash(String value) {
         try {
-<span class="nc" id="L144">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
-<span class="nc" id="L145">            String hex = HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));</span>
-<span class="nc" id="L146">            return hex.substring(0, 12);</span>
-<span class="nc" id="L147">        } catch (NoSuchAlgorithmException e) {</span>
-<span class="nc" id="L148">            throw new IllegalStateException(&quot;SHA-256 must be available&quot;, e);</span>
+<span class="nc" id="L143">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
+<span class="nc" id="L144">            String hex = HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L145">            return hex.substring(0, 12);</span>
+<span class="nc" id="L146">        } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L147">            throw new IllegalStateException(&quot;SHA-256 must be available&quot;, e);</span>
         }
     }
 
     public AuthResult refresh(String refreshToken) {
-<span class="nc" id="L153">        RefreshTokenService.Issued rotated = refreshTokenService.rotate(refreshToken);</span>
-<span class="nc" id="L154">        User user = userRepository.findById(rotated.userId())</span>
-<span class="nc" id="L155">                .orElseThrow(() -&gt; InvalidRefreshTokenException.expiredOrRevoked());</span>
-<span class="nc" id="L156">        String accessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), roleCodes(user));</span>
-<span class="nc" id="L157">        return new AuthResult(accessToken, rotated.token(), jwtService.accessTtl().toSeconds(), user);</span>
+<span class="nc" id="L152">        RefreshTokenService.Issued rotated = refreshTokenService.rotate(refreshToken);</span>
+<span class="nc" id="L153">        User user = userRepository.findById(rotated.userId())</span>
+<span class="nc" id="L154">                .orElseThrow(() -&gt; InvalidRefreshTokenException.expiredOrRevoked());</span>
+<span class="nc" id="L155">        String accessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), roleCodes(user));</span>
+<span class="nc" id="L156">        return new AuthResult(accessToken, rotated.token(), jwtService.accessTtl().toSeconds(), user);</span>
     }
 
     /**
@@ -164,70 +163,79 @@ public class AuthService {
      * (unlike the private {@link #issueTokens}) specifically for this cross-module use.
      */
     public AuthResult reissueTokens(User user) {
-<span class="nc" id="L167">        return issueTokens(user);</span>
+<span class="nc" id="L166">        return issueTokens(user);</span>
     }
 
     public void logout(String refreshToken) {
         try {
-<span class="nc" id="L172">            JwtService.RefreshClaims claims = jwtService.parseRefreshToken(refreshToken);</span>
-<span class="nc" id="L173">            refreshTokenService.revokeFamily(claims.familyId());</span>
-<span class="nc" id="L174">            log.info(&quot;Logout userId={}&quot;, claims.userId());</span>
-<span class="nc" id="L175">        } catch (JwtException | IllegalArgumentException ignored) {</span>
+<span class="nc" id="L171">            JwtService.RefreshClaims claims = jwtService.parseRefreshToken(refreshToken);</span>
+<span class="nc" id="L172">            refreshTokenService.revokeFamily(claims.familyId());</span>
+<span class="nc" id="L173">            log.info(&quot;Logout userId={}&quot;, claims.userId());</span>
+<span class="nc" id="L174">        } catch (JwtException | IllegalArgumentException ignored) {</span>
             // Already invalid/expired/malformed — nothing to revoke. Logout is idempotent.
-<span class="nc" id="L177">        }</span>
-<span class="nc" id="L178">    }</span>
+<span class="nc" id="L176">        }</span>
+<span class="nc" id="L177">    }</span>
 
     @Transactional
     public void verifyEmail(String rawToken) {
-<span class="nc" id="L182">        UUID userId = verificationTokenService.consumeEmailVerificationToken(rawToken)</span>
-<span class="nc" id="L183">                .orElseThrow(() -&gt; new BadRequestException(</span>
+<span class="nc" id="L181">        UUID userId = verificationTokenService.consumeEmailVerificationToken(rawToken)</span>
+<span class="nc" id="L182">                .orElseThrow(() -&gt; new BadRequestException(</span>
                         &quot;INVALID_TOKEN&quot;, &quot;This verification link is invalid or has expired&quot;));
-<span class="nc" id="L185">        User user = userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
-<span class="nc" id="L186">        user.markEmailVerified(Instant.now());</span>
-<span class="nc" id="L187">        log.info(&quot;Email verified userId={}&quot;, userId);</span>
-<span class="nc" id="L188">    }</span>
+<span class="nc" id="L184">        User user = userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
+<span class="nc" id="L185">        user.markEmailVerified(Instant.now());</span>
+<span class="nc" id="L186">        log.info(&quot;Email verified userId={}&quot;, userId);</span>
+<span class="nc" id="L187">    }</span>
+
+    public void sendEmailVerification(User user) {
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        if (user.isEmailVerified()) {</span>
+<span class="nc" id="L191">            return;</span>
+        }
+<span class="nc" id="L193">        String verificationToken = verificationTokenService.issueEmailVerificationToken(user.getId());</span>
+<span class="nc" id="L194">        mailer.sendEmailVerification(user.getEmail(), verificationToken);</span>
+<span class="nc" id="L195">        log.info(&quot;Email verification requested userId={}&quot;, user.getId());</span>
+<span class="nc" id="L196">    }</span>
 
     /** Always completes normally regardless of whether the email exists — no account enumeration. */
     public void requestPasswordReset(String email) {
-<span class="nc" id="L192">        userRepository.findByEmail(email.trim().toLowerCase()).ifPresent(user -&gt; {</span>
-<span class="nc" id="L193">            String token = verificationTokenService.issuePasswordResetToken(user.getId());</span>
-<span class="nc" id="L194">            mailer.sendPasswordReset(user.getEmail(), token);</span>
+<span class="nc" id="L200">        userRepository.findByEmail(email.trim().toLowerCase()).ifPresent(user -&gt; {</span>
+<span class="nc" id="L201">            String token = verificationTokenService.issuePasswordResetToken(user.getId());</span>
+<span class="nc" id="L202">            mailer.sendPasswordReset(user.getEmail(), token);</span>
             // Only logged when the account actually exists — the response to the caller
             // stays identical either way (no enumeration), but this log line itself is
             // server-side only, never observable by the requester.
-<span class="nc" id="L198">            log.info(&quot;Password reset requested userId={}&quot;, user.getId());</span>
-<span class="nc" id="L199">        });</span>
-<span class="nc" id="L200">    }</span>
+<span class="nc" id="L206">            log.info(&quot;Password reset requested userId={}&quot;, user.getId());</span>
+<span class="nc" id="L207">        });</span>
+<span class="nc" id="L208">    }</span>
 
     @Transactional
     public void confirmPasswordReset(String rawToken, String newPassword) {
-<span class="nc" id="L204">        UUID userId = verificationTokenService.consumePasswordResetToken(rawToken)</span>
-<span class="nc" id="L205">                .orElseThrow(() -&gt; new BadRequestException(</span>
+<span class="nc" id="L212">        UUID userId = verificationTokenService.consumePasswordResetToken(rawToken)</span>
+<span class="nc" id="L213">                .orElseThrow(() -&gt; new BadRequestException(</span>
                         &quot;INVALID_TOKEN&quot;, &quot;This reset link is invalid or has expired&quot;));
-<span class="nc" id="L207">        User user = userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
-<span class="nc" id="L208">        user.setPasswordHash(passwordEncoder.encode(newPassword));</span>
+<span class="nc" id="L215">        User user = userRepository.findById(userId).orElseThrow(() -&gt; NotFoundException.of(&quot;User&quot;, userId));</span>
+<span class="nc" id="L216">        user.setPasswordHash(passwordEncoder.encode(newPassword));</span>
         // Password changed — every existing session everywhere is revoked, not just this device.
-<span class="nc" id="L210">        refreshTokenService.revokeAllForUser(userId);</span>
-<span class="nc" id="L211">        log.info(&quot;Password reset confirmed, all sessions revoked userId={}&quot;, userId);</span>
-<span class="nc" id="L212">    }</span>
+<span class="nc" id="L218">        refreshTokenService.revokeAllForUser(userId);</span>
+<span class="nc" id="L219">        log.info(&quot;Password reset confirmed, all sessions revoked userId={}&quot;, userId);</span>
+<span class="nc" id="L220">    }</span>
 
     private AuthResult issueTokens(User user) {
-<span class="nc" id="L215">        Set&lt;String&gt; roles = roleCodes(user);</span>
-<span class="nc" id="L216">        String accessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), roles);</span>
-<span class="nc" id="L217">        RefreshTokenService.Issued issued = refreshTokenService.issue(user.getId());</span>
-<span class="nc" id="L218">        return new AuthResult(accessToken, issued.token(), jwtService.accessTtl().toSeconds(), user);</span>
+<span class="nc" id="L223">        Set&lt;String&gt; roles = roleCodes(user);</span>
+<span class="nc" id="L224">        String accessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), roles);</span>
+<span class="nc" id="L225">        RefreshTokenService.Issued issued = refreshTokenService.issue(user.getId());</span>
+<span class="nc" id="L226">        return new AuthResult(accessToken, issued.token(), jwtService.accessTtl().toSeconds(), user);</span>
     }
 
     private String safeFullName(GoogleTokenVerifier.GoogleUser googleUser) {
-<span class="nc" id="L222">        String fullName = googleUser.fullName();</span>
-<span class="nc bnc" id="L223" title="All 4 branches missed.">        if (fullName == null || fullName.isBlank()) {</span>
-<span class="nc" id="L224">            return googleUser.email();</span>
+<span class="nc" id="L230">        String fullName = googleUser.fullName();</span>
+<span class="nc bnc" id="L231" title="All 4 branches missed.">        if (fullName == null || fullName.isBlank()) {</span>
+<span class="nc" id="L232">            return googleUser.email();</span>
         }
-<span class="nc" id="L226">        return fullName.trim();</span>
+<span class="nc" id="L234">        return fullName.trim();</span>
     }
 
     private Set&lt;String&gt; roleCodes(User user) {
-<span class="nc" id="L230">        return user.getRoles().stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet());</span>
+<span class="nc" id="L238">        return user.getRoles().stream().map(Role::getCode).collect(Collectors.toUnmodifiableSet());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

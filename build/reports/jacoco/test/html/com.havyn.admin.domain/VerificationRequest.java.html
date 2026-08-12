@@ -32,7 +32,7 @@ public class VerificationRequest extends BaseEntity {
     @Column(name = &quot;notes&quot;)
     private String notes;
 
-<span class="nc" id="L35">    @Enumerated(EnumType.STRING)</span>
+<span class="pc" id="L35">    @Enumerated(EnumType.STRING)</span>
     @Column(name = &quot;status&quot;, nullable = false, length = 20)
     private VerificationStatus status = VerificationStatus.PENDING;
 
@@ -49,27 +49,27 @@ public class VerificationRequest extends BaseEntity {
         // JPA
 <span class="nc" id="L50">    }</span>
 
-<span class="nc" id="L52">    public VerificationRequest(UUID userId, String documentUrl, String notes) {</span>
-<span class="nc" id="L53">        this.userId = userId;</span>
-<span class="nc" id="L54">        this.documentUrl = documentUrl;</span>
-<span class="nc" id="L55">        this.notes = notes;</span>
-<span class="nc" id="L56">    }</span>
+<span class="fc" id="L52">    public VerificationRequest(UUID userId, String documentUrl, String notes) {</span>
+<span class="fc" id="L53">        this.userId = userId;</span>
+<span class="fc" id="L54">        this.documentUrl = documentUrl;</span>
+<span class="fc" id="L55">        this.notes = notes;</span>
+<span class="fc" id="L56">    }</span>
 
     public void approve(UUID adminId, Instant when) {
-<span class="nc" id="L59">        this.status = VerificationStatus.APPROVED;</span>
-<span class="nc" id="L60">        this.reviewedBy = adminId;</span>
-<span class="nc" id="L61">        this.reviewedAt = when;</span>
-<span class="nc" id="L62">    }</span>
+<span class="fc" id="L59">        this.status = VerificationStatus.APPROVED;</span>
+<span class="fc" id="L60">        this.reviewedBy = adminId;</span>
+<span class="fc" id="L61">        this.reviewedAt = when;</span>
+<span class="fc" id="L62">    }</span>
 
     public void reject(UUID adminId, String reviewNotes, Instant when) {
-<span class="nc" id="L65">        this.status = VerificationStatus.REJECTED;</span>
-<span class="nc" id="L66">        this.reviewNotes = reviewNotes;</span>
-<span class="nc" id="L67">        this.reviewedBy = adminId;</span>
-<span class="nc" id="L68">        this.reviewedAt = when;</span>
-<span class="nc" id="L69">    }</span>
+<span class="fc" id="L65">        this.status = VerificationStatus.REJECTED;</span>
+<span class="fc" id="L66">        this.reviewNotes = reviewNotes;</span>
+<span class="fc" id="L67">        this.reviewedBy = adminId;</span>
+<span class="fc" id="L68">        this.reviewedAt = when;</span>
+<span class="fc" id="L69">    }</span>
 
     public UUID getUserId() {
-<span class="nc" id="L72">        return userId;</span>
+<span class="fc" id="L72">        return userId;</span>
     }
 
     public String getDocumentUrl() {
@@ -81,15 +81,15 @@ public class VerificationRequest extends BaseEntity {
     }
 
     public VerificationStatus getStatus() {
-<span class="nc" id="L84">        return status;</span>
+<span class="fc" id="L84">        return status;</span>
     }
 
     public String getReviewNotes() {
-<span class="nc" id="L88">        return reviewNotes;</span>
+<span class="fc" id="L88">        return reviewNotes;</span>
     }
 
     public UUID getReviewedBy() {
-<span class="nc" id="L92">        return reviewedBy;</span>
+<span class="fc" id="L92">        return reviewedBy;</span>
     }
 
     public Instant getReviewedAt() {

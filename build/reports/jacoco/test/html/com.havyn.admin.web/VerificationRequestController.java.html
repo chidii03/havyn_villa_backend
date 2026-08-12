@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping(&quot;/api/v1/host/verification-requests&quot;)
-@PreAuthorize(&quot;hasRole('HOST')&quot;)
+@PreAuthorize(&quot;isAuthenticated()&quot;)
 public class VerificationRequestController {
 
     private final VerificationService verificationService;

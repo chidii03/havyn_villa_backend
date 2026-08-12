@@ -13,6 +13,9 @@ import com.havyn.audit.service.AuditLogService;
 import com.havyn.common.error.ConflictException;
 import com.havyn.common.error.ForbiddenException;
 import com.havyn.common.error.NotFoundException;
+import com.havyn.common.error.BadRequestException;
+import com.havyn.users.domain.User;
+import com.havyn.users.repo.UserRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -24,15 +27,17 @@ class VerificationServiceTest {
 
     private final VerificationRequestRepository repository = mock(VerificationRequestRepository.class);
     private final AuditLogService auditLogService = mock(AuditLogService.class);
+    private final UserRepository userRepository = mock(UserRepository.class);
     private final Clock clock = Clock.fixed(Instant.parse("2026-07-27T00:00:00Z"), ZoneOffset.UTC);
 
-    private final VerificationService service = new VerificationService(repository, auditLogService, clock);
+    private final VerificationService service = new VerificationService(repository, auditLogService, clock, userRepository);
 
     private final UUID adminId = UUID.randomUUID();
     private final UUID userId = UUID.randomUUID();
 
     @Test
     void submit_rejectsASecondPendingRequestFromTheSameUser() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(verifiedUser()));
         when(repository.existsByUserIdAndStatus(userId, VerificationStatus.PENDING)).thenReturn(true);
 
         assertThatThrownBy(() -> service.submit(userId, "https://example.com/id.pdf", null))
@@ -43,6 +48,7 @@ class VerificationServiceTest {
 
     @Test
     void submit_savesANewPendingRequest() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(verifiedUser()));
         when(repository.existsByUserIdAndStatus(userId, VerificationStatus.PENDING)).thenReturn(false);
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -50,6 +56,16 @@ class VerificationServiceTest {
 
         assertThat(request.getUserId()).isEqualTo(userId);
         assertThat(request.getStatus()).isEqualTo(VerificationStatus.PENDING);
+    }
+
+    @Test
+    void submit_rejectsAnUnverifiedEmail() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User("guest@example.com", "hashed")));
+
+        assertThatThrownBy(() -> service.submit(userId, "https://example.com/id.pdf", null))
+                .isInstanceOf(BadRequestException.class)
+                .extracting(ex -> ((BadRequestException) ex).getCode())
+                .isEqualTo("EMAIL_NOT_VERIFIED");
     }
 
     @Test
@@ -100,5 +116,11 @@ class VerificationServiceTest {
         when(repository.findById(missingId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getOwnedOrAdmin(userId, missingId)).isInstanceOf(NotFoundException.class);
+    }
+
+    private User verifiedUser() {
+        User user = new User("guest@example.com", "hashed");
+        user.markEmailVerified(Instant.now(clock));
+        return user;
     }
 }

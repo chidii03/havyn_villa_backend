@@ -12,10 +12,10 @@ import java.util.UUID;
  * know payments/ exists — same cross-module pattern as {@code PropertyChangedEvent}
  * (prompt 10/11).
  */
-<span class="nc" id="L15">public record BookingRefundDueEvent(UUID bookingId, BigDecimal refundAmount, Instant occurredAt) implements DomainEvent {</span>
+<span class="fc" id="L15">public record BookingRefundDueEvent(UUID bookingId, BigDecimal refundAmount, Instant occurredAt) implements DomainEvent {</span>
 
     public static BookingRefundDueEvent of(UUID bookingId, BigDecimal refundAmount) {
-<span class="nc" id="L18">        return new BookingRefundDueEvent(bookingId, refundAmount, Instant.now());</span>
+<span class="fc" id="L18">        return new BookingRefundDueEvent(bookingId, refundAmount, Instant.now());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

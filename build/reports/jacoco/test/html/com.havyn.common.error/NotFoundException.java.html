@@ -6,11 +6,11 @@ import org.springframework.http.HttpStatus;
 public class NotFoundException extends ApiException {
 
     public NotFoundException(String message) {
-<span class="nc" id="L9">        super(&quot;NOT_FOUND&quot;, HttpStatus.NOT_FOUND, message);</span>
-<span class="nc" id="L10">    }</span>
+<span class="fc" id="L9">        super(&quot;NOT_FOUND&quot;, HttpStatus.NOT_FOUND, message);</span>
+<span class="fc" id="L10">    }</span>
 
     public static NotFoundException of(String resource, Object id) {
-<span class="nc" id="L13">        return new NotFoundException(resource + &quot; &quot; + id + &quot; not found&quot;);</span>
+<span class="fc" id="L13">        return new NotFoundException(resource + &quot; &quot; + id + &quot; not found&quot;);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

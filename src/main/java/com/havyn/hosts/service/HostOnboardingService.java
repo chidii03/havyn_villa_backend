@@ -39,6 +39,7 @@ public class HostOnboardingService {
     public AuthResult becomeHost(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> NotFoundException.of("User", userId));
         if (!user.isEmailVerified()) {
+            authService.sendEmailVerification(user);
             throw new BadRequestException("EMAIL_NOT_VERIFIED", "Verify your email before you can host");
         }
         if (!verificationRequestRepository.existsByUserIdAndStatus(userId, VerificationStatus.APPROVED)) {

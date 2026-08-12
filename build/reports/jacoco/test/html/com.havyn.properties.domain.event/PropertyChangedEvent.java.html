@@ -10,10 +10,10 @@ import java.util.UUID;
  * to invalidate its Redis cache — see {@code search.cache.SearchCacheService} — without
  * the properties module needing to know search exists.
  */
-<span class="nc" id="L13">public record PropertyChangedEvent(UUID propertyId, Instant occurredAt) implements DomainEvent {</span>
+<span class="fc" id="L13">public record PropertyChangedEvent(UUID propertyId, Instant occurredAt) implements DomainEvent {</span>
 
     public static PropertyChangedEvent of(UUID propertyId) {
-<span class="nc" id="L16">        return new PropertyChangedEvent(propertyId, Instant.now());</span>
+<span class="fc" id="L16">        return new PropertyChangedEvent(propertyId, Instant.now());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

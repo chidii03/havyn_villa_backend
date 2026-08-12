@@ -41,12 +41,12 @@ public class Availability extends BaseEntity {
         // JPA
 <span class="nc" id="L42">    }</span>
 
-<span class="nc" id="L44">    public Availability(Property property, LocalDate date, boolean blocked, BigDecimal priceOverride) {</span>
-<span class="nc" id="L45">        this.property = property;</span>
-<span class="nc" id="L46">        this.date = date;</span>
-<span class="nc" id="L47">        this.blocked = blocked;</span>
-<span class="nc" id="L48">        this.priceOverride = priceOverride;</span>
-<span class="nc" id="L49">    }</span>
+<span class="fc" id="L44">    public Availability(Property property, LocalDate date, boolean blocked, BigDecimal priceOverride) {</span>
+<span class="fc" id="L45">        this.property = property;</span>
+<span class="fc" id="L46">        this.date = date;</span>
+<span class="fc" id="L47">        this.blocked = blocked;</span>
+<span class="fc" id="L48">        this.priceOverride = priceOverride;</span>
+<span class="fc" id="L49">    }</span>
 
     public Property getProperty() {
 <span class="nc" id="L52">        return property;</span>
@@ -78,7 +78,7 @@ public class Availability extends BaseEntity {
 
     /** Set by prompt 12's BookingService on create/cancel/hold-expiry — this column was reserved for exactly this. */
     public void setBookingId(UUID bookingId) {
-<span class="nc" id="L81">        this.bookingId = bookingId;</span>
-<span class="nc" id="L82">    }</span>
+<span class="fc" id="L81">        this.bookingId = bookingId;</span>
+<span class="fc" id="L82">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

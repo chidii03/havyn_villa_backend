@@ -12,22 +12,22 @@ import java.util.Set;
  * like so {@link CancellationPolicyCalculator} has something correct to plug into —
  * see backend/02-domain-modules.md's session 6 notes.
  */
-<span class="nc" id="L15">public enum BookingStatus {</span>
-<span class="nc" id="L16">    PENDING,</span>
-<span class="nc" id="L17">    CONFIRMED,</span>
-<span class="nc" id="L18">    CANCELLED,</span>
-<span class="nc" id="L19">    COMPLETED,</span>
-<span class="nc" id="L20">    REFUNDED;</span>
+<span class="fc" id="L15">public enum BookingStatus {</span>
+<span class="fc" id="L16">    PENDING,</span>
+<span class="fc" id="L17">    CONFIRMED,</span>
+<span class="fc" id="L18">    CANCELLED,</span>
+<span class="fc" id="L19">    COMPLETED,</span>
+<span class="fc" id="L20">    REFUNDED;</span>
 
-<span class="nc" id="L22">    private static final Map&lt;BookingStatus, Set&lt;BookingStatus&gt;&gt; ALLOWED_TRANSITIONS = Map.of(</span>
-<span class="nc" id="L23">            PENDING, Set.of(CONFIRMED, CANCELLED),</span>
-<span class="nc" id="L24">            CONFIRMED, Set.of(CANCELLED, COMPLETED, REFUNDED),</span>
-<span class="nc" id="L25">            CANCELLED, Set.of(),</span>
-<span class="nc" id="L26">            COMPLETED, Set.of(REFUNDED),</span>
-<span class="nc" id="L27">            REFUNDED, Set.of());</span>
+<span class="fc" id="L22">    private static final Map&lt;BookingStatus, Set&lt;BookingStatus&gt;&gt; ALLOWED_TRANSITIONS = Map.of(</span>
+<span class="fc" id="L23">            PENDING, Set.of(CONFIRMED, CANCELLED),</span>
+<span class="fc" id="L24">            CONFIRMED, Set.of(CANCELLED, COMPLETED, REFUNDED),</span>
+<span class="fc" id="L25">            CANCELLED, Set.of(),</span>
+<span class="fc" id="L26">            COMPLETED, Set.of(REFUNDED),</span>
+<span class="fc" id="L27">            REFUNDED, Set.of());</span>
 
     public boolean canTransitionTo(BookingStatus target) {
-<span class="nc" id="L30">        return ALLOWED_TRANSITIONS.getOrDefault(this, Set.of()).contains(target);</span>
+<span class="fc" id="L30">        return ALLOWED_TRANSITIONS.getOrDefault(this, Set.of()).contains(target);</span>
     }
 
     public boolean isActive() {

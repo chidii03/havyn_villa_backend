@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SmtpEmailSender.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">api</a> &gt; <a href="index.source.html" class="el_package">com.havyn.notifications.domain</a> &gt; <span class="el_source">SmtpEmailSender.java</span></div><h1>SmtpEmailSender.java</h1><pre class="source lang-java linenums">package com.havyn.notifications.domain;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,37 +23,59 @@ import org.springframework.stereotype.Component;
 @Component
 public class SmtpEmailSender implements EmailSender {
 
+<span class="nc" id="L26">    private static final Logger log = LoggerFactory.getLogger(SmtpEmailSender.class);</span>
+
     private final JavaMailSender mailSender;
     private final String mailFrom;
 
-<span class="nc" id="L22">    public SmtpEmailSender(JavaMailSender mailSender, @Value(&quot;${havyn.mail-from}&quot;) String mailFrom) {</span>
-<span class="nc" id="L23">        this.mailSender = mailSender;</span>
-<span class="nc" id="L24">        this.mailFrom = mailFrom;</span>
-<span class="nc" id="L25">    }</span>
+<span class="nc" id="L31">    public SmtpEmailSender(JavaMailSender mailSender, @Value(&quot;${havyn.mail-from}&quot;) String mailFrom) {</span>
+<span class="nc" id="L32">        this.mailSender = mailSender;</span>
+<span class="nc" id="L33">        this.mailFrom = mailFrom;</span>
+<span class="nc" id="L34">    }</span>
 
     @Override
     public void send(String toEmail, String subject, String body) {
-<span class="nc" id="L29">        SimpleMailMessage message = new SimpleMailMessage();</span>
-<span class="nc" id="L30">        message.setFrom(mailFrom);</span>
-<span class="nc" id="L31">        message.setTo(toEmail);</span>
-<span class="nc" id="L32">        message.setSubject(subject);</span>
-<span class="nc" id="L33">        message.setText(body);</span>
-<span class="nc" id="L34">        mailSender.send(message);</span>
-<span class="nc" id="L35">    }</span>
+<span class="nc" id="L38">        SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="nc" id="L39">        message.setFrom(mailFrom);</span>
+<span class="nc" id="L40">        message.setTo(toEmail);</span>
+<span class="nc" id="L41">        message.setSubject(subject);</span>
+<span class="nc" id="L42">        message.setText(body);</span>
+        try {
+<span class="nc" id="L44">            mailSender.send(message);</span>
+<span class="nc" id="L45">            log.info(&quot;Email sent subject=\&quot;{}\&quot; recipientHash={}&quot;, subject, shortHash(toEmail));</span>
+<span class="nc" id="L46">        } catch (MailException e) {</span>
+<span class="nc" id="L47">            log.warn(&quot;Failed to send email subject=\&quot;{}\&quot; recipientHash={} error={}&quot;, subject, shortHash(toEmail), e.getMessage(), e);</span>
+<span class="nc" id="L48">            throw e;</span>
+<span class="nc" id="L49">        }</span>
+<span class="nc" id="L50">    }</span>
 
     @Override
     public void sendHtml(String toEmail, String subject, String htmlBody) {
         try {
-<span class="nc" id="L40">            var message = mailSender.createMimeMessage();</span>
-<span class="nc" id="L41">            var helper = new MimeMessageHelper(message, &quot;UTF-8&quot;);</span>
-<span class="nc" id="L42">            helper.setFrom(mailFrom);</span>
-<span class="nc" id="L43">            helper.setTo(toEmail);</span>
-<span class="nc" id="L44">            helper.setSubject(subject);</span>
-<span class="nc" id="L45">            helper.setText(htmlBody, true);</span>
-<span class="nc" id="L46">            mailSender.send(message);</span>
-<span class="nc" id="L47">        } catch (jakarta.mail.MessagingException e) {</span>
-<span class="nc" id="L48">            throw new IllegalStateException(&quot;Unable to build email message&quot;, e);</span>
-<span class="nc" id="L49">        }</span>
-<span class="nc" id="L50">    }</span>
+<span class="nc" id="L55">            var message = mailSender.createMimeMessage();</span>
+<span class="nc" id="L56">            var helper = new MimeMessageHelper(message, &quot;UTF-8&quot;);</span>
+<span class="nc" id="L57">            helper.setFrom(mailFrom);</span>
+<span class="nc" id="L58">            helper.setTo(toEmail);</span>
+<span class="nc" id="L59">            helper.setSubject(subject);</span>
+<span class="nc" id="L60">            helper.setText(htmlBody, true);</span>
+<span class="nc" id="L61">            mailSender.send(message);</span>
+<span class="nc" id="L62">            log.info(&quot;HTML email sent subject=\&quot;{}\&quot; recipientHash={}&quot;, subject, shortHash(toEmail));</span>
+<span class="nc" id="L63">        } catch (MailException e) {</span>
+<span class="nc" id="L64">            log.warn(&quot;Failed to send HTML email subject=\&quot;{}\&quot; recipientHash={} error={}&quot;, subject, shortHash(toEmail), e.getMessage(), e);</span>
+<span class="nc" id="L65">            throw e;</span>
+<span class="nc" id="L66">        } catch (jakarta.mail.MessagingException e) {</span>
+<span class="nc" id="L67">            throw new IllegalStateException(&quot;Unable to build email message&quot;, e);</span>
+<span class="nc" id="L68">        }</span>
+<span class="nc" id="L69">    }</span>
+
+    private static String shortHash(String value) {
+        try {
+<span class="nc" id="L73">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
+<span class="nc" id="L74">            String hex = HexFormat.of().formatHex(digest.digest(value.toLowerCase().getBytes(StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L75">            return hex.substring(0, 12);</span>
+<span class="nc" id="L76">        } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L77">            throw new IllegalStateException(&quot;SHA-256 must be available&quot;, e);</span>
+        }
+    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,6 +1,13 @@
 package com.havyn.notifications.domain;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -15,6 +22,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class SmtpEmailSender implements EmailSender {
+
+    private static final Logger log = LoggerFactory.getLogger(SmtpEmailSender.class);
 
     private final JavaMailSender mailSender;
     private final String mailFrom;
@@ -31,7 +40,13 @@ public class SmtpEmailSender implements EmailSender {
         message.setTo(toEmail);
         message.setSubject(subject);
         message.setText(body);
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
+            log.info("Email sent subject=\"{}\" recipientHash={}", subject, shortHash(toEmail));
+        } catch (MailException e) {
+            log.warn("Failed to send email subject=\"{}\" recipientHash={} error={}", subject, shortHash(toEmail), e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override
@@ -44,8 +59,22 @@ public class SmtpEmailSender implements EmailSender {
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
             mailSender.send(message);
+            log.info("HTML email sent subject=\"{}\" recipientHash={}", subject, shortHash(toEmail));
+        } catch (MailException e) {
+            log.warn("Failed to send HTML email subject=\"{}\" recipientHash={} error={}", subject, shortHash(toEmail), e.getMessage(), e);
+            throw e;
         } catch (jakarta.mail.MessagingException e) {
             throw new IllegalStateException("Unable to build email message", e);
+        }
+    }
+
+    private static String shortHash(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String hex = HexFormat.of().formatHex(digest.digest(value.toLowerCase().getBytes(StandardCharsets.UTF_8)));
+            return hex.substring(0, 12);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 must be available", e);
         }
     }
 }

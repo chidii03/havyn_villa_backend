@@ -2,6 +2,9 @@ package com.havyn.auth.domain;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,8 +78,14 @@ public class SmtpMailer implements Mailer {
             helper.setSubject(subject);
             helper.setText(body, true);
             mailSender.send(message);
+            log.info("Email sent subject=\"{}\" recipientHash={}", subject, shortHash(to));
         } catch (MailException | jakarta.mail.MessagingException ex) {
-            log.warn("Failed to send email (subject=\"{}\"), continuing without it: {}", subject, ex.getMessage());
+            log.warn(
+                    "Failed to send email subject=\"{}\" recipientHash={} error={}",
+                    subject,
+                    shortHash(to),
+                    ex.getMessage(),
+                    ex);
         }
     }
 
@@ -112,5 +121,15 @@ public class SmtpMailer implements Mailer {
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static String shortHash(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String hex = HexFormat.of().formatHex(digest.digest(value.toLowerCase().getBytes(StandardCharsets.UTF_8)));
+            return hex.substring(0, 12);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 must be available", e);
+        }
     }
 }
