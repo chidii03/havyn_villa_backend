@@ -94,14 +94,14 @@ export function CategoryTabs({
               <Image
                 src={icon}
                 alt=""
-                width={36}
-                height={36}
+                width={46}
+                height={46}
                 priority
                 className={cn(
-                  "h-8 w-8 border-0 object-contain outline-none",
+                  "h-10 w-10 border-0 object-contain outline-none",
                   "transition-transform duration-200",
-                  "sm:h-9 sm:w-9",
-                  "md:h-10 md:w-10",
+                  "sm:h-11 sm:w-11",
+                  "md:h-12 md:w-12",
                   "group-hover:scale-110",
                   !active && "opacity-70 group-hover:opacity-100",
                 )}
