@@ -6,11 +6,11 @@ import org.springframework.context.annotation.Configuration;
 
 /** A single injectable {@link Clock} so time-dependent logic (JWT expiry) is testable. */
 @Configuration
-<span class="nc" id="L9">public class ClockConfig {</span>
+<span class="fc" id="L9">public class ClockConfig {</span>
 
     @Bean
     public Clock clock() {
-<span class="nc" id="L13">        return Clock.systemUTC();</span>
+<span class="fc" id="L13">        return Clock.systemUTC();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -53,7 +53,7 @@ public class User extends BaseEntity {
 <span class="fc" id="L53">    }</span>
 
     public String getEmail() {
-<span class="nc" id="L56">        return email;</span>
+<span class="fc" id="L56">        return email;</span>
     }
 
     public String getPasswordHash() {
@@ -65,13 +65,13 @@ public class User extends BaseEntity {
 <span class="nc" id="L65">    }</span>
 
     public UserStatus getStatus() {
-<span class="nc" id="L68">        return status;</span>
+<span class="fc" id="L68">        return status;</span>
     }
 
     /** Admin-initiated account status change (suspend/reactivate) — see admin.service.AdminUserService, prompt 18. */
     public void setStatus(UserStatus status) {
-<span class="nc" id="L73">        this.status = status;</span>
-<span class="nc" id="L74">    }</span>
+<span class="fc" id="L73">        this.status = status;</span>
+<span class="fc" id="L74">    }</span>
 
     public Instant getEmailVerifiedAt() {
 <span class="nc" id="L77">        return emailVerifiedAt;</span>
@@ -98,7 +98,7 @@ public class User extends BaseEntity {
 
     /** Admin-initiated role revocation — see admin.service.AdminUserService, prompt 18. */
     public void removeRole(Role role) {
-<span class="nc" id="L101">        roles.remove(role);</span>
-<span class="nc" id="L102">    }</span>
+<span class="fc" id="L101">        roles.remove(role);</span>
+<span class="fc" id="L102">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -30,59 +30,59 @@ public class SearchService {
     public SearchService(
             PropertySearchRepository propertySearchRepository,
             SearchCacheService searchCacheService,
-<span class="nc" id="L33">            PropertyMediaRepository propertyMediaRepository) {</span>
-<span class="nc" id="L34">        this.propertySearchRepository = propertySearchRepository;</span>
-<span class="nc" id="L35">        this.searchCacheService = searchCacheService;</span>
-<span class="nc" id="L36">        this.propertyMediaRepository = propertyMediaRepository;</span>
-<span class="nc" id="L37">    }</span>
+<span class="fc" id="L33">            PropertyMediaRepository propertyMediaRepository) {</span>
+<span class="fc" id="L34">        this.propertySearchRepository = propertySearchRepository;</span>
+<span class="fc" id="L35">        this.searchCacheService = searchCacheService;</span>
+<span class="fc" id="L36">        this.propertyMediaRepository = propertyMediaRepository;</span>
+<span class="fc" id="L37">    }</span>
 
     public PageResponse&lt;SearchResultItem&gt; search(SearchCriteria criteria, Pageable pageable) {
-<span class="nc" id="L40">        validate(criteria);</span>
+<span class="fc" id="L40">        validate(criteria);</span>
 
-<span class="nc" id="L42">        return searchCacheService.get(criteria, pageable)</span>
-<span class="nc" id="L43">                .map(CachedSearchPage::toPageResponse)</span>
-<span class="nc" id="L44">                .orElseGet(() -&gt; {</span>
-<span class="nc" id="L45">                    PageResponse&lt;SearchResultItem&gt; fresh = execute(criteria, pageable);</span>
-<span class="nc" id="L46">                    searchCacheService.put(criteria, pageable, CachedSearchPage.from(fresh));</span>
-<span class="nc" id="L47">                    return fresh;</span>
+<span class="fc" id="L42">        return searchCacheService.get(criteria, pageable)</span>
+<span class="fc" id="L43">                .map(CachedSearchPage::toPageResponse)</span>
+<span class="fc" id="L44">                .orElseGet(() -&gt; {</span>
+<span class="fc" id="L45">                    PageResponse&lt;SearchResultItem&gt; fresh = execute(criteria, pageable);</span>
+<span class="fc" id="L46">                    searchCacheService.put(criteria, pageable, CachedSearchPage.from(fresh));</span>
+<span class="fc" id="L47">                    return fresh;</span>
                 });
     }
 
     private PageResponse&lt;SearchResultItem&gt; execute(SearchCriteria criteria, Pageable pageable) {
-<span class="nc" id="L52">        Page&lt;Property&gt; results = propertySearchRepository.search(criteria, pageable);</span>
-<span class="nc" id="L53">        Map&lt;UUID, List&lt;String&gt;&gt; photoUrlsByPropertyId = photoUrlsByPropertyId(results.getContent());</span>
+<span class="fc" id="L52">        Page&lt;Property&gt; results = propertySearchRepository.search(criteria, pageable);</span>
+<span class="fc" id="L53">        Map&lt;UUID, List&lt;String&gt;&gt; photoUrlsByPropertyId = photoUrlsByPropertyId(results.getContent());</span>
         // Always approximate — GET /search is always public; see
         // SearchResultItem#withApproximateLocation's own doc.
-<span class="nc" id="L56">        return PageResponse.of(results.map(property -&gt; SearchResultItem</span>
-<span class="nc" id="L57">                .from(property, photoUrlsByPropertyId.getOrDefault(property.getId(), List.of()))</span>
-<span class="nc" id="L58">                .withApproximateLocation()));</span>
+<span class="fc" id="L56">        return PageResponse.of(results.map(property -&gt; SearchResultItem</span>
+<span class="fc" id="L57">                .from(property, photoUrlsByPropertyId.getOrDefault(property.getId(), List.of()))</span>
+<span class="fc" id="L58">                .withApproximateLocation()));</span>
     }
 
     /** One query for the whole page instead of N — see PropertyMediaRepository's own doc on the ordering guarantee. */
     private Map&lt;UUID, List&lt;String&gt;&gt; photoUrlsByPropertyId(List&lt;Property&gt; properties) {
-<span class="nc" id="L63">        List&lt;UUID&gt; propertyIds = properties.stream().map(Property::getId).toList();</span>
-<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (propertyIds.isEmpty()) {</span>
-<span class="nc" id="L65">            return Map.of();</span>
+<span class="fc" id="L63">        List&lt;UUID&gt; propertyIds = properties.stream().map(Property::getId).toList();</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (propertyIds.isEmpty()) {</span>
+<span class="fc" id="L65">            return Map.of();</span>
         }
-<span class="nc" id="L67">        return propertyMediaRepository.findAllByPropertyIdInOrderByPositionAsc(propertyIds).stream()</span>
-<span class="nc" id="L68">                .collect(Collectors.groupingBy(</span>
+<span class="fc" id="L67">        return propertyMediaRepository.findAllByPropertyIdInOrderByPositionAsc(propertyIds).stream()</span>
+<span class="fc" id="L68">                .collect(Collectors.groupingBy(</span>
                         PropertyMedia::getPropertyId,
-<span class="nc" id="L70">                        Collectors.mapping(PropertyMedia::getSecureUrl, Collectors.toList())));</span>
+<span class="fc" id="L70">                        Collectors.mapping(PropertyMedia::getSecureUrl, Collectors.toList())));</span>
     }
 
     private void validate(SearchCriteria criteria) {
-<span class="nc bnc" id="L74" title="All 2 branches missed.">        boolean hasCheckIn = criteria.checkIn() != null;</span>
-<span class="nc bnc" id="L75" title="All 2 branches missed.">        boolean hasCheckOut = criteria.checkOut() != null;</span>
-<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (hasCheckIn != hasCheckOut) {</span>
-<span class="nc" id="L77">            throw new BadRequestException(&quot;INCOMPLETE_DATE_RANGE&quot;, &quot;checkIn and checkOut must both be provided together&quot;);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        boolean hasCheckIn = criteria.checkIn() != null;</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        boolean hasCheckOut = criteria.checkOut() != null;</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (hasCheckIn != hasCheckOut) {</span>
+<span class="fc" id="L77">            throw new BadRequestException(&quot;INCOMPLETE_DATE_RANGE&quot;, &quot;checkIn and checkOut must both be provided together&quot;);</span>
         }
-<span class="nc bnc" id="L79" title="All 4 branches missed.">        if (hasCheckIn &amp;&amp; !criteria.checkIn().isBefore(criteria.checkOut())) {</span>
-<span class="nc" id="L80">            throw new BadRequestException(&quot;INVALID_DATE_RANGE&quot;, &quot;checkIn must be before checkOut&quot;);</span>
+<span class="pc bpc" id="L79" title="1 of 4 branches missed.">        if (hasCheckIn &amp;&amp; !criteria.checkIn().isBefore(criteria.checkOut())) {</span>
+<span class="fc" id="L80">            throw new BadRequestException(&quot;INVALID_DATE_RANGE&quot;, &quot;checkIn must be before checkOut&quot;);</span>
         }
-<span class="nc bnc" id="L82" title="All 4 branches missed.">        if (criteria.minPrice() != null &amp;&amp; criteria.maxPrice() != null</span>
-<span class="nc bnc" id="L83" title="All 2 branches missed.">                &amp;&amp; criteria.minPrice().compareTo(criteria.maxPrice()) &gt; 0) {</span>
-<span class="nc" id="L84">            throw new BadRequestException(&quot;INVALID_PRICE_RANGE&quot;, &quot;minPrice must not be greater than maxPrice&quot;);</span>
+<span class="pc bpc" id="L82" title="1 of 4 branches missed.">        if (criteria.minPrice() != null &amp;&amp; criteria.maxPrice() != null</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">                &amp;&amp; criteria.minPrice().compareTo(criteria.maxPrice()) &gt; 0) {</span>
+<span class="fc" id="L84">            throw new BadRequestException(&quot;INVALID_PRICE_RANGE&quot;, &quot;minPrice must not be greater than maxPrice&quot;);</span>
         }
-<span class="nc" id="L86">    }</span>
+<span class="fc" id="L86">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

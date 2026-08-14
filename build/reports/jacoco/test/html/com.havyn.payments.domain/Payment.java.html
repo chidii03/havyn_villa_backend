@@ -35,7 +35,7 @@ public class Payment extends BaseEntity {
     @Column(name = &quot;currency&quot;, nullable = false, length = 3)
     private String currency;
 
-<span class="nc" id="L38">    @Enumerated(EnumType.STRING)</span>
+<span class="pc" id="L38">    @Enumerated(EnumType.STRING)</span>
     @Column(name = &quot;status&quot;, nullable = false, length = 20)
     private PaymentStatus status = PaymentStatus.PENDING;
 
@@ -43,24 +43,24 @@ public class Payment extends BaseEntity {
         // JPA
 <span class="nc" id="L44">    }</span>
 
-<span class="nc" id="L46">    public Payment(UUID bookingId, String provider, String providerRef, BigDecimal amount, String currency) {</span>
-<span class="nc" id="L47">        this.bookingId = bookingId;</span>
-<span class="nc" id="L48">        this.provider = provider;</span>
-<span class="nc" id="L49">        this.providerRef = providerRef;</span>
-<span class="nc" id="L50">        this.amount = amount;</span>
-<span class="nc" id="L51">        this.currency = currency;</span>
-<span class="nc" id="L52">    }</span>
+<span class="fc" id="L46">    public Payment(UUID bookingId, String provider, String providerRef, BigDecimal amount, String currency) {</span>
+<span class="fc" id="L47">        this.bookingId = bookingId;</span>
+<span class="fc" id="L48">        this.provider = provider;</span>
+<span class="fc" id="L49">        this.providerRef = providerRef;</span>
+<span class="fc" id="L50">        this.amount = amount;</span>
+<span class="fc" id="L51">        this.currency = currency;</span>
+<span class="fc" id="L52">    }</span>
 
     public UUID getBookingId() {
-<span class="nc" id="L55">        return bookingId;</span>
+<span class="fc" id="L55">        return bookingId;</span>
     }
 
     public String getProvider() {
-<span class="nc" id="L59">        return provider;</span>
+<span class="fc" id="L59">        return provider;</span>
     }
 
     public String getProviderRef() {
-<span class="nc" id="L63">        return providerRef;</span>
+<span class="fc" id="L63">        return providerRef;</span>
     }
 
     public BigDecimal getAmount() {
@@ -68,23 +68,23 @@ public class Payment extends BaseEntity {
     }
 
     public String getCurrency() {
-<span class="nc" id="L71">        return currency;</span>
+<span class="fc" id="L71">        return currency;</span>
     }
 
     public PaymentStatus getStatus() {
-<span class="nc" id="L75">        return status;</span>
+<span class="fc" id="L75">        return status;</span>
     }
 
     public void markSucceeded() {
-<span class="nc" id="L79">        this.status = PaymentStatus.SUCCEEDED;</span>
-<span class="nc" id="L80">    }</span>
+<span class="fc" id="L79">        this.status = PaymentStatus.SUCCEEDED;</span>
+<span class="fc" id="L80">    }</span>
 
     public void markFailed() {
-<span class="nc" id="L83">        this.status = PaymentStatus.FAILED;</span>
-<span class="nc" id="L84">    }</span>
+<span class="fc" id="L83">        this.status = PaymentStatus.FAILED;</span>
+<span class="fc" id="L84">    }</span>
 
     public boolean isTerminal() {
-<span class="nc bnc" id="L87" title="All 4 branches missed.">        return status == PaymentStatus.SUCCEEDED || status == PaymentStatus.FAILED;</span>
+<span class="pc bpc" id="L87" title="1 of 4 branches missed.">        return status == PaymentStatus.SUCCEEDED || status == PaymentStatus.FAILED;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

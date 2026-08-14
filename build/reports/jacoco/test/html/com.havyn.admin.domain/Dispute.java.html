@@ -30,7 +30,7 @@ public class Dispute extends BaseEntity {
     @Column(name = &quot;reason&quot;, nullable = false)
     private String reason;
 
-<span class="nc" id="L33">    @Enumerated(EnumType.STRING)</span>
+<span class="pc" id="L33">    @Enumerated(EnumType.STRING)</span>
     @Column(name = &quot;status&quot;, nullable = false, length = 20)
     private DisputeStatus status = DisputeStatus.OPEN;
 
@@ -47,18 +47,18 @@ public class Dispute extends BaseEntity {
         // JPA
 <span class="nc" id="L48">    }</span>
 
-<span class="nc" id="L50">    public Dispute(UUID bookingId, UUID raisedBy, String reason) {</span>
-<span class="nc" id="L51">        this.bookingId = bookingId;</span>
-<span class="nc" id="L52">        this.raisedBy = raisedBy;</span>
-<span class="nc" id="L53">        this.reason = reason;</span>
-<span class="nc" id="L54">    }</span>
+<span class="fc" id="L50">    public Dispute(UUID bookingId, UUID raisedBy, String reason) {</span>
+<span class="fc" id="L51">        this.bookingId = bookingId;</span>
+<span class="fc" id="L52">        this.raisedBy = raisedBy;</span>
+<span class="fc" id="L53">        this.reason = reason;</span>
+<span class="fc" id="L54">    }</span>
 
     public void resolve(UUID adminId, String resolutionNotes, Instant when) {
-<span class="nc" id="L57">        this.status = DisputeStatus.RESOLVED;</span>
-<span class="nc" id="L58">        this.resolutionNotes = resolutionNotes;</span>
-<span class="nc" id="L59">        this.resolvedBy = adminId;</span>
-<span class="nc" id="L60">        this.resolvedAt = when;</span>
-<span class="nc" id="L61">    }</span>
+<span class="fc" id="L57">        this.status = DisputeStatus.RESOLVED;</span>
+<span class="fc" id="L58">        this.resolutionNotes = resolutionNotes;</span>
+<span class="fc" id="L59">        this.resolvedBy = adminId;</span>
+<span class="fc" id="L60">        this.resolvedAt = when;</span>
+<span class="fc" id="L61">    }</span>
 
     public void dismiss(UUID adminId, String resolutionNotes, Instant when) {
 <span class="nc" id="L64">        this.status = DisputeStatus.DISMISSED;</span>
@@ -68,11 +68,11 @@ public class Dispute extends BaseEntity {
 <span class="nc" id="L68">    }</span>
 
     public UUID getBookingId() {
-<span class="nc" id="L71">        return bookingId;</span>
+<span class="fc" id="L71">        return bookingId;</span>
     }
 
     public UUID getRaisedBy() {
-<span class="nc" id="L75">        return raisedBy;</span>
+<span class="fc" id="L75">        return raisedBy;</span>
     }
 
     public String getReason() {
@@ -80,7 +80,7 @@ public class Dispute extends BaseEntity {
     }
 
     public DisputeStatus getStatus() {
-<span class="nc" id="L83">        return status;</span>
+<span class="fc" id="L83">        return status;</span>
     }
 
     public String getResolutionNotes() {
@@ -88,7 +88,7 @@ public class Dispute extends BaseEntity {
     }
 
     public UUID getResolvedBy() {
-<span class="nc" id="L91">        return resolvedBy;</span>
+<span class="fc" id="L91">        return resolvedBy;</span>
     }
 
     public Instant getResolvedAt() {

@@ -8,14 +8,14 @@ import java.util.List;
  * {@code { &quot;error&quot;: { &quot;code&quot;, &quot;message&quot;, &quot;details&quot;: [...], &quot;traceId&quot; } } }.
  * See project-docs/architecture/03-api-design.md.
  */
-<span class="nc" id="L11">public record ErrorResponse(Body error) {</span>
+<span class="fc" id="L11">public record ErrorResponse(Body error) {</span>
 
     public static ErrorResponse of(String code, String message, List&lt;ErrorDetail&gt; details, String traceId) {
-<span class="nc" id="L14">        return new ErrorResponse(new Body(code, message, details, traceId));</span>
+<span class="fc" id="L14">        return new ErrorResponse(new Body(code, message, details, traceId));</span>
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-<span class="nc" id="L18">    public record Body(String code, String message, List&lt;ErrorDetail&gt; details, String traceId) {</span>
+<span class="fc" id="L18">    public record Body(String code, String message, List&lt;ErrorDetail&gt; details, String traceId) {</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -46,7 +46,7 @@ spring:
             enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
 
 havyn:
-  web-base-url: ${WEB_BASE_URL:https://localhost:3000}
+  web-base-url: ${WEB_BASE_URL:http://localhost:3000}
   mail-from: ${MAIL_FROM:no-reply@havynvilla.com}
   notification-timezone: ${HAVYN_NOTIFICATION_TIMEZONE:Africa/Lagos}
 

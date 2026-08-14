@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-<span class="nc" id="L11">public record PropertyDetail(</span>
+<span class="fc" id="L11">public record PropertyDetail(</span>
         UUID id,
         UUID hostId,
         PropertyTypeSummary type,
@@ -40,38 +40,38 @@ import java.util.UUID;
 
     /** No photos wired in — used by admin/host-management flows that don't load media alongside the property. */
     public static PropertyDetail from(Property property) {
-<span class="nc" id="L43">        return from(property, List.of());</span>
+<span class="fc" id="L43">        return from(property, List.of());</span>
     }
 
     public static PropertyDetail from(Property property, List&lt;String&gt; photoUrls) {
-<span class="nc" id="L47">        return new PropertyDetail(</span>
-<span class="nc" id="L48">                property.getId(),</span>
-<span class="nc" id="L49">                property.getHostId(),</span>
-<span class="nc" id="L50">                PropertyTypeSummary.from(property.getType()),</span>
-<span class="nc" id="L51">                property.getTitle(),</span>
-<span class="nc" id="L52">                property.getDescription(),</span>
-<span class="nc" id="L53">                property.getAddress(),</span>
-<span class="nc" id="L54">                property.getCity(),</span>
-<span class="nc" id="L55">                property.getState(),</span>
-<span class="nc" id="L56">                property.getCountry(),</span>
-<span class="nc" id="L57">                property.getLat(),</span>
-<span class="nc" id="L58">                property.getLng(),</span>
-<span class="nc" id="L59">                property.getCurrency(),</span>
-<span class="nc" id="L60">                property.getBasePrice(),</span>
-<span class="nc" id="L61">                property.getCapacity(),</span>
-<span class="nc" id="L62">                property.getBedrooms(),</span>
-<span class="nc" id="L63">                property.getBeds(),</span>
-<span class="nc" id="L64">                property.getBathrooms(),</span>
-<span class="nc" id="L65">                property.getCleaningFee(),</span>
-<span class="nc" id="L66">                property.getServiceFeePct(),</span>
-<span class="nc" id="L67">                property.getHouseRules(),</span>
-<span class="nc" id="L68">                property.getCancellationPolicy(),</span>
-<span class="nc" id="L69">                property.getStatus().name(),</span>
-<span class="nc" id="L70">                property.getRatingAvg(),</span>
-<span class="nc" id="L71">                property.getRatingCount(),</span>
-<span class="nc" id="L72">                property.getAmenities().stream().map(AmenitySummary::from).toList(),</span>
-<span class="nc" id="L73">                property.getCreatedAt(),</span>
-<span class="nc" id="L74">                property.getUpdatedAt(),</span>
+<span class="fc" id="L47">        return new PropertyDetail(</span>
+<span class="fc" id="L48">                property.getId(),</span>
+<span class="fc" id="L49">                property.getHostId(),</span>
+<span class="fc" id="L50">                PropertyTypeSummary.from(property.getType()),</span>
+<span class="fc" id="L51">                property.getTitle(),</span>
+<span class="fc" id="L52">                property.getDescription(),</span>
+<span class="fc" id="L53">                property.getAddress(),</span>
+<span class="fc" id="L54">                property.getCity(),</span>
+<span class="fc" id="L55">                property.getState(),</span>
+<span class="fc" id="L56">                property.getCountry(),</span>
+<span class="fc" id="L57">                property.getLat(),</span>
+<span class="fc" id="L58">                property.getLng(),</span>
+<span class="fc" id="L59">                property.getCurrency(),</span>
+<span class="fc" id="L60">                property.getBasePrice(),</span>
+<span class="fc" id="L61">                property.getCapacity(),</span>
+<span class="fc" id="L62">                property.getBedrooms(),</span>
+<span class="fc" id="L63">                property.getBeds(),</span>
+<span class="fc" id="L64">                property.getBathrooms(),</span>
+<span class="fc" id="L65">                property.getCleaningFee(),</span>
+<span class="fc" id="L66">                property.getServiceFeePct(),</span>
+<span class="fc" id="L67">                property.getHouseRules(),</span>
+<span class="fc" id="L68">                property.getCancellationPolicy(),</span>
+<span class="fc" id="L69">                property.getStatus().name(),</span>
+<span class="fc" id="L70">                property.getRatingAvg(),</span>
+<span class="fc" id="L71">                property.getRatingCount(),</span>
+<span class="fc" id="L72">                property.getAmenities().stream().map(AmenitySummary::from).toList(),</span>
+<span class="fc" id="L73">                property.getCreatedAt(),</span>
+<span class="fc" id="L74">                property.getUpdatedAt(),</span>
                 photoUrls);
     }
 
@@ -86,15 +86,15 @@ import java.util.UUID;
      * pin, until booked&quot; intent, now actually enforced server-side.
      */
     public PropertyDetail withApproximateLocation() {
-<span class="nc" id="L89">        return new PropertyDetail(</span>
+<span class="fc" id="L89">        return new PropertyDetail(</span>
                 id, hostId, type, title, description, null, city, state, country,
-<span class="nc" id="L91">                approximate(lat), approximate(lng), currency, basePrice, capacity, bedrooms, beds, bathrooms,</span>
+<span class="fc" id="L91">                approximate(lat), approximate(lng), currency, basePrice, capacity, bedrooms, beds, bathrooms,</span>
                 cleaningFee, serviceFeePct, houseRules, cancellationPolicy, status, ratingAvg, ratingCount,
                 amenities, createdAt, updatedAt, photoUrls);
     }
 
     private static BigDecimal approximate(BigDecimal coordinate) {
-<span class="nc bnc" id="L97" title="All 2 branches missed.">        return coordinate == null ? null : coordinate.setScale(2, RoundingMode.HALF_UP);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        return coordinate == null ? null : coordinate.setScale(2, RoundingMode.HALF_UP);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

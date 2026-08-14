@@ -30,10 +30,10 @@ public class AdminSettingsService {
     private final PlatformSettingRepository platformSettingRepository;
     private final AuditLogService auditLogService;
 
-<span class="nc" id="L33">    public AdminSettingsService(PlatformSettingRepository platformSettingRepository, AuditLogService auditLogService) {</span>
-<span class="nc" id="L34">        this.platformSettingRepository = platformSettingRepository;</span>
-<span class="nc" id="L35">        this.auditLogService = auditLogService;</span>
-<span class="nc" id="L36">    }</span>
+<span class="fc" id="L33">    public AdminSettingsService(PlatformSettingRepository platformSettingRepository, AuditLogService auditLogService) {</span>
+<span class="fc" id="L34">        this.platformSettingRepository = platformSettingRepository;</span>
+<span class="fc" id="L35">        this.auditLogService = auditLogService;</span>
+<span class="fc" id="L36">    }</span>
 
     @Transactional(readOnly = true)
     public List&lt;PlatformSetting&gt; list() {
@@ -42,34 +42,34 @@ public class AdminSettingsService {
 
     @Transactional
     public PlatformSetting update(UUID adminId, String key, String value) {
-<span class="nc" id="L45">        PlatformSetting setting = platformSettingRepository.findById(key).orElseThrow(() -&gt; NotFoundException.of(&quot;PlatformSetting&quot;, key));</span>
-<span class="nc" id="L46">        validateValue(key, value);</span>
-<span class="nc" id="L47">        String before = setting.getValue();</span>
-<span class="nc" id="L48">        setting.setValue(value);</span>
-<span class="nc" id="L49">        auditLogService.record(</span>
+<span class="fc" id="L45">        PlatformSetting setting = platformSettingRepository.findById(key).orElseThrow(() -&gt; NotFoundException.of(&quot;PlatformSetting&quot;, key));</span>
+<span class="fc" id="L46">        validateValue(key, value);</span>
+<span class="fc" id="L47">        String before = setting.getValue();</span>
+<span class="fc" id="L48">        setting.setValue(value);</span>
+<span class="fc" id="L49">        auditLogService.record(</span>
                 adminId, &quot;PLATFORM_SETTING_UPDATED&quot;, &quot;PlatformSetting&quot;, null,
-<span class="nc" id="L51">                Map.of(&quot;key&quot;, key, &quot;value&quot;, before), Map.of(&quot;key&quot;, key, &quot;value&quot;, value));</span>
-<span class="nc" id="L52">        return setting;</span>
+<span class="fc" id="L51">                Map.of(&quot;key&quot;, key, &quot;value&quot;, before), Map.of(&quot;key&quot;, key, &quot;value&quot;, value));</span>
+<span class="fc" id="L52">        return setting;</span>
     }
 
     private void validateValue(String key, String value) {
-<span class="nc bnc" id="L56" title="All 4 branches missed.">        if (value == null || value.isBlank()) {</span>
-<span class="nc" id="L57">            throw new BadRequestException(&quot;INVALID_SETTING_VALUE&quot;, &quot;Value must not be blank&quot;);</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">        if (value == null || value.isBlank()) {</span>
+<span class="fc" id="L57">            throw new BadRequestException(&quot;INVALID_SETTING_VALUE&quot;, &quot;Value must not be blank&quot;);</span>
         }
-<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (COMMISSION_SETTING_KEY.equals(key)) {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (COMMISSION_SETTING_KEY.equals(key)) {</span>
             BigDecimal parsed;
             try {
-<span class="nc" id="L62">                parsed = new BigDecimal(value);</span>
-<span class="nc" id="L63">            } catch (NumberFormatException e) {</span>
-<span class="nc" id="L64">                throw new BadRequestException(&quot;INVALID_SETTING_VALUE&quot;, &quot;commission_pct must be a number&quot;);</span>
-<span class="nc" id="L65">            }</span>
-<span class="nc bnc" id="L66" title="All 4 branches missed.">            if (parsed.signum() &lt; 0 || parsed.compareTo(BigDecimal.valueOf(100)) &gt; 0) {</span>
-<span class="nc" id="L67">                throw new BadRequestException(&quot;INVALID_SETTING_VALUE&quot;, &quot;commission_pct must be between 0 and 100&quot;);</span>
+<span class="fc" id="L62">                parsed = new BigDecimal(value);</span>
+<span class="fc" id="L63">            } catch (NumberFormatException e) {</span>
+<span class="fc" id="L64">                throw new BadRequestException(&quot;INVALID_SETTING_VALUE&quot;, &quot;commission_pct must be a number&quot;);</span>
+<span class="fc" id="L65">            }</span>
+<span class="pc bpc" id="L66" title="1 of 4 branches missed.">            if (parsed.signum() &lt; 0 || parsed.compareTo(BigDecimal.valueOf(100)) &gt; 0) {</span>
+<span class="fc" id="L67">                throw new BadRequestException(&quot;INVALID_SETTING_VALUE&quot;, &quot;commission_pct must be between 0 and 100&quot;);</span>
             }
         }
-<span class="nc bnc" id="L70" title="All 6 branches missed.">        if (BOOKINGS_ENABLED_SETTING_KEY.equals(key) &amp;&amp; !&quot;true&quot;.equalsIgnoreCase(value) &amp;&amp; !&quot;false&quot;.equalsIgnoreCase(value)) {</span>
-<span class="nc" id="L71">            throw new BadRequestException(&quot;INVALID_SETTING_VALUE&quot;, &quot;bookings_enabled must be \&quot;true\&quot; or \&quot;false\&quot;&quot;);</span>
+<span class="pc bpc" id="L70" title="1 of 6 branches missed.">        if (BOOKINGS_ENABLED_SETTING_KEY.equals(key) &amp;&amp; !&quot;true&quot;.equalsIgnoreCase(value) &amp;&amp; !&quot;false&quot;.equalsIgnoreCase(value)) {</span>
+<span class="fc" id="L71">            throw new BadRequestException(&quot;INVALID_SETTING_VALUE&quot;, &quot;bookings_enabled must be \&quot;true\&quot; or \&quot;false\&quot;&quot;);</span>
         }
-<span class="nc" id="L73">    }</span>
+<span class="fc" id="L73">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

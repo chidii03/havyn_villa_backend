@@ -27,15 +27,15 @@ public class AuditLogService {
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
 
-<span class="nc" id="L30">    public AuditLogService(AuditLogRepository auditLogRepository, ObjectMapper objectMapper) {</span>
-<span class="nc" id="L31">        this.auditLogRepository = auditLogRepository;</span>
-<span class="nc" id="L32">        this.objectMapper = objectMapper;</span>
-<span class="nc" id="L33">    }</span>
+<span class="fc" id="L30">    public AuditLogService(AuditLogRepository auditLogRepository, ObjectMapper objectMapper) {</span>
+<span class="fc" id="L31">        this.auditLogRepository = auditLogRepository;</span>
+<span class="fc" id="L32">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L33">    }</span>
 
     @Transactional
     public void record(UUID actorId, String action, String targetType, UUID targetId, Object before, Object after) {
-<span class="nc" id="L37">        auditLogRepository.save(new AuditLog(actorId, action, targetType, targetId, toJson(before), toJson(after)));</span>
-<span class="nc" id="L38">    }</span>
+<span class="fc" id="L37">        auditLogRepository.save(new AuditLog(actorId, action, targetType, targetId, toJson(before), toJson(after)));</span>
+<span class="fc" id="L38">    }</span>
 
     @Transactional(readOnly = true)
     public Page&lt;AuditLog&gt; list(Pageable pageable) {
@@ -48,11 +48,11 @@ public class AuditLogService {
     }
 
     private String toJson(Object value) {
-<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (value == null) {</span>
-<span class="nc" id="L52">            return null;</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L52">            return null;</span>
         }
         try {
-<span class="nc" id="L55">            return objectMapper.writeValueAsString(value);</span>
+<span class="fc" id="L55">            return objectMapper.writeValueAsString(value);</span>
 <span class="nc" id="L56">        } catch (JsonProcessingException e) {</span>
             // An audit entry with a missing before/after snapshot is still far better
             // than failing the underlying admin action over a serialization quirk.

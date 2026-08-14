@@ -23,10 +23,10 @@ public class VerificationTokenService {
 
     private static final String EMAIL_VERIFY_PREFIX = &quot;havyn:auth:verify-email:&quot;;
     private static final String PASSWORD_RESET_PREFIX = &quot;havyn:auth:password-reset:&quot;;
-<span class="nc" id="L26">    private static final Duration EMAIL_VERIFY_TTL = Duration.ofHours(24);</span>
-<span class="nc" id="L27">    private static final Duration PASSWORD_RESET_TTL = Duration.ofHours(1);</span>
+<span class="fc" id="L26">    private static final Duration EMAIL_VERIFY_TTL = Duration.ofHours(24);</span>
+<span class="fc" id="L27">    private static final Duration PASSWORD_RESET_TTL = Duration.ofHours(1);</span>
 
-<span class="nc" id="L29">    private static final SecureRandom SECURE_RANDOM = new SecureRandom();</span>
+<span class="fc" id="L29">    private static final SecureRandom SECURE_RANDOM = new SecureRandom();</span>
 
     private final StringRedisTemplate redisTemplate;
 

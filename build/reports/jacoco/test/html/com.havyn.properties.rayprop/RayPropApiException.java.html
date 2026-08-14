@@ -25,31 +25,31 @@ public class RayPropApiException extends RuntimeException {
 <span class="nc" id="L25">    }</span>
 
     public RayPropApiException(int httpStatus, String errorCode, String message, String responseBody) {
-<span class="nc" id="L28">        super(message);</span>
-<span class="nc" id="L29">        this.httpStatus = httpStatus;</span>
-<span class="nc" id="L30">        this.errorCode = errorCode;</span>
-<span class="nc" id="L31">        this.responseBody = responseBody;</span>
-<span class="nc" id="L32">    }</span>
+<span class="fc" id="L28">        super(message);</span>
+<span class="fc" id="L29">        this.httpStatus = httpStatus;</span>
+<span class="fc" id="L30">        this.errorCode = errorCode;</span>
+<span class="fc" id="L31">        this.responseBody = responseBody;</span>
+<span class="fc" id="L32">    }</span>
 
     public int getHttpStatus() {
-<span class="nc" id="L35">        return httpStatus;</span>
+<span class="fc" id="L35">        return httpStatus;</span>
     }
 
     public String getErrorCode() {
-<span class="nc" id="L39">        return errorCode;</span>
+<span class="fc" id="L39">        return errorCode;</span>
     }
 
     public String getResponseBody() {
-<span class="nc" id="L43">        return responseBody;</span>
+<span class="fc" id="L43">        return responseBody;</span>
     }
 
     public boolean isDailyLimitReached() {
-<span class="nc" id="L47">        return &quot;DAILY_LIMIT_REACHED&quot;.equals(errorCode);</span>
+<span class="fc" id="L47">        return &quot;DAILY_LIMIT_REACHED&quot;.equals(errorCode);</span>
     }
 
     /** Per-second throughput limit, distinct from the daily unique-listing quota above. */
     public boolean isRateLimited() {
-<span class="nc bnc" id="L52" title="All 4 branches missed.">        return httpStatus == 429 &amp;&amp; !isDailyLimitReached();</span>
+<span class="fc bfc" id="L52" title="All 4 branches covered.">        return httpStatus == 429 &amp;&amp; !isDailyLimitReached();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

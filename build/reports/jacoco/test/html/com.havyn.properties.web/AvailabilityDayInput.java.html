@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /** {@code blocked} left null means &quot;leave the existing block state unchanged&quot; (defaults to unblocked for a new day). */
-<span class="nc" id="L9">public record AvailabilityDayInput(</span>
+<span class="fc" id="L9">public record AvailabilityDayInput(</span>
         @NotNull LocalDate date,
         Boolean blocked,
         @PositiveOrZero BigDecimal priceOverride) {

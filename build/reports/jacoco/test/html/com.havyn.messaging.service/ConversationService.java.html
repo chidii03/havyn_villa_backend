@@ -43,34 +43,34 @@ public class ConversationService {
             MessageRepository messageRepository,
             PropertyRepository propertyRepository,
             BookingRepository bookingRepository,
-<span class="nc" id="L46">            ApplicationEventPublisher eventPublisher) {</span>
-<span class="nc" id="L47">        this.conversationRepository = conversationRepository;</span>
-<span class="nc" id="L48">        this.messageRepository = messageRepository;</span>
-<span class="nc" id="L49">        this.propertyRepository = propertyRepository;</span>
-<span class="nc" id="L50">        this.bookingRepository = bookingRepository;</span>
-<span class="nc" id="L51">        this.eventPublisher = eventPublisher;</span>
-<span class="nc" id="L52">    }</span>
+<span class="fc" id="L46">            ApplicationEventPublisher eventPublisher) {</span>
+<span class="fc" id="L47">        this.conversationRepository = conversationRepository;</span>
+<span class="fc" id="L48">        this.messageRepository = messageRepository;</span>
+<span class="fc" id="L49">        this.propertyRepository = propertyRepository;</span>
+<span class="fc" id="L50">        this.bookingRepository = bookingRepository;</span>
+<span class="fc" id="L51">        this.eventPublisher = eventPublisher;</span>
+<span class="fc" id="L52">    }</span>
 
     @Transactional
     public Conversation startOrContinue(UUID guestId, UUID propertyId, UUID bookingId, String body) {
-<span class="nc" id="L56">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
-<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (property.getHostId().equals(guestId)) {</span>
-<span class="nc" id="L58">            throw new BadRequestException(&quot;HOST_CANNOT_MESSAGE_OWN_LISTING&quot;, &quot;You cannot start a conversation on your own listing&quot;);</span>
+<span class="pc" id="L56">        Property property = propertyRepository.findById(propertyId).orElseThrow(() -&gt; NotFoundException.of(&quot;Property&quot;, propertyId));</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (property.getHostId().equals(guestId)) {</span>
+<span class="fc" id="L58">            throw new BadRequestException(&quot;HOST_CANNOT_MESSAGE_OWN_LISTING&quot;, &quot;You cannot start a conversation on your own listing&quot;);</span>
         }
 
-<span class="nc" id="L61">        Conversation conversation = conversationRepository.findByPropertyIdAndGuestId(propertyId, guestId)</span>
-<span class="nc" id="L62">                .orElseGet(() -&gt; conversationRepository.save(new Conversation(propertyId, property.getHostId(), guestId)));</span>
+<span class="fc" id="L61">        Conversation conversation = conversationRepository.findByPropertyIdAndGuestId(propertyId, guestId)</span>
+<span class="fc" id="L62">                .orElseGet(() -&gt; conversationRepository.save(new Conversation(propertyId, property.getHostId(), guestId)));</span>
 
-<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (bookingId != null) {</span>
-<span class="nc" id="L65">            Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
-<span class="nc bnc" id="L66" title="All 4 branches missed.">            if (!booking.getGuestId().equals(guestId) || !booking.getPropertyId().equals(propertyId)) {</span>
-<span class="nc" id="L67">                throw new BadRequestException(&quot;BOOKING_PROPERTY_MISMATCH&quot;, &quot;This booking is not yours for this property&quot;);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (bookingId != null) {</span>
+<span class="pc" id="L65">            Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -&gt; NotFoundException.of(&quot;Booking&quot;, bookingId));</span>
+<span class="pc bpc" id="L66" title="1 of 4 branches missed.">            if (!booking.getGuestId().equals(guestId) || !booking.getPropertyId().equals(propertyId)) {</span>
+<span class="fc" id="L67">                throw new BadRequestException(&quot;BOOKING_PROPERTY_MISMATCH&quot;, &quot;This booking is not yours for this property&quot;);</span>
             }
-<span class="nc" id="L69">            conversation.linkBooking(bookingId);</span>
+<span class="fc" id="L69">            conversation.linkBooking(bookingId);</span>
         }
 
-<span class="nc" id="L72">        appendMessage(conversation, guestId, body);</span>
-<span class="nc" id="L73">        return conversation;</span>
+<span class="fc" id="L72">        appendMessage(conversation, guestId, body);</span>
+<span class="fc" id="L73">        return conversation;</span>
     }
 
     @Transactional(readOnly = true)
@@ -85,8 +85,8 @@ public class ConversationService {
 
     @Transactional
     public Message sendMessage(UUID senderId, UUID conversationId, String body) {
-<span class="nc" id="L88">        Conversation conversation = findParticipant(senderId, conversationId);</span>
-<span class="nc" id="L89">        return appendMessage(conversation, senderId, body);</span>
+<span class="fc" id="L88">        Conversation conversation = findParticipant(senderId, conversationId);</span>
+<span class="fc" id="L89">        return appendMessage(conversation, senderId, body);</span>
     }
 
     @Transactional(readOnly = true)
@@ -97,27 +97,27 @@ public class ConversationService {
 
     @Transactional
     public void markRead(UUID userId, UUID conversationId) {
-<span class="nc" id="L100">        findParticipant(userId, conversationId);</span>
-<span class="nc" id="L101">        List&lt;Message&gt; unread = messageRepository.findAllByConversationIdAndSenderIdNotAndReadAtIsNull(conversationId, userId);</span>
-<span class="nc" id="L102">        Instant now = Instant.now();</span>
-<span class="nc" id="L103">        unread.forEach(message -&gt; message.markRead(now));</span>
-<span class="nc" id="L104">    }</span>
+<span class="fc" id="L100">        findParticipant(userId, conversationId);</span>
+<span class="fc" id="L101">        List&lt;Message&gt; unread = messageRepository.findAllByConversationIdAndSenderIdNotAndReadAtIsNull(conversationId, userId);</span>
+<span class="fc" id="L102">        Instant now = Instant.now();</span>
+<span class="fc" id="L103">        unread.forEach(message -&gt; message.markRead(now));</span>
+<span class="fc" id="L104">    }</span>
 
     private Message appendMessage(Conversation conversation, UUID senderId, String body) {
-<span class="nc" id="L107">        Message message = messageRepository.save(new Message(conversation.getId(), senderId, body));</span>
-<span class="nc" id="L108">        conversation.touch(Instant.now());</span>
-<span class="nc" id="L109">        eventPublisher.publishEvent(MessageSentEvent.of(</span>
-<span class="nc" id="L110">                message.getId(), conversation.getId(), senderId, conversation.otherParticipant(senderId), conversation.getPropertyId()));</span>
-<span class="nc" id="L111">        return message;</span>
+<span class="fc" id="L107">        Message message = messageRepository.save(new Message(conversation.getId(), senderId, body));</span>
+<span class="fc" id="L108">        conversation.touch(Instant.now());</span>
+<span class="fc" id="L109">        eventPublisher.publishEvent(MessageSentEvent.of(</span>
+<span class="fc" id="L110">                message.getId(), conversation.getId(), senderId, conversation.otherParticipant(senderId), conversation.getPropertyId()));</span>
+<span class="fc" id="L111">        return message;</span>
     }
 
     private Conversation findParticipant(UUID userId, UUID conversationId) {
-<span class="nc" id="L115">        Conversation conversation = conversationRepository.findById(conversationId)</span>
-<span class="nc" id="L116">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Conversation&quot;, conversationId));</span>
-<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (!conversation.isParticipant(userId)) {</span>
-<span class="nc" id="L118">            throw new ForbiddenException(&quot;You do not have access to this conversation&quot;);</span>
+<span class="fc" id="L115">        Conversation conversation = conversationRepository.findById(conversationId)</span>
+<span class="fc" id="L116">                .orElseThrow(() -&gt; NotFoundException.of(&quot;Conversation&quot;, conversationId));</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (!conversation.isParticipant(userId)) {</span>
+<span class="fc" id="L118">            throw new ForbiddenException(&quot;You do not have access to this conversation&quot;);</span>
         }
-<span class="nc" id="L120">        return conversation;</span>
+<span class="fc" id="L120">        return conversation;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

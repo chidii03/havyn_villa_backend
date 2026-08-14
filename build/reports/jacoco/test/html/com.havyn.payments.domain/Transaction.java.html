@@ -36,14 +36,14 @@ public class Transaction extends BaseEntity {
         // JPA
 <span class="nc" id="L37">    }</span>
 
-<span class="nc" id="L39">    public Transaction(UUID paymentId, TransactionType type, String providerRef, BigDecimal amount, String currency, String rawPayload) {</span>
-<span class="nc" id="L40">        this.paymentId = paymentId;</span>
-<span class="nc" id="L41">        this.type = type;</span>
-<span class="nc" id="L42">        this.providerRef = providerRef;</span>
-<span class="nc" id="L43">        this.amount = amount;</span>
-<span class="nc" id="L44">        this.currency = currency;</span>
-<span class="nc" id="L45">        this.rawPayload = rawPayload;</span>
-<span class="nc" id="L46">    }</span>
+<span class="fc" id="L39">    public Transaction(UUID paymentId, TransactionType type, String providerRef, BigDecimal amount, String currency, String rawPayload) {</span>
+<span class="fc" id="L40">        this.paymentId = paymentId;</span>
+<span class="fc" id="L41">        this.type = type;</span>
+<span class="fc" id="L42">        this.providerRef = providerRef;</span>
+<span class="fc" id="L43">        this.amount = amount;</span>
+<span class="fc" id="L44">        this.currency = currency;</span>
+<span class="fc" id="L45">        this.rawPayload = rawPayload;</span>
+<span class="fc" id="L46">    }</span>
 
     public UUID getPaymentId() {
 <span class="nc" id="L49">        return paymentId;</span>

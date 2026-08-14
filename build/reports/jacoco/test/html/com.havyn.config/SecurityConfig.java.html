@@ -23,13 +23,13 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-<span class="nc" id="L26">public class SecurityConfig {</span>
+<span class="fc" id="L26">public class SecurityConfig {</span>
 
-<span class="nc" id="L28">    private static final String[] AUTH_REQUIRED_PROPERTY_POST_PATHS = {</span>
+<span class="fc" id="L28">    private static final String[] AUTH_REQUIRED_PROPERTY_POST_PATHS = {</span>
             &quot;/api/v1/properties/*/reviews&quot;, &quot;/api/v1/properties/*/conversations&quot;
     };
 
-<span class="nc" id="L32">    private static final String[] PUBLIC_PATHS = {</span>
+<span class="fc" id="L32">    private static final String[] PUBLIC_PATHS = {</span>
             &quot;/actuator/health&quot;, &quot;/actuator/health/**&quot;, &quot;/actuator/info&quot;,
             &quot;/swagger-ui.html&quot;, &quot;/swagger-ui/**&quot;, &quot;/v3/api-docs&quot;, &quot;/v3/api-docs/**&quot;,
             &quot;/api/v1/auth/**&quot;,
@@ -46,40 +46,40 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
-<span class="nc" id="L49">        http</span>
-<span class="nc" id="L50">                .csrf(csrf -&gt; csrf.disable())</span>
-<span class="nc" id="L51">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
-<span class="nc" id="L52">                .authorizeHttpRequests(auth -&gt; auth</span>
-<span class="nc" id="L53">                        .requestMatchers(HttpMethod.OPTIONS, &quot;/**&quot;).permitAll()</span>
-<span class="nc" id="L54">                        .requestMatchers(HttpMethod.POST, AUTH_REQUIRED_PROPERTY_POST_PATHS).authenticated()</span>
-<span class="nc" id="L55">                        .requestMatchers(PUBLIC_PATHS).permitAll()</span>
-<span class="nc" id="L56">                        .anyRequest().authenticated())</span>
-<span class="nc" id="L57">                .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class)</span>
-<span class="nc" id="L58">                .exceptionHandling(ex -&gt; ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))</span>
-<span class="nc" id="L59">                .httpBasic(basic -&gt; basic.disable())</span>
-<span class="nc" id="L60">                .formLogin(form -&gt; form.disable())</span>
+<span class="fc" id="L49">        http</span>
+<span class="fc" id="L50">                .csrf(csrf -&gt; csrf.disable())</span>
+<span class="fc" id="L51">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="fc" id="L52">                .authorizeHttpRequests(auth -&gt; auth</span>
+<span class="fc" id="L53">                        .requestMatchers(HttpMethod.OPTIONS, &quot;/**&quot;).permitAll()</span>
+<span class="fc" id="L54">                        .requestMatchers(HttpMethod.POST, AUTH_REQUIRED_PROPERTY_POST_PATHS).authenticated()</span>
+<span class="fc" id="L55">                        .requestMatchers(PUBLIC_PATHS).permitAll()</span>
+<span class="fc" id="L56">                        .anyRequest().authenticated())</span>
+<span class="fc" id="L57">                .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class)</span>
+<span class="fc" id="L58">                .exceptionHandling(ex -&gt; ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))</span>
+<span class="fc" id="L59">                .httpBasic(basic -&gt; basic.disable())</span>
+<span class="fc" id="L60">                .formLogin(form -&gt; form.disable())</span>
                 // security/01-security-plan.md#platform: &quot;Secure headers (HSTS,
                 // X-Content-Type-Options, Referrer-Policy, CSP)&quot;. X-Content-Type-Options:
                 // nosniff and X-Frame-Options: DENY are Spring Security defaults, made
                 // explicit here rather than left implicit.
-<span class="nc" id="L65">                .headers(headers -&gt; headers</span>
-<span class="nc" id="L66">                        .contentTypeOptions(withDefaults())</span>
-<span class="nc" id="L67">                        .frameOptions(frame -&gt; frame.deny())</span>
-<span class="nc" id="L68">                        .referrerPolicy(referrer -&gt; referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))</span>
-<span class="nc" id="L69">                        .contentSecurityPolicy(csp -&gt; csp.policyDirectives(CONTENT_SECURITY_POLICY))</span>
+<span class="fc" id="L65">                .headers(headers -&gt; headers</span>
+<span class="fc" id="L66">                        .contentTypeOptions(withDefaults())</span>
+<span class="fc" id="L67">                        .frameOptions(frame -&gt; frame.deny())</span>
+<span class="fc" id="L68">                        .referrerPolicy(referrer -&gt; referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))</span>
+<span class="fc" id="L69">                        .contentSecurityPolicy(csp -&gt; csp.policyDirectives(CONTENT_SECURITY_POLICY))</span>
                         // Only takes effect over HTTPS (browsers ignore it on plain HTTP,
                         // i.e. local dev) — real effect once a reverse proxy terminates TLS
                         // in front of this (prompts 27/29).
-<span class="nc" id="L73">                        .httpStrictTransportSecurity(hsts -&gt; hsts</span>
-<span class="nc" id="L74">                                .includeSubDomains(true)</span>
-<span class="nc" id="L75">                                .maxAgeInSeconds(Duration.ofDays(365).toSeconds())));</span>
-<span class="nc" id="L76">        return http.build();</span>
+<span class="fc" id="L73">                        .httpStrictTransportSecurity(hsts -&gt; hsts</span>
+<span class="fc" id="L74">                                .includeSubDomains(true)</span>
+<span class="fc" id="L75">                                .maxAgeInSeconds(Duration.ofDays(365).toSeconds())));</span>
+<span class="fc" id="L76">        return http.build();</span>
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         // security/01-security-plan.md's documented target.
-<span class="nc" id="L82">        return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();</span>
+<span class="fc" id="L82">        return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

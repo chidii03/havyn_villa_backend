@@ -9,17 +9,17 @@ import com.fasterxml.jackson.databind.JsonNode;
  * {@link RayPropFetchResult}/{@code RayPropSyncResult} as real diagnostics rather than
  * inferred/guessed numbers.
  */
-<span class="nc" id="L12">public record RayPropDataAccess(int accessedToday, int dailyLimit, int remainingToday) {</span>
+<span class="fc" id="L12">public record RayPropDataAccess(int accessedToday, int dailyLimit, int remainingToday) {</span>
 
     static RayPropDataAccess from(JsonNode node) {
-<span class="nc" id="L15">        JsonNode dataAccess = node.path(&quot;dataAccess&quot;);</span>
-<span class="nc bnc" id="L16" title="All 4 branches missed.">        if (dataAccess.isMissingNode() || dataAccess.isNull()) {</span>
-<span class="nc" id="L17">            return null;</span>
+<span class="fc" id="L15">        JsonNode dataAccess = node.path(&quot;dataAccess&quot;);</span>
+<span class="pc bpc" id="L16" title="1 of 4 branches missed.">        if (dataAccess.isMissingNode() || dataAccess.isNull()) {</span>
+<span class="fc" id="L17">            return null;</span>
         }
-<span class="nc" id="L19">        return new RayPropDataAccess(</span>
-<span class="nc" id="L20">                dataAccess.path(&quot;accessedToday&quot;).asInt(0),</span>
-<span class="nc" id="L21">                dataAccess.path(&quot;dailyLimit&quot;).asInt(0),</span>
-<span class="nc" id="L22">                dataAccess.path(&quot;remainingToday&quot;).asInt(0));</span>
+<span class="fc" id="L19">        return new RayPropDataAccess(</span>
+<span class="fc" id="L20">                dataAccess.path(&quot;accessedToday&quot;).asInt(0),</span>
+<span class="fc" id="L21">                dataAccess.path(&quot;dailyLimit&quot;).asInt(0),</span>
+<span class="fc" id="L22">                dataAccess.path(&quot;remainingToday&quot;).asInt(0));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

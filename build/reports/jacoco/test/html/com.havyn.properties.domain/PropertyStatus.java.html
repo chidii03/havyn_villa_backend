@@ -24,7 +24,7 @@ import java.util.Set;
 <span class="fc" id="L24">            SUSPENDED, Set.of(ACTIVE));</span>
 
     public boolean canTransitionTo(PropertyStatus target) {
-<span class="nc" id="L27">        return ALLOWED_TRANSITIONS.getOrDefault(this, Set.of()).contains(target);</span>
+<span class="fc" id="L27">        return ALLOWED_TRANSITIONS.getOrDefault(this, Set.of()).contains(target);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

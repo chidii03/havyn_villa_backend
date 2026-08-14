@@ -26,11 +26,11 @@ public final class CancellationPolicyCalculator {
 
     /** @param daysUntilCheckIn whole days between &quot;now&quot; and check-in; negative/zero means check-in has passed or is today. */
     public static BigDecimal refundPercentage(String cancellationPolicy, long daysUntilCheckIn) {
-<span class="pc bpc" id="L29" title="2 of 4 branches missed.">        return switch (cancellationPolicy) {</span>
-<span class="pc bpc" id="L30" title="1 of 2 branches missed.">            case &quot;FLEXIBLE&quot; -&gt; daysUntilCheckIn &gt;= 1 ? FULL_REFUND : NO_REFUND;</span>
-<span class="nc bnc" id="L31" title="All 2 branches missed.">            case &quot;MODERATE&quot; -&gt; daysUntilCheckIn &gt;= 5 ? FULL_REFUND : NO_REFUND;</span>
+<span class="fc bfc" id="L29" title="All 4 branches covered.">        return switch (cancellationPolicy) {</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">            case &quot;FLEXIBLE&quot; -&gt; daysUntilCheckIn &gt;= 1 ? FULL_REFUND : NO_REFUND;</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">            case &quot;MODERATE&quot; -&gt; daysUntilCheckIn &gt;= 5 ? FULL_REFUND : NO_REFUND;</span>
 <span class="fc bfc" id="L32" title="All 2 branches covered.">            case &quot;STRICT&quot; -&gt; daysUntilCheckIn &gt;= 7 ? HALF_REFUND : NO_REFUND;</span>
-<span class="nc" id="L33">            default -&gt; NO_REFUND;</span>
+<span class="fc" id="L33">            default -&gt; NO_REFUND;</span>
         };
     }
 }

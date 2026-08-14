@@ -3,11 +3,11 @@
 import com.havyn.common.error.BadRequestException;
 
 /** Default is {@link #NEWEST} — every listing starts at rating 0, so sorting by rating first would just be createdAt in disguise until reviews exist (prompt 15). */
-<span class="nc" id="L6">public enum SortOption {</span>
-<span class="nc" id="L7">    PRICE_ASC,</span>
-<span class="nc" id="L8">    PRICE_DESC,</span>
-<span class="nc" id="L9">    RATING_DESC,</span>
-<span class="nc" id="L10">    NEWEST;</span>
+<span class="fc" id="L6">public enum SortOption {</span>
+<span class="fc" id="L7">    PRICE_ASC,</span>
+<span class="fc" id="L8">    PRICE_DESC,</span>
+<span class="fc" id="L9">    RATING_DESC,</span>
+<span class="fc" id="L10">    NEWEST;</span>
 
     public static SortOption fromParam(String raw) {
 <span class="nc bnc" id="L13" title="All 4 branches missed.">        if (raw == null || raw.isBlank()) {</span>
