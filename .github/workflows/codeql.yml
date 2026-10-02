@@ -1,10 +1,5 @@
 name: CodeQL
 
-# project-docs/prompts/24-security-hardening.md: "dependency + SAST scanning in CI."
-# This is the SAST half (Dependabot, .github/dependabot.yml, is the dependency-
-# scanning half). Scans both languages in this repo — java-kotlin for apps/api,
-# javascript-typescript for apps/web + packages/shared.
-
 on:
   push:
     branches: [main]

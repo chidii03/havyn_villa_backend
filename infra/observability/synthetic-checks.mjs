@@ -1,14 +1,3 @@
-/**
- * devops/02-observability.md: "synthetic checks on core flows (search, quote) in
- * staging/prod." No staging/prod exists yet (prompts 27/29 not done) — this is the
- * real script that will run against one once it does, not a placeholder. Exits
- * non-zero (and prints which check failed) on any failure, so it's ready to wire
- * into an uptime tool or a scheduled workflow — see .github/workflows/
- * synthetic-checks.yml, which is scheduled but no-ops until SYNTHETIC_BASE_URL is
- * actually configured.
- *
- * Usage: SYNTHETIC_BASE_URL=https://api.havynvilla.com node synthetic-checks.mjs
- */
 const BASE_URL = process.env.SYNTHETIC_BASE_URL;
 if (!BASE_URL) {
   console.log("SYNTHETIC_BASE_URL not set — nothing to check against yet (no staging/prod deployed, see prompts 27/29). Skipping.");

@@ -365,8 +365,12 @@ public class PropertyService {
     }
 
     private Property findOwned(UUID hostId, UUID propertyId) {
-        return propertyRepository.findByIdAndHostId(propertyId, hostId)
+        Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> NotFoundException.of("Property", propertyId));
+        if (!property.getHostId().equals(hostId)) {
+            throw new ForbiddenException("Host does not own this property");
+        }
+        return property;
     }
 
     private PropertyType findType(String code) {

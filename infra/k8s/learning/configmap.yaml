@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: havyn-api-config
+  namespace: havyn-villa
+data:
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: havyn_villa
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  MAIL_HOST: mailhog
+  MAIL_PORT: "1025"
+  SERVER_PORT: "8080"
+  WEB_BASE_URL: http://localhost:3000
+  PAYMENTS_PROVIDER: paystack
+  RAYPROP_BASE_URL: https://api.rayprop.io
+  HAVYN_BOOTSTRAP_ADMIN_ENABLED: "false"
+  REDIS_HEALTH_ENABLED: "false"
+  MAIL_HEALTH_ENABLED: "false"

@@ -1,14 +1,8 @@
-name: Deploy
+name: Backend Kubernetes learning deploy
 
-# devops/01-devops-and-deployment.md#CI/CD: "On merge to main: build+push images,
-# deploy staging, run E2E/smoke, manual/auto promote to prod. Rollback = redeploy
-# previous image." Runs after ci.yml's checks passed as the PR gate (branch
-# protection, a repo setting — not configurable from this workflow file); this
-# workflow doesn't re-run the test suite.
-
+# Manual Kubernetes practice path only. The standalone web and mobile apps are
+# not built here. Railway is the production deployment for the backend.
 on:
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 permissions:
@@ -17,177 +11,62 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  # No real GitHub org/repo exists yet (this repo has no git remote configured —
-  # see infra/k8s/README.md) — ${{ github.repository }} resolves correctly the
-  # moment it's actually pushed somewhere; nothing to hardcode.
   API_IMAGE: ghcr.io/${{ github.repository }}-api
-  WEB_IMAGE: ghcr.io/${{ github.repository }}-web
 
 jobs:
   build-and-push:
-    name: Build + push images
+    name: Build and push API image
     runs-on: ubuntu-latest
     outputs:
       api-tag: ${{ steps.tags.outputs.api-tag }}
-      web-tag: ${{ steps.tags.outputs.web-tag }}
     steps:
       - uses: actions/checkout@v4
-
       - id: tags
-        run: |
-          echo "api-tag=${{ env.API_IMAGE }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          echo "web-tag=${{ env.WEB_IMAGE }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-
+        run: echo "api-tag=${{ env.API_IMAGE }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
-
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build + push API image
+      - name: Build and push API image
         uses: docker/build-push-action@v6
         with:
           context: apps/api
           push: true
           tags: |
             ${{ steps.tags.outputs.api-tag }}
-            ${{ env.API_IMAGE }}:staging-latest
+            ${{ env.API_IMAGE }}:learning-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build + push web image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          push: true
-          tags: |
-            ${{ steps.tags.outputs.web-tag }}
-            ${{ env.WEB_IMAGE }}:staging-latest
-          build-args: |
-            NEXT_PUBLIC_API_BASE_URL=${{ vars.STAGING_API_BASE_URL }}
-            NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY=${{ vars.GOOGLE_MAPS_BROWSER_KEY }}
-            NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${{ vars.GOOGLE_MAPS_MAP_ID }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy-staging:
-    name: Deploy to staging
+  deploy-learning:
+    name: Deploy API to optional Kubernetes cluster
     runs-on: ubuntu-latest
     needs: build-and-push
-    environment: staging
+    environment: kubernetes-learning
     steps:
       - uses: actions/checkout@v4
-
-      - name: Check staging cluster access is configured
+      - name: Check cluster access
         id: gate
         run: |
           if [ -z "${{ secrets.KUBE_CONFIG_STAGING }}" ]; then
-            echo "KUBE_CONFIG_STAGING not set — no staging cluster exists yet. Images were built and pushed above; nothing to deploy to. Skipping."
+            echo "KUBE_CONFIG_STAGING is not configured; image publishing completed and Kubernetes deployment is skipped."
             echo "configured=false" >> "$GITHUB_OUTPUT"
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
-
       - if: steps.gate.outputs.configured == 'true'
         run: |
           mkdir -p "$HOME/.kube"
           echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > "$HOME/.kube/config"
-
       - if: steps.gate.outputs.configured == 'true'
         uses: azure/setup-kubectl@v4
-
       - if: steps.gate.outputs.configured == 'true'
         working-directory: infra/k8s/overlays/staging
         run: |
           curl -sfL https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64.tar.gz | tar xz
-          ./kustomize edit set image \
-            ${{ env.API_IMAGE }}=${{ needs.build-and-push.outputs.api-tag }} \
-            ${{ env.WEB_IMAGE }}=${{ needs.build-and-push.outputs.web-tag }}
+          ./kustomize edit set image ${{ env.API_IMAGE }}=${{ needs.build-and-push.outputs.api-tag }}
           ./kustomize build . | kubectl apply -f -
-
-      # This IS prompt 27's "migrations run safely on deploy" gate — see
-      # infra/k8s/README.md's "Why there's no separate migration Job." A pod whose
-      # Flyway migration fails never passes readinessProbe, so rollout status never
-      # succeeds and this step fails the deploy before anything user-facing changes.
       - if: steps.gate.outputs.configured == 'true'
-        run: |
-          kubectl -n havyn-staging rollout status deployment/havyn-api --timeout=5m
-          kubectl -n havyn-staging rollout status deployment/havyn-web --timeout=5m
-
-      - if: steps.gate.outputs.configured == 'true'
-        working-directory: infra/observability
-        run: |
-          npm install
-          node synthetic-checks.mjs
-        env:
-          SYNTHETIC_BASE_URL: ${{ vars.STAGING_API_BASE_URL }}
-
-  promote-production:
-    name: Promote to production (manual approval)
-    runs-on: ubuntu-latest
-    needs: [build-and-push, deploy-staging]
-    # A GitHub Environment named "production" with required reviewers configured
-    # in repo settings turns this into the "manual... promote to prod" gate the
-    # devops doc calls for — not something expressible purely in this YAML file.
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check production cluster access is configured
-        id: gate
-        run: |
-          if [ -z "${{ secrets.KUBE_CONFIG_PRODUCTION }}" ]; then
-            echo "KUBE_CONFIG_PRODUCTION not set — no production cluster exists yet. Skipping."
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - if: steps.gate.outputs.configured == 'true'
-        run: |
-          mkdir -p "$HOME/.kube"
-          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > "$HOME/.kube/config"
-
-      - if: steps.gate.outputs.configured == 'true'
-        uses: azure/setup-kubectl@v4
-
-      # Re-tags the EXACT image that already passed staging + its smoke checks —
-      # never a fresh build — "immutable images promoted across envs" (this
-      # prompt's own constraint), not just staging and prod happening to build
-      # from the same commit.
-      - if: steps.gate.outputs.configured == 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - if: steps.gate.outputs.configured == 'true'
-        run: |
-          docker buildx imagetools create -t ${{ env.API_IMAGE }}:production-latest ${{ needs.build-and-push.outputs.api-tag }}
-          docker buildx imagetools create -t ${{ env.WEB_IMAGE }}:production-latest ${{ needs.build-and-push.outputs.web-tag }}
-
-      - if: steps.gate.outputs.configured == 'true'
-        working-directory: infra/k8s/overlays/production
-        run: |
-          curl -sfL https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64.tar.gz | tar xz
-          ./kustomize edit set image \
-            ${{ env.API_IMAGE }}=${{ needs.build-and-push.outputs.api-tag }} \
-            ${{ env.WEB_IMAGE }}=${{ needs.build-and-push.outputs.web-tag }}
-          ./kustomize build . | kubectl apply -f -
-
-      - if: steps.gate.outputs.configured == 'true'
-        run: |
-          kubectl -n havyn-production rollout status deployment/havyn-api --timeout=5m
-          kubectl -n havyn-production rollout status deployment/havyn-web --timeout=5m
-
-      - if: steps.gate.outputs.configured == 'true'
-        working-directory: infra/observability
-        run: |
-          npm install
-          node synthetic-checks.mjs
-        env:
-          SYNTHETIC_BASE_URL: ${{ vars.PRODUCTION_API_BASE_URL }}
+        run: kubectl -n havyn-staging rollout status deployment/havyn-api --timeout=5m

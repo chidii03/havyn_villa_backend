@@ -1,23 +1,7 @@
 {
   "name": "havyn-villa",
   "private": true,
-  "description": "Havyn Villa — premium property marketplace. Monorepo root (npm workspaces) for apps/web, apps/mobile, and packages/shared. Backend lives in apps/api (Gradle/Java, not part of this workspace).",
-  "workspaces": [
-    "apps/web",
-    "apps/mobile",
-    "packages/shared"
-  ],
-  "scripts": {
-    "dev:web": "npm run dev -w apps/web",
-    "build:web": "npm run build -w apps/web",
-    "lint:web": "npm run lint -w apps/web",
-    "test:web": "npm run test -w apps/web",
-    "build:shared": "npm run build -w packages/shared",
-    "start:mobile": "npm run start -w apps/mobile",
-    "lint:mobile": "npm run lint -w apps/mobile",
-    "test:mobile": "npm run test -w apps/mobile",
-    "typecheck:mobile": "npm run typecheck -w apps/mobile"
-  },
+  "description": "Havyn Villa backend infrastructure tooling. The Spring Boot API lives in apps/api; web and mobile are standalone projects outside this repository.",
   "engines": {
     "node": ">=20"
   }

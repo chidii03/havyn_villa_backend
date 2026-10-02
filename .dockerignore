@@ -7,7 +7,6 @@ apps/api/bin/
 apps/api/loadtest/node_modules/
 infra/observability/node_modules/
 
-# Not needed to build the web image — excluding keeps the build context small.
 apps/api/src/
 project-docs/
 brand/

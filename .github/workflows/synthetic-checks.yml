@@ -1,15 +1,8 @@
 name: Synthetic checks
 
-# devops/02-observability.md: "synthetic checks on core flows (search, quote) in
-# staging/prod." Scheduled every 15 minutes, but genuinely no-ops (exit 0,
-# logs why) until the SYNTHETIC_BASE_URL repository variable is set — there is no
-# staging/prod deployment yet (prompts 27/29). This is real, ready-to-use tooling,
-# not a placeholder: set the variable once a real environment exists and this starts
-# actually checking it, no code change needed.
-
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/15 * * * *"   
   workflow_dispatch: {}
 
 jobs:

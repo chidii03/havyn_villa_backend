@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: havyn-api
+  namespace: havyn-villa
+  labels:
+    app: havyn-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: havyn-api
+  template:
+    metadata:
+      labels:
+        app: havyn-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          # Replace with the image published by docker-publish.yml, or an image
+          # built and pushed for your own KillerCoda exercise.
+          image: ghcr.io/OWNER/havyn-villa-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          # A failed liveness probe restarts this container. If a pod dies, the
+          # Deployment controller creates a replacement to maintain two replicas.
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          envFrom:
+            - configMapRef:
+                name: havyn-api-config
+            - secretRef:
+                name: havyn-api-secrets

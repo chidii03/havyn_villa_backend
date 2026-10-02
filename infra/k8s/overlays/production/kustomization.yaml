@@ -12,8 +12,6 @@ resources:
 images:
   - name: ghcr.io/OWNER/havyn-villa-api
     newTag: production-latest
-  - name: ghcr.io/OWNER/havyn-villa-web
-    newTag: production-latest
 
 # Base's replicas (2) and HPA range (2-6) already match production sizing — no
 # override needed here, unlike staging's deliberately smaller footprint.
@@ -25,12 +23,9 @@ patches:
     patch: |
       - op: replace
         path: /spec/tls/0/hosts
-        value: ["CHANGEME.example.com", "api.CHANGEME.example.com"]
+        value: ["api.CHANGEME.example.com"]
       - op: replace
         path: /spec/rules/0/host
-        value: CHANGEME.example.com
-      - op: replace
-        path: /spec/rules/1/host
         value: api.CHANGEME.example.com
   - target:
       kind: ConfigMap

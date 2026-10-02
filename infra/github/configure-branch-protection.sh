@@ -17,7 +17,7 @@ REPO="${1:?Usage: $0 <owner>/<repo> [branch]}"
 BRANCH="${2:-main}"
 
 # Required = a real correctness check, never expected to be flaky. Excludes the
-# `load-test` job (ci.yml) deliberately: p95-latency thresholds measured on a
+# optional load-test job deliberately: p95-latency thresholds measured on a
 # shared, noisy GitHub-hosted runner are inherently noisier than functional
 # correctness — making it a hard merge-blocker risks blocking valid PRs on CI
 # infrastructure jitter, not a real regression (see prompt 26's own "alerts
@@ -25,13 +25,13 @@ BRANCH="${2:-main}"
 # instead of a paging alert). It still runs and is visible on every PR, just not
 # required. CodeQL's two matrix jobs ("Analyze (javascript-typescript)"/
 # "Analyze (java-kotlin)", from .github/workflows/codeql.yml) ARE required —
-# security scanning is a correctness gate, not a performance one.
+# security scanning is a correctness gate, not a performance one. The backend
+# workflow has no frontend, E2E, or web-container checks because those projects
+# are maintained outside this repository.
 REQUIRED_CHECKS=(
   "Pipeline validation — observability, k8s manifests, workflow config"
-  "Backend — build, unit + integration tests, coverage gate"
-  "Frontend — lint, typecheck, test + coverage gate + a11y, build"
-  "E2E — Playwright against a real booted stack"
-  "Docker — Dockerfile lint, image build + container smoke tests"
+  "Backend — build, unit tests, coverage gate"
+  "Docker — API lint and image build"
   "Analyze (javascript-typescript)"
   "Analyze (java-kotlin)"
 )

@@ -1,17 +1,5 @@
 name: Rollback
 
-# prompt 28: "documented rollback" + "rollback drill" test. Two modes:
-#   previous-revision — `kubectl rollout undo`, reverts to the ReplicaSet Kubernetes
-#     itself already kept from the last deploy. Fast, no image tag to look up —
-#     the right choice for "something's on fire right now."
-#   specific-tag — re-applies a named image tag (e.g. rolling back two releases,
-#     not one, or re-promoting a known-good tag after a bad rollback attempt).
-#
-# Deliberately NOT gated behind a GitHub Environment's required-reviewer approval
-# (unlike deploy.yml's promote-production job) — manually triggering this workflow
-# at all already requires repo write access, and an emergency rollback should be
-# fast, not wait on the same approval flow as a forward deploy.
-
 on:
   workflow_dispatch:
     inputs:
@@ -80,7 +68,6 @@ jobs:
         if: steps.gate.outputs.configured == 'true' && inputs.mode == 'previous-revision'
         run: |
           kubectl -n ${{ steps.target.outputs.namespace }} rollout undo deployment/havyn-api
-          kubectl -n ${{ steps.target.outputs.namespace }} rollout undo deployment/havyn-web
 
       - name: Roll back — specific tag
         if: steps.gate.outputs.configured == 'true' && inputs.mode == 'specific-tag'
@@ -98,7 +85,6 @@ jobs:
       - if: steps.gate.outputs.configured == 'true'
         run: |
           kubectl -n ${{ steps.target.outputs.namespace }} rollout status deployment/havyn-api --timeout=5m
-          kubectl -n ${{ steps.target.outputs.namespace }} rollout status deployment/havyn-web --timeout=5m
 
       - name: Confirm the rollback actually restored health
         if: steps.gate.outputs.configured == 'true'

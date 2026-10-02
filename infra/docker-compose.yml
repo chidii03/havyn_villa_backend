@@ -88,11 +88,6 @@ services:
       MAIL_HOST: mailhog
       MAIL_PORT: 1025
       WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:3000}
-      # Real values come from a local, gitignored .env (see .env.example) — never
-      # committed; these `:-` fallbacks only exist so `docker-compose up` with no
-      # .env at all still boots (auth/JWT works with the placeholder; payments/
-      # media/maps integrations simply stay unconfigured, same as running the app
-      # directly with `./gradlew bootRun` and no env set).
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change_me_this_is_a_local_dev_only_placeholder}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_this_is_a_local_dev_only_placeholder_too}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
@@ -109,50 +104,6 @@ services:
       timeout: 5s
       retries: 10
       start_period: 45s
-
-  web:
-    build:
-      context: .. # repo root — see apps/web/Dockerfile's own comment on why
-      dockerfile: apps/web/Dockerfile
-      args:
-        # Build-time, not runtime (Next.js inlines NEXT_PUBLIC_* at build) — see
-        # apps/web/Dockerfile's comment.
-        #
-        # KNOWN LIMITATION, stated plainly rather than silently broken: apps/web/
-        # src/lib/api/http.ts uses ONE NEXT_PUBLIC_API_BASE_URL for both
-        # client-side (browser) and server-side (Server Component SSR) fetches —
-        # there's no separate internal/external URL split in that code today. Set
-        # to localhost:8080 here because that's correct for the browser (via this
-        # service's published port, reachable from the host) — client-rendered
-        # flows (BookingWidget, search-bar interactions, etc.) work correctly
-        # through this container. Server-side fetches issued *from inside* this
-        # container (property/search Server Components) will NOT reach the
-        # backend this way — `localhost` inside the web container isn't
-        # `havyn-backend`. Introducing a server/client URL split is a real,
-        # worthwhile fix but touches apps/web/src/lib/api/*, outside this
-        # prompt's file scope (Dockerfiles/compose/deploy manifests only) — left
-        # for whoever next touches that module. Until then, `docker-compose up`
-        # is a real smoke test that the whole stack builds/boots/health-checks
-        # together; `npm run dev` + `./gradlew bootRun` against this same
-        # compose file's infra services remains the actual daily dev workflow
-        # (which is why postgres/redis/minio/mailhog have always published their
-        # ports to localhost, unchanged by this prompt).
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
-        NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY:-}
-        NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID: ${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID:-}
-    container_name: havyn-web
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-    ports:
-      - "${WEB_PORT:-3000}:3000"
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
 
 volumes:
   havyn_postgres_data:

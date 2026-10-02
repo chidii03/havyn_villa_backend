@@ -6,9 +6,6 @@ resources:
   - backend-service.yaml
   - backend-hpa.yaml
   - backend-configmap.yaml
-  - web-deployment.yaml
-  - web-service.yaml
-  - web-hpa.yaml
   - ingress.yaml
 
 # backend-secret.example.yaml is deliberately NOT listed here — it's a template for

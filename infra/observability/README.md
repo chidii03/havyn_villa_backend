@@ -1,4 +1,4 @@
-# Observability as code (prompt 26)
+# Observability as code 
 
 Real, usable artifacts — none of this is a placeholder, but none of it has run
 against live infrastructure either, since no Prometheus/Grafana/staging deployment

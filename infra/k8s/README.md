@@ -8,7 +8,7 @@ Ingress using nginx-ingress-controller annotations (swap for your controller).
 ## Layout
 
 ```
-base/        Deployment/Service/HPA/ConfigMap/Ingress for havyn-api + havyn-web,
+base/        Deployment/Service/HPA/ConfigMap/Ingress for havyn-api,
              plus backend-secret.example.yaml (a template — never applied as-is)
 overlays/
   staging/     namespace havyn-staging, 1 replica, staging.CHANGEME.example.com

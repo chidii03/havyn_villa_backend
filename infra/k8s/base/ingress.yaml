@@ -14,16 +14,6 @@ spec:
     - hosts: ["CHANGEME.example.com", "api.CHANGEME.example.com"]
       secretName: havyn-villa-tls
   rules:
-    - host: CHANGEME.example.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: havyn-web
-                port:
-                  name: http
     - host: api.CHANGEME.example.com
       http:
         paths:

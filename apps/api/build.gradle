@@ -10,9 +10,6 @@ version = '0.0.1-SNAPSHOT'
 description = 'Havyn Villa API - Spring Boot modular monolith'
 
 java {
-	// Target Java 21 bytecode/source level without pinning a toolchain — this avoids
-	// Gradle toolchain auto-provisioning (no download repository configured in this
-	// environment) while still working on any JDK 21+ (dev machine here has JDK 23).
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
 }
@@ -33,24 +30,14 @@ dependencies {
 	implementation 'org.flywaydb:flyway-database-postgresql'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-
-	// Observability (prompt 26) — versions for the three below are Spring Boot's own
-	// managed BOM versions (io.spring.dependency-management plugin), same as every
-	// other unversioned `implementation` line here; only logstash-logback-encoder
-	// needs a pinned version since it isn't part of that BOM (verified against Maven
-	// Central before adding, same discipline as every hand-picked dependency in this
-	// project — see the prompt-08 note on fabricated Spring Initializr coordinates).
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
-	implementation 'io.opentelemetry:opentelemetry-exporter-logging' // dev-friendly default — logs spans, no external collector required
-	runtimeOnly 'io.opentelemetry:opentelemetry-exporter-otlp' // real backend (Jaeger/Tempo/Honeycomb/...), used only if management.otlp.tracing.endpoint is configured
+	implementation 'io.opentelemetry:opentelemetry-exporter-logging'
+	runtimeOnly 'io.opentelemetry:opentelemetry-exporter-otlp' 
 	implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	runtimeOnly 'org.postgresql:postgresql'
-	// Spring Security's Argon2PasswordEncoder needs a real Argon2 implementation on the
-	// classpath at runtime — it's an optional dependency of spring-security-crypto, not
-	// pulled in transitively. Without this, encoding/matching throws NoClassDefFoundError.
 	runtimeOnly 'org.bouncycastle:bcprov-jdk18on:1.80'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

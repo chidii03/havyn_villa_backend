@@ -1,19 +1,16 @@
 # Required GitHub Actions secrets & variables
 
-The single source of truth for every `secrets.*`/`vars.*` this repo's workflows
-reference (excluding `secrets.GITHUB_TOKEN`, which GitHub provides automatically —
-nothing to configure). `infra/github/validate.mjs` cross-checks every workflow
-file against this table in both directions: nothing referenced-but-undocumented,
-nothing documented-but-unused. Set these via repo/environment Settings once a real
-GitHub repo exists — none of them exist anywhere yet (this repo has no git remote,
-confirmed via `git remote -v`).
+The single source of truth for every `secrets.*`/`vars.*` this backend repo's
+workflows reference (excluding `secrets.GITHUB_TOKEN`, which GitHub provides
+automatically). `infra/github/validate.mjs` cross-checks every workflow file
+against this table in both directions.
 
 ## Secrets
 
 | Name | Used by | Purpose |
 |---|---|---|
 | `KUBE_CONFIG_STAGING` | `deploy.yml`, `rollback.yml` | Base64 kubeconfig for the staging cluster. Absent = those jobs skip cleanly (see each workflow's own gate step) rather than fail. |
-| `KUBE_CONFIG_PRODUCTION` | `deploy.yml`, `rollback.yml` | Same, for production. |
+| `KUBE_CONFIG_PRODUCTION` | `rollback.yml` | Base64 kubeconfig for an optional manually managed production-like cluster. |
 
 ## Variables
 
@@ -23,11 +20,9 @@ Repo/environment *variables* (`vars.*`), not secrets — none of these are sensi
 
 | Name | Used by | Purpose |
 |---|---|---|
-| `STAGING_API_BASE_URL` | `deploy.yml` | Staging's public API URL — build arg for the web image and the target for post-deploy synthetic checks. |
-| `PRODUCTION_API_BASE_URL` | `deploy.yml`, `rollback.yml` | Same, for production. |
-| `SYNTHETIC_BASE_URL` | `synthetic-checks.yml` | Which environment the scheduled (every-15-min) synthetic check targets — independent of the two above so it can point anywhere (typically production). |
-| `GOOGLE_MAPS_BROWSER_KEY` | `deploy.yml` | Baked into the web image at build time (`NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY`). |
-| `GOOGLE_MAPS_MAP_ID` | `deploy.yml` | Same, `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`. |
+| `STAGING_API_BASE_URL` | `rollback.yml` | Public backend URL used for the post-rollback synthetic check. |
+| `PRODUCTION_API_BASE_URL` | `rollback.yml` | Public backend URL used for the production rollback synthetic check. |
+| `SYNTHETIC_BASE_URL` | `synthetic-checks.yml` | Which backend environment the scheduled synthetic check targets. |
 
 ## Why variables, not secrets, for the non-sensitive ones
 

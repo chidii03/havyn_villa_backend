@@ -12,13 +12,9 @@ resources:
 images:
   - name: ghcr.io/OWNER/havyn-villa-api
     newTag: staging-latest
-  - name: ghcr.io/OWNER/havyn-villa-web
-    newTag: staging-latest
 
 replicas:
   - name: havyn-api
-    count: 1
-  - name: havyn-web
     count: 1
 
 patches:
@@ -33,27 +29,14 @@ patches:
         path: /spec/maxReplicas
         value: 3
   - target:
-      kind: HorizontalPodAutoscaler
-      name: havyn-web
-    patch: |
-      - op: replace
-        path: /spec/minReplicas
-        value: 1
-      - op: replace
-        path: /spec/maxReplicas
-        value: 3
-  - target:
       kind: Ingress
       name: havyn-villa
     patch: |
       - op: replace
         path: /spec/tls/0/hosts
-        value: ["staging.CHANGEME.example.com", "api.staging.CHANGEME.example.com"]
+        value: ["api.staging.CHANGEME.example.com"]
       - op: replace
         path: /spec/rules/0/host
-        value: staging.CHANGEME.example.com
-      - op: replace
-        path: /spec/rules/1/host
         value: api.staging.CHANGEME.example.com
   - target:
       kind: ConfigMap
