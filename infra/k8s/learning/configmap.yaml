@@ -4,15 +4,15 @@ metadata:
   name: havyn-api-config
   namespace: havyn-villa
 data:
-  POSTGRES_HOST: postgres
-  POSTGRES_PORT: "5432"
-  POSTGRES_DB: havyn_villa
-  REDIS_HOST: redis
-  REDIS_PORT: "6379"
+  POSTGRES_HOST: iriguchi.proxy.rlwy.net
+  POSTGRES_PORT: "55710"
+  POSTGRES_DB: railway
+  REDIS_HOST: tokaido.proxy.rlwy.net
+  REDIS_PORT: "36143"
   MAIL_HOST: mailhog
   MAIL_PORT: "1025"
   SERVER_PORT: "8080"
-  WEB_BASE_URL: http://localhost:3000
+  WEB_BASE_URL: https://havynvilla.vercel.app
   PAYMENTS_PROVIDER: paystack
   RAYPROP_BASE_URL: https://api.rayprop.io
   HAVYN_BOOTSTRAP_ADMIN_ENABLED: "false"

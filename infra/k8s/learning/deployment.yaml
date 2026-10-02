@@ -21,9 +21,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          # Replace with the image published by docker-publish.yml, or an image
-          # built and pushed for your own KillerCoda exercise.
-          image: ghcr.io/OWNER/havyn-villa-api:latest
+          image: ghcr.io/chidii03/havyn_villa_backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -32,8 +30,6 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
-          # A failed liveness probe restarts this container. If a pod dies, the
-          # Deployment controller creates a replacement to maintain two replicas.
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness

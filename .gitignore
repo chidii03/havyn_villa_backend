@@ -23,6 +23,7 @@ target/
 .DS_Store
 .idea/
 .vscode/
+.settings/
 *.iml
 
 # Test / coverage
