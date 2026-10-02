@@ -1,7 +1,4 @@
 # syntax=docker/dockerfile:1
-# Multi-stage build (prompt 27) — build context is apps/api/ itself (see
-# infra/docker-compose.yml's `build: context: apps/api`), so paths here are relative
-# to this file, not the monorepo root.
 
 # ---- deps/build stage --------------------------------------------------------
 FROM eclipse-temurin:21-jdk-alpine AS build
@@ -12,7 +9,8 @@ WORKDIR /app
 COPY gradlew ./
 COPY gradle gradle
 COPY build.gradle settings.gradle ./
-RUN chmod +x gradlew && ./gradlew --no-daemon dependencies > /dev/null 2>&1 || true
+RUN chmod +x gradlew
+RUN ./gradlew --no-daemon dependencies
 
 COPY src src
 RUN ./gradlew --no-daemon bootJar -x test
@@ -29,10 +27,6 @@ USER havyn
 
 EXPOSE 8080
 
-# Alpine's busybox wget is built in — no extra package needed. Mirrors
-# management.health.readinessstate (application.yml) — an "UP" body means both the
-# app and its DB/Redis dependencies are actually reachable, not just that the JVM
-# process is alive.
 HEALTHCHECK --interval=10s --timeout=3s --start-period=45s --retries=5 \
   CMD wget -q -O- http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
 

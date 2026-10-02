@@ -3,9 +3,9 @@ spring:
     name: havyn-villa-api
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:havyn_villa}
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:chidi03}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${PGHOST:${POSTGRES_HOST:localhost}}:${PGPORT:${POSTGRES_PORT:5432}}/${PGDATABASE:${POSTGRES_DB:havyn_villa}}}
+    username: ${SPRING_DATASOURCE_USERNAME:${PGUSER:${POSTGRES_USER:postgres}}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:${POSTGRES_PASSWORD:}}}
     hikari:
       maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
       minimum-idle: ${DB_POOL_MIN_IDLE:5}
@@ -59,15 +59,9 @@ havyn:
   rate-limit:
     enabled: true
     rules:
-      # Rules are matched in order, first-prefix-match wins (RateLimitFilter) — none of
-      # these prefixes overlap, so order doesn't matter here, but keep new rules
-      # non-overlapping with existing ones or put the more specific prefix first.
       - path-prefix: /api/v1/auth
         limit: 20
         window-seconds: 60
-      # Public, high-traffic browsing — generous enough for normal filter/typeahead
-      # use, still a real ceiling against scraping/DoS (prompt 24: "Rate limiting on
-      # auth/search/booking/messaging").
       - path-prefix: /api/v1/search
         limit: 60
         window-seconds: 60
@@ -134,7 +128,8 @@ havyn:
       api-secret: ${CLOUDINARY_API_SECRET:}
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Railway injects PORT; local development continues to use SERVER_PORT/8080.
+  port: ${PORT:${SERVER_PORT:8080}}
 
 management:
   endpoints:
@@ -171,14 +166,6 @@ management:
       # expensive); a real prod deployment should lower this — see
       # devops/02-observability.md's prompt 26 notes.
       probability: 1.0
-  # No management.otlp.tracing.endpoint here deliberately — Boot's OTLP exporter
-  # auto-config only activates when that property is genuinely present (an empty-
-  # string default would still count as "present" and attempt to export to nowhere).
-  # Tracing/span-creation/MDC population all work with nothing configured; the
-  # logging exporter (build.gradle's opentelemetry-exporter-logging) prints spans
-  # to the console in the meantime. Set MANAGEMENT_OTLP_TRACING_ENDPOINT at deploy
-  # time to ship real spans to Jaeger/Tempo/Honeycomb/etc. — no code or config
-  # change needed here to enable that later.
 
 springdoc:
   swagger-ui:

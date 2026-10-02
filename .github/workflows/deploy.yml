@@ -44,7 +44,6 @@ jobs:
     name: Deploy API to optional Kubernetes cluster
     runs-on: ubuntu-latest
     needs: build-and-push
-    environment: kubernetes-learning
     steps:
       - uses: actions/checkout@v4
       - name: Check cluster access

@@ -1,9 +1,0 @@
-build/
-bin/
-.gradle/
-out/
-loadtest/node_modules/
-*.log
-.env
-.env.*
-!.env.example
