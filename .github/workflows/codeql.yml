@@ -13,6 +13,7 @@ jobs:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       security-events: write
       contents: read
     strategy:
@@ -22,9 +23,7 @@ jobs:
           - language: javascript-typescript
             build-mode: none
           - language: java-kotlin
-            # Unlike JS/TS, Java analysis needs a real build to extract an accurate call
-            # graph — `autobuild` invokes apps/api's Gradle wrapper automatically.
-            build-mode: autobuild
+            build-mode: manual
 
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +41,19 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
+      - name: Build Java for CodeQL
+        if: matrix.language == 'java-kotlin'
+        working-directory: apps/api
+        run: ./gradlew --no-daemon classes
+
       - name: Perform CodeQL analysis
+        if: matrix.language == 'javascript-typescript'
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+      - name: Perform CodeQL analysis (Java)
+        if: matrix.language == 'java-kotlin'
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"

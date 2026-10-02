@@ -138,7 +138,7 @@ Some tests (e.g. `RayPropLiveSmokeTest`) make real network calls and are opt-in 
 
 ## Deployment Notes
 
-- Target platform: **Render**
+- Target platform: **Railway**
 - Ensure all secrets (`JWT_*_SECRET`, `RAYPROP_API_KEY`, `PAYSTACK_SECRET_KEY`, `GOOGLE_CLIENT_ID`, DB credentials) are set as environment variables in the hosting platform's dashboard — never baked into the image or committed to the repo.
 - Confirm the deployed Postgres and Redis instances are reachable from the deployed API before going live.
 - Remove or gate any temporary diagnostic logging (e.g. startup key-length diagnostics) behind a dev-only profile before production deploys.
