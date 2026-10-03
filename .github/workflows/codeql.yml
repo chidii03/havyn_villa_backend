@@ -52,8 +52,6 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
-          # Dependabot/fork pull requests receive a read-only token. Analyze
-          # them, but upload SARIF only from trusted pushes and schedules.
           upload: ${{ github.event_name != 'pull_request' }}
 
       - name: Perform CodeQL analysis (Java)
