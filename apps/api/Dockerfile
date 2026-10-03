@@ -18,11 +18,11 @@ RUN ./gradlew --no-daemon bootJar -x test
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
 # Least-privilege runtime (prompt 27 constraint) — never root.
-RUN addgroup -S havyn && adduser -S havyn -G havyn
+RUN addgroup -S havyn && adduser -S havyn -G havyn -u 1000
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 RUN chown havyn:havyn app.jar
-USER havyn
+USER 1000
 
 EXPOSE 8080
 
