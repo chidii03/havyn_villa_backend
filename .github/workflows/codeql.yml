@@ -36,6 +36,10 @@ jobs:
           java-version: "21"
           cache: gradle
 
+      - name: Ensure Gradle wrapper is executable
+        if: matrix.language == 'java-kotlin'
+        run: chmod +x apps/api/gradlew
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
