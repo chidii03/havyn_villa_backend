@@ -8,7 +8,10 @@ public class RayPropProperties {
 
     private String apiKey = "";
     private String baseUrl = "https://api.rayprop.io";
-    private String listingsPath = "/listings";
+    // RayProp's current public API is versioned under the complete-api function.
+    // Keep this configurable for older/private tenants, but make the documented
+    // endpoint the safe default.
+    private String listingsPath = "/functions/v1/complete-api/listings";
 
     /** RayProp caps {@code limit} at 50 server-side regardless of what's requested (docs: Pagination). */
     private int pageSize = 50;

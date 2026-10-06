@@ -43,7 +43,7 @@ public record RayPropListing(
         addImageUrls(images, node.path("photos"), "image_url", "url", "secure_url");
         addImageUrls(images, node.path("media"), "image_url", "url", "secure_url");
         return new RayPropListing(
-                node.path("id").asText(),
+                firstText(node, "unique_listing_id", "id", "listing_id"),
                 stripZeroWidth(node.path("title").asText("")),
                 stripZeroWidth(firstText(node, "description", "summary", "details")),
                 node.path("currency").asText("NGN"),
@@ -56,7 +56,9 @@ public record RayPropListing(
                 firstDecimal(node, null, "lat", "latitude"),
                 firstDecimal(node, null, "lng", "lon", "longitude"),
                 firstText(node, "property_category", "property_type", "type", "category"),
-                firstLong(node, 0, "price_per_night", "pricePerNight", "nightly_price"),
+                // Current RayProp responses use nightly_kobo; older responses used
+                // price_per_night. Both are minor-unit values.
+                firstLong(node, 0, "nightly_kobo", "price_per_night", "pricePerNight", "nightly_price"),
                 images);
     }
 
@@ -97,6 +99,13 @@ public record RayPropListing(
             JsonNode value = node.path(field);
             if (value.isNumber()) {
                 return value.asLong();
+            }
+            if (value.isTextual()) {
+                try {
+                    return new BigDecimal(value.asText().trim()).longValueExact();
+                } catch (NumberFormatException | ArithmeticException ignored) {
+                    // Try the next known alias rather than rejecting the listing.
+                }
             }
         }
         return fallback;

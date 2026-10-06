@@ -92,7 +92,7 @@ havyn:
   rayprop:
     api-key: ${RAYPROP_API_KEY:}
     base-url: ${RAYPROP_BASE_URL:https://api.rayprop.io}
-    listings-path: ${RAYPROP_LISTINGS_PATH:/listings}
+    listings-path: ${RAYPROP_LISTINGS_PATH:/functions/v1/complete-api/listings}
     page-size: ${RAYPROP_PAGE_SIZE:50}
     max-pages: ${RAYPROP_MAX_PAGES:20}
     sync-on-startup: ${RAYPROP_SYNC_ON_STARTUP:true}

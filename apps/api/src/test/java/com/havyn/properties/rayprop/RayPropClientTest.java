@@ -35,6 +35,10 @@ class RayPropClientTest {
         properties = new RayPropProperties();
         properties.setApiKey("rp_sandbox_test_key");
         properties.setBaseUrl("https://api.rayprop.io");
+        // These request-shape tests exercise the legacy path explicitly. The
+        // production default is the current /functions/v1/complete-api/listings
+        // endpoint; the path remains configurable for older tenants.
+        properties.setListingsPath("/listings");
         properties.setPageSize(50);
         properties.setMaxPages(20);
 
@@ -178,6 +182,23 @@ class RayPropClientTest {
         return "{\"success\":true,\"data\":[" + String.join(",", listingsJson) + "],"
                 + "\"meta\":{\"hasMore\":" + hasMore + "}"
                 + dataAccessField + "}";
+    }
+
+    @Test
+    void fetchAllListings_parsesCurrentRayPropListingAliases() {
+        mockServer.expect(requestTo("https://api.rayprop.io/listings?limit=50"))
+                .andRespond(withSuccess("""
+                        {"success":true,"data":[{"unique_listing_id":"rp_current_1","title":"Current listing",
+                        "city":"Lagos","state":"Lagos","bedrooms":2,"bathrooms":2,"max_guests":4,
+                        "nightly_kobo":12500000,"currency":"NGN","listing_images":[{"image_url":"https://img.example/1.jpg"}]}],
+                        "meta":{"hasMore":false}}
+                        """, MediaType.APPLICATION_JSON));
+
+        RayPropListing listing = client.fetchAllListings().listings().get(0);
+
+        assertThat(listing.id()).isEqualTo("rp_current_1");
+        assertThat(listing.pricePerNightMinorUnits()).isEqualTo(12_500_000L);
+        assertThat(listing.imageUrls()).containsExactly("https://img.example/1.jpg");
     }
 
     private static String cursorPage(java.util.List<String> listingsJson, String nextCursor, String dataAccessJson) {

@@ -23,17 +23,18 @@ BRANCH="${2:-main}"
 # infrastructure jitter, not a real regression (see prompt 26's own "alerts
 # actionable, not noisy" principle, same reasoning applied here to a merge gate
 # instead of a paging alert). It still runs and is visible on every PR, just not
-# required. CodeQL's two matrix jobs ("Analyze (javascript-typescript)"/
-# "Analyze (java-kotlin)", from .github/workflows/codeql.yml) ARE required —
-# security scanning is a correctness gate, not a performance one. The backend
-# workflow has no frontend, E2E, or web-container checks because those projects
-# are maintained outside this repository.
+# required. CodeQL is intentionally not listed here: this repository uses
+# GitHub's repository-level default setup, whose generated checks are managed by
+# GitHub rather than by a checked-in workflow. Keeping an advanced CodeQL
+# workflow alongside default setup causes SARIF uploads to fail with:
+# "CodeQL analyses from advanced configurations cannot be processed when the
+# default setup is enabled."
+# The backend workflow has no frontend, E2E, or web-container checks because
+# those projects are maintained outside this repository.
 REQUIRED_CHECKS=(
   "Pipeline validation — observability, k8s manifests, workflow config"
   "Backend — build, unit tests, coverage gate"
   "Docker — API lint and image build"
-  "Analyze (javascript-typescript)"
-  "Analyze (java-kotlin)"
 )
 
 CONTEXTS_JSON=$(printf '%s\n' "${REQUIRED_CHECKS[@]}" | jq -R . | jq -s .)
