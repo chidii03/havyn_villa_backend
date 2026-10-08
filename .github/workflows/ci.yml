@@ -14,7 +14,7 @@ jobs:
     name: Pipeline validation — observability, k8s manifests, workflow config
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -38,7 +38,7 @@ jobs:
     name: Backend — build, unit tests, coverage gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -66,7 +66,7 @@ jobs:
     name: Docker — API lint and image build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Lint API Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
