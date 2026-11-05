@@ -4,7 +4,7 @@ The backend service for Havyn Villa, a property rental platform for the Nigerian
 
 ## Tech Stack
 
-- **Language / Runtime:** Java 24
+- **Language / Runtime:** Java 21 (as enforced by `build.gradle`)
 - **Framework:** Spring Boot 3.5.3
 - **Database:** PostgreSQL 16
 - **Migrations:** Flyway
@@ -17,17 +17,17 @@ The backend service for Havyn Villa, a property rental platform for the Nigerian
 
 ## Prerequisites
 
-- Java 24 (JDK)
+- Java 21 (JDK)
 - PostgreSQL 16+ running locally or accessible remotely
 - Redis-compatible server running locally (Memurai on Windows, or native Redis on macOS/Linux)
 - Gradle Wrapper (included — no separate Gradle install needed)
 
 ## Getting Started
 
-### 1. Clone and navigate to the API module
+### 1. Clone and navigate to the API repository
 
 ```bash
-cd my-app/apps/api
+cd my-app
 ```
 
 ### 2. Configure environment variables
@@ -56,11 +56,21 @@ Required variables:
 
 > ⚠️ `.env` is gitignored and must never be committed. Only `.env.example` (with placeholder values) belongs in version control.
 
-### 3. Start dependencies
+### 3. Start dependencies with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+This starts PostgreSQL, Redis, MailHog, and the API. See `docs/local-development.md` for health checks, logs, reset instructions, and the separately cloned web application.
+
+### 4. Run the API without Docker
 
 Make sure PostgreSQL and Redis are running locally before starting the app. On startup, Flyway will automatically apply all pending migrations found in `src/main/resources/db/migration`.
 
-### 4. Run the application
+Run from the API module; its Gradle task also reads `../../.env` when present.
+
+### 5. Run the application
 
 ```bash
 ./gradlew.bat bootRun      # Windows
@@ -69,7 +79,7 @@ Make sure PostgreSQL and Redis are running locally before starting the app. On s
 
 The API starts on **http://localhost:8080** by default.
 
-### 5. Verify it's running
+### 6. Verify it's running
 
 ```bash
 curl http://localhost:8080/actuator/health

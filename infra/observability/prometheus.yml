@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "/etc/prometheus/alerts.yml"
+
+scrape_configs:
+  # Scrapes Spring Boot backend via Actuator Prometheus endpoint
+  - job_name: "havyn-villa-api"
+    metrics_path: "/actuator/prometheus"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["backend:8080"]
+        labels:
+          app: "havyn-villa-api"
+          environment: "local-dev"
+
+  # Fallback for running API directly on host while Prometheus runs in Docker
+  - job_name: "havyn-villa-api-host"
+    metrics_path: "/actuator/prometheus"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+        labels:
+          app: "havyn-villa-api"
+          environment: "local-host"
+
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

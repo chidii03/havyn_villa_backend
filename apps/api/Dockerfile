@@ -26,6 +26,10 @@ USER 1000
 
 EXPOSE 8080
 
+# Use a bounded share of the container limit rather than host memory. The image
+# remains configurable by overriding JAVA_TOOL_OPTIONS at runtime.
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=25.0 -Djava.io.tmpdir=/tmp"
+
 HEALTHCHECK --interval=10s --timeout=3s --start-period=45s --retries=5 \
   CMD wget -q -O- http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
 

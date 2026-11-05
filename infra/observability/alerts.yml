@@ -1,14 +1,3 @@
-# Prometheus alerting rules (prompt 26 — project-docs/devops/02-observability.md
-# "Dashboards & alerts"). Every metric named below is real and currently emitted by
-# apps/api (scrape /actuator/prometheus) — not placeholder names. See
-# project-docs/devops/02-observability.md's prompt 26 notes for how to load this into
-# a real Prometheus (none is deployed yet — prompts 27/29) and why "alerts fire on
-# injected faults" hasn't been verified end-to-end here.
-#
-# Constraint from the prompt: "Alerts actionable, not noisy" — every rule below has a
-# `for:` duration so a single blip doesn't page anyone, and every annotation says what
-# to go look at, not just that a number crossed a line.
-
 groups:
   - name: havyn-villa-golden-signals
     rules:
