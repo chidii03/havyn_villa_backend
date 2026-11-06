@@ -34,7 +34,6 @@ services:
     volumes:
       - ./infra/observability/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./infra/observability/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./infra/observability/dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json:ro
       - havyn_grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
