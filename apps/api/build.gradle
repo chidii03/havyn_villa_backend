@@ -75,7 +75,6 @@ jacocoTestReport {
 	}
 }
 
-
 jacocoTestCoverageVerification {
 	dependsOn test, integrationTest
 	// Passing Test task providers here makes Gradle 9 resolve the test-results
@@ -127,3 +126,14 @@ tasks.named('bootRun') {
 	}
 }
 
+tasks.register('run') {
+	description = 'Runs this project as a Spring Boot application (alias for bootRun).'
+	group = 'application'
+	dependsOn 'bootRun'
+}
+
+tasks.register('Run') {
+	description = 'Runs this project as a Spring Boot application (alias for bootRun).'
+	group = 'application'
+	dependsOn 'bootRun'
+}
